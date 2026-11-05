@@ -26,6 +26,7 @@ import {
   getRepoRoot,
   getSpawnCwdForIntegration,
   resolveExampleEntry,
+  SKIP_WINDOWS_BUN_CHILD_PROCESS,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -46,50 +47,55 @@ describe("integration: SSG + React 构建", () => {
     chdir(originalCwd);
   });
 
-  it("build 任务应成功执行并生成 HTML（含 headInject）", async () => {
-    // 构建前清空 dist，确保从干净环境开始
-    const distDir = join(exampleDir, "dist");
-    if (await exists(distDir)) {
-      await remove(distDir, { recursive: true });
-    }
+  it.skipIf(
+    SKIP_WINDOWS_BUN_CHILD_PROCESS,
+    "build 任务应成功执行并生成 HTML（含 headInject）",
+    async () => {
+      // 构建前清空 dist，确保从干净环境开始
+      const distDir = join(exampleDir, "dist");
+      if (await exists(distDir)) {
+        await remove(distDir, { recursive: true });
+      }
 
-    // 子进程与当前测试运行时可执行文件一致，仍由 deno.json 解析依赖
-    const cmd = createCommand(getExampleChildProcessExecutable(), {
-      args: exampleBuildArgs(resolveExampleEntry(exampleDir, "src/main.ts")),
-      cwd: getSpawnCwdForIntegration(exampleDir),
-      stdout: "piped",
-      stderr: "piped",
-    });
-    const proc = cmd.spawn();
+      // 子进程与当前测试运行时可执行文件一致，仍由 deno.json 解析依赖
+      const cmd = createCommand(getExampleChildProcessExecutable(), {
+        args: exampleBuildArgs(resolveExampleEntry(exampleDir, "src/main.ts")),
+        cwd: getSpawnCwdForIntegration(exampleDir),
+        stdout: "piped",
+        stderr: "piped",
+      });
+      const proc = cmd.spawn();
 
-    const [status, stdoutText, stderrText] = await Promise.all([
-      proc.status,
-      proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
-      proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
-    ]);
-    if (!status.success) {
-      throw new Error(
-        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${
-          stdoutText || "(empty)"
-        }`,
-      );
-    }
+      const [status, stdoutText, stderrText] = await Promise.all([
+        proc.status,
+        proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
+        proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+      ]);
+      if (!status.success) {
+        throw new Error(
+          `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${
+            stdoutText || "(empty)"
+          }`,
+        );
+      }
 
-    const indexPath = join(exampleDir, "dist", "client", "index.html");
-    const existsIndex = await existsBuildOutput(indexPath);
-    expect(existsIndex).toBe(true);
+      const indexPath = join(exampleDir, "dist", "client", "index.html");
+      const existsIndex = await existsBuildOutput(indexPath);
+      expect(existsIndex).toBe(true);
 
-    const html = await readTextFile(indexPath);
-    expect(html).toContain("<head>");
-    expect(html).toContain("</head>");
-    // headInject：Tailwind 插件在 onBuild 中推送 link，应注入到 </head> 前
-    expect(html).toMatch(/<link[^>]*href="[^"]*\/assets\/[^"]*\.css"[^>]*>/);
+      const html = await readTextFile(indexPath);
+      expect(html).toContain("<head>");
+      expect(html).toContain("</head>");
+      // headInject：Tailwind 插件在 onBuild 中推送 link，应注入到 </head> 前
+      expect(html).toMatch(/<link[^>]*href="[^"]*\/assets\/[^"]*\.css"[^>]*>/);
 
-    // 客户端激活：构建后注入的 hydration 数据与客户端脚本
-    expect(html).toContain("globalThis.__DATA__");
-    expect(html).toContain("__DWEB_MODE__");
-    expect(html).toContain('src="/_client.js"');
-    expect(html).toContain("计数器示例");
-    expect(html).toContain("data-counter-value");
-  }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
+      // 客户端激活：构建后注入的 hydration 数据与客户端脚本
+      expect(html).toContain("globalThis.__DATA__");
+      expect(html).toContain("__DWEB_MODE__");
+      expect(html).toContain('src="/_client.js"');
+      expect(html).toContain("计数器示例");
+      expect(html).toContain("data-counter-value");
+    },
+    { sanitizeOps: false, sanitizeResources: false, timeout: 90000 },
+  );
 });

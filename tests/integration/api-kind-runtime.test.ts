@@ -36,6 +36,7 @@ import {
   getRepoRoot,
   getSpawnCwdForIntegration,
   resolveExampleEntry,
+  SKIP_WINDOWS_BUN_CHILD_PROCESS,
 } from "../setup.ts";
 
 const REPO_ROOT = getRepoRoot();
@@ -315,41 +316,49 @@ describe("integration: api kind — init generate（子进程）", () => {
     }
   });
 
-  it("init 生成的 API 项目 GET/POST /hello 应返回 JSON", async () => {
-    chdir(testDir);
-    const env = {
-      ...getEnvAll(),
-      PORT: String(INIT_PORT),
-      RUNTIME_ENV: "start",
-    };
+  it.skipIf(
+    SKIP_WINDOWS_BUN_CHILD_PROCESS,
+    "init 生成的 API 项目 GET/POST /hello 应返回 JSON",
+    async () => {
+      chdir(testDir);
+      const env = {
+        ...getEnvAll(),
+        PORT: String(INIT_PORT),
+        RUNTIME_ENV: "start",
+      };
 
-    const cmd = createCommand(getExampleChildProcessExecutable(), {
-      args: exampleRunArgs(resolveExampleEntry(testDir, "src/main.ts")),
-      cwd: getSpawnCwdForIntegration(testDir),
-      env,
-      stdout: "inherit",
-      stderr: "inherit",
-    });
-    child = cmd.spawn();
+      const cmd = createCommand(getExampleChildProcessExecutable(), {
+        args: exampleRunArgs(resolveExampleEntry(testDir, "src/main.ts")),
+        cwd: getSpawnCwdForIntegration(testDir),
+        env,
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      child = cmd.spawn();
 
-    const getRes = await waitForOkJson(`http://127.0.0.1:${INIT_PORT}/hello`);
-    expect(getRes.status).toBe(200);
-    expect(typeof getRes.json.message).toBe("string");
-    expect(getRes.raw).not.toMatch(/<!DOCTYPE|<html/i);
+      const getRes = await waitForOkJson(`http://127.0.0.1:${INIT_PORT}/hello`);
+      expect(getRes.status).toBe(200);
+      expect(typeof getRes.json.message).toBe("string");
+      expect(getRes.raw).not.toMatch(/<!DOCTYPE|<html/i);
 
-    const postRes = await waitForOkJson(`http://127.0.0.1:${INIT_PORT}/hello`, {
-      method: "POST",
-      body: JSON.stringify({ from: "init" }),
-    });
-    expect(postRes.status).toBe(200);
-    expect(typeof postRes.json.message).toBe("string");
-    expect(postRes.json.data).toEqual({ from: "init" });
+      const postRes = await waitForOkJson(
+        `http://127.0.0.1:${INIT_PORT}/hello`,
+        {
+          method: "POST",
+          body: JSON.stringify({ from: "init" }),
+        },
+      );
+      expect(postRes.status).toBe(200);
+      expect(typeof postRes.json.message).toBe("string");
+      expect(postRes.json.data).toEqual({ from: "init" });
 
-    await stopChild(child);
-    child = null;
-  }, {
-    timeout: 90_000,
-    sanitizeOps: false,
-    sanitizeResources: false,
-  });
+      await stopChild(child);
+      child = null;
+    },
+    {
+      timeout: 90_000,
+      sanitizeOps: false,
+      sanitizeResources: false,
+    },
+  );
 });

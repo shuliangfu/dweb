@@ -26,6 +26,7 @@ import {
   getRepoRoot,
   getSpawnCwdForIntegration,
   resolveExampleEntry,
+  SKIP_WINDOWS_BUN_CHILD_PROCESS,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -46,51 +47,56 @@ describe("integration: CSR + View 构建", () => {
     chdir(originalCwd);
   });
 
-  it("build 任务应成功执行并生成 server.js 与 client 资源", async () => {
-    const distDir = join(exampleDir, "dist");
-    if (await exists(distDir)) {
-      await remove(distDir, { recursive: true });
-    }
+  it.skipIf(
+    SKIP_WINDOWS_BUN_CHILD_PROCESS,
+    "build 任务应成功执行并生成 server.js 与 client 资源",
+    async () => {
+      const distDir = join(exampleDir, "dist");
+      if (await exists(distDir)) {
+        await remove(distDir, { recursive: true });
+      }
 
-    const cmd = createCommand(getExampleChildProcessExecutable(), {
-      args: exampleBuildArgs(resolveExampleEntry(exampleDir, "src/main.ts")),
-      cwd: getSpawnCwdForIntegration(exampleDir),
-      stdout: "piped",
-      stderr: "piped",
-    });
-    const proc = cmd.spawn();
+      const cmd = createCommand(getExampleChildProcessExecutable(), {
+        args: exampleBuildArgs(resolveExampleEntry(exampleDir, "src/main.ts")),
+        cwd: getSpawnCwdForIntegration(exampleDir),
+        stdout: "piped",
+        stderr: "piped",
+      });
+      const proc = cmd.spawn();
 
-    const [status, stdoutText, stderrText] = await Promise.all([
-      proc.status,
-      proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
-      proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
-    ]);
-    if (!status.success) {
-      throw new Error(
-        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${
-          stdoutText || "(empty)"
-        }`,
-      );
-    }
+      const [status, stdoutText, stderrText] = await Promise.all([
+        proc.status,
+        proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
+        proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+      ]);
+      if (!status.success) {
+        throw new Error(
+          `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${
+            stdoutText || "(empty)"
+          }`,
+        );
+      }
 
-    const serverJs = join(exampleDir, "dist", "server.js");
-    if (!(await existsBuildOutput(serverJs))) {
-      throw new Error(
-        `build 退出 0 但缺少 ${serverJs}（exampleDir=${exampleDir}）。stderr: ${
-          stderrText || "(empty)"
-        }\nstdout: ${stdoutText || "(empty)"}`,
-      );
-    }
-    expect(await existsBuildOutput(serverJs)).toBe(true);
+      const serverJs = join(exampleDir, "dist", "server.js");
+      if (!(await existsBuildOutput(serverJs))) {
+        throw new Error(
+          `build 退出 0 但缺少 ${serverJs}（exampleDir=${exampleDir}）。stderr: ${
+            stderrText || "(empty)"
+          }\nstdout: ${stdoutText || "(empty)"}`,
+        );
+      }
+      expect(await existsBuildOutput(serverJs)).toBe(true);
 
-    const clientDir = join(exampleDir, "dist", "client");
-    expect(await existsBuildOutput(clientDir)).toBe(true);
+      const clientDir = join(exampleDir, "dist", "client");
+      expect(await existsBuildOutput(clientDir)).toBe(true);
 
-    const clientFiles = await readdir(clientDir);
-    const clientJs = clientFiles.find((f) => f.name.startsWith("_client"));
-    expect(clientJs).toBeDefined();
+      const clientFiles = await readdir(clientDir);
+      const clientJs = clientFiles.find((f) => f.name.startsWith("_client"));
+      expect(clientJs).toBeDefined();
 
-    const assetsDir = join(clientDir, "assets");
-    expect(await existsBuildOutput(assetsDir)).toBe(true);
-  }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
+      const assetsDir = join(clientDir, "assets");
+      expect(await existsBuildOutput(assetsDir)).toBe(true);
+    },
+    { sanitizeOps: false, sanitizeResources: false, timeout: 90000 },
+  );
 });

@@ -95,6 +95,9 @@ deno add jsr:@dreamer/runtime-adapter
 - **跨平台**：✅ 全面兼容 macOS、Linux、Windows，开箱即用，无需额外配置
 - **Bun 构建参数**：使用 `bun run <entry> -- --build`（`--` 保证 Windows Bun 下
   `--build` 进入应用；Deno／Node 仍直接 `--build`）
+- **Windows Bun 子进程（已知限制）**：Windows＋Bun 上 spawn 的
+  `bun run … -- --build`／init 起服可能空输出仍 exit 0、不落盘 dist（上游
+  Bun）。相关 **integration** 用例临时 skip；e2e 与其它 OS／runtime 不停
 - **依赖**：整合所有 @dreamer/* 包
 
 ---
@@ -2053,8 +2056,9 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### [Unreleased] — 升级战役（草稿）
 
-- **修复**：Windows Bun 集成测试对齐 `bun run <entry> -- --build`、绝对 spawn
-  entry／cwd（未关 e2e）。
+- **变更**：临时 skip Windows＋Bun 子进程相关 **integration**
+  （`SKIP_WINDOWS_BUN_CHILD_PROCESS`）；上游空输出／exit 0 限制；e2e 与其它矩阵
+  岗不变。
 - **破坏性**：生产默认 — 非 dev 开启 `securityHeaders`＋`rateLimit`（`false`
   逃生）； `cors` 仍 opt-in。
 - **新增**：`csrf`、可选 `upload`（`@dreamer/upload@^2`，`requireAuth` 默认

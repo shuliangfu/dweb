@@ -73,6 +73,14 @@ export function getExampleChildProcessExecutable(): string {
 }
 
 /**
+ * Windows + Bun：子进程 spawn（`bun run … -- --build`／起服）可能空 stdout／stderr
+ * 仍 exit 0、不落盘 dist，或服务起不来——属上游 Bun 在 Windows 上的兼容限制。
+ * 临时 skip 相关 **integration** 用例；其它 OS／runtime／e2e／进程内 fixture 不停。
+ */
+export const SKIP_WINDOWS_BUN_CHILD_PROCESS = IS_BUN &&
+  platform() === "windows";
+
+/**
  * 子进程里执行 `build` 的 argv：
  * - bun: ["run", entry, "--", "--build"]
  *   （`--` 必需：Windows Bun 否则 `--build` 进不了脚本 argv；

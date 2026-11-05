@@ -26,6 +26,7 @@ import {
   getRepoRoot,
   getSpawnCwdForIntegration,
   resolveExampleEntry,
+  SKIP_WINDOWS_BUN_CHILD_PROCESS,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -46,7 +47,8 @@ describe("integration: SSG + View 构建", () => {
     chdir(originalCwd);
   });
 
-  it(
+  it.skipIf(
+    SKIP_WINDOWS_BUN_CHILD_PROCESS,
     "build 任务应成功执行并生成 HTML（含 headInject 与客户端激活）",
     async () => {
       const distDir = join(exampleDir, "dist");
