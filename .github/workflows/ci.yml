@@ -3,6 +3,9 @@
 # 暂不跑 Bun 浏览器 e2e（unit/integration 保留）；恢复时取消 test-*-bun 中 e2e 与 Playwright 注释
 name: CI
 
+# Pin Linux to ubuntu-24.04: ubuntu-latest is 26.04; Playwright rejects
+# chromium (+ --with-deps) there. Match @dreamer/test / view CI pin.
+
 on:
   push:
     branches: [dev]
@@ -16,7 +19,7 @@ env:
 
 jobs:
   test-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -31,7 +34,7 @@ jobs:
         run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@1.64.1 install --with-deps chromium
 
       - name: Check
         run: deno check src/ tests/
@@ -58,7 +61,7 @@ jobs:
         run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@1.64.1 install chromium
 
       - name: Check
         run: deno check src/ tests/
@@ -89,7 +92,7 @@ jobs:
         run: deno cache src/cli.ts src/setup.ts
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@1.64.1 install chromium
 
       - name: Check
         run: deno check src/ tests/
@@ -101,7 +104,7 @@ jobs:
         run: deno test -A --no-check tests/
 
   test-linux-bun:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -117,7 +120,7 @@ jobs:
 
       # 暂不跑 Bun e2e，无需 Playwright
       # - name: Install Playwright Chromium
-      #   run: npx -y playwright@1.59.1 install chromium
+      #   run: npx -y playwright@1.64.1 install --with-deps chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun) unit
@@ -151,7 +154,7 @@ jobs:
 
       # 暂不跑 Bun e2e，无需 Playwright
       # - name: Install Playwright Chromium
-      #   run: npx -y playwright@1.59.1 install chromium
+      #   run: npx -y playwright@1.64.1 install chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun, macOS) unit
@@ -186,7 +189,7 @@ jobs:
 
   # ─── Node.js jobs（unit + e2e 浏览器测试，排除 integration）───
   test-linux-node:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -201,7 +204,7 @@ jobs:
         run: npm install
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@1.64.1 install --with-deps chromium
 
       - name: Test (Node, Linux) unit
         run: npm run test:node
@@ -225,7 +228,7 @@ jobs:
         run: npm install
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@1.64.1 install chromium
 
       - name: Test (Node, macOS) unit
         run: npm run test:node
@@ -249,7 +252,7 @@ jobs:
         uses: browser-actions/setup-chrome@v1
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@1.64.1 install chromium
 
       - name: Test (Node, Windows) unit
         run: npm run test:node
