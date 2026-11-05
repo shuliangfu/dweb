@@ -118,14 +118,9 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      # Bun job PATH may lack a working npm/npx CLI for playwright@1.59.1
-      # (CI log: "playwright: not found" exit 127). Pin Node then use npx like Deno/Node jobs.
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-
+      # Use bunx (not npx): after bun install, npx fails with "playwright: not found" on all OS.
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install --with-deps chromium
+        run: bunx playwright@1.59.1 install --with-deps chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun) unit
@@ -156,12 +151,8 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: bunx playwright@1.59.1 install chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun, macOS) unit
@@ -188,15 +179,11 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-
       - name: Setup Chrome (for browser E2E tests)
         uses: browser-actions/setup-chrome@v1
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: bunx playwright@1.59.1 install chromium
 
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
