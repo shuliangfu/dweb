@@ -10,6 +10,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- **Windows Bun CI integration tests**: child-process builds now use
+  `bun run <entry> -- --build` (the `--` is required so `--build` reaches
+  script argv on Windows Bun; matches example `package.json` scripts and
+  `@dreamer/runtime-adapter` `args()` guidance). Spawns use an absolute entry
+  plus normalized `cwd` (`getSpawnCwd` / `resolveExampleEntry`), and assert
+  dist under the example directory—no e2e skip / fake-green.
+
 ### Breaking
 
 - **Safer production defaults** (vs 3.7.x):

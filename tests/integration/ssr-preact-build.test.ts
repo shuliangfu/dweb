@@ -25,6 +25,7 @@ import {
   getExampleChildProcessExecutable,
   getRepoRoot,
   getSpawnCwdForIntegration,
+  resolveExampleEntry,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -47,38 +48,39 @@ describe("integration: SSR + Preact 构建", () => {
 
   it("build 任务应成功执行并生成 server.js 与 client 资源", async () => {
     // 构建前清空 dist，确保从干净环境开始
-    const distDir = join(cwd(), "dist");
+    const distDir = join(exampleDir, "dist");
     if (await exists(distDir)) {
       await remove(distDir, { recursive: true });
     }
 
     const cmd = createCommand(getExampleChildProcessExecutable(), {
-      args: exampleBuildArgs("src/main.ts"),
-      cwd: getSpawnCwdForIntegration(),
+      args: exampleBuildArgs(resolveExampleEntry(exampleDir, "src/main.ts")),
+      cwd: getSpawnCwdForIntegration(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
     const proc = cmd.spawn();
 
-    const [status, stderrText] = await Promise.all([
+    const [status, stdoutText, stderrText] = await Promise.all([
       proc.status,
+      proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
       proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
     ]);
     if (!status.success) {
-      throw new Error(`build 失败: ${stderrText}`);
+      throw new Error(
+        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${stdoutText || "(empty)"}`,
+      );
     }
 
-    const serverJs = join(cwd(), "dist", "server.js");
+    const serverJs = join(exampleDir, "dist", "server.js");
     if (!(await existsBuildOutput(serverJs))) {
       throw new Error(
-        `build 退出 0 但缺少 ${serverJs}（cwd=${cwd()}）。stderr: ${
-          stderrText || "(empty)"
-        }`,
+        `build 退出 0 但缺少 ${serverJs}（exampleDir=${exampleDir}）。stderr: ${stderrText || "(empty)"}\nstdout: ${stdoutText || "(empty)"}`,
       );
     }
     expect(await existsBuildOutput(serverJs)).toBe(true);
 
-    const clientDir = join(cwd(), "dist", "client");
+    const clientDir = join(exampleDir, "dist", "client");
     expect(await existsBuildOutput(clientDir)).toBe(true);
 
     const clientFiles = await readdir(clientDir);

@@ -50,6 +50,7 @@ import {
   exampleBuildArgs,
   exampleRunArgs,
   getExampleChildProcessExecutable,
+  getSpawnCwd,
 } from "../setup.ts";
 
 /**
@@ -733,7 +734,7 @@ async function _buildExample(
 
   const cmd = createCommand(getExampleChildProcessExecutable(), {
     args: exampleBuildArgs(entry),
-    cwd: exampleDir,
+    cwd: getSpawnCwd(exampleDir),
     stdout: "piped",
     stderr: "piped",
   });
@@ -1946,7 +1947,7 @@ async function _buildExampleAdvanced(
   for (const entry of entries) {
     const cmd = createCommand(getExampleChildProcessExecutable(), {
       args: exampleBuildArgs(entry),
-      cwd: exampleDir,
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });

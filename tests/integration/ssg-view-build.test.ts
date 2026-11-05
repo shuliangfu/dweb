@@ -25,6 +25,7 @@ import {
   getExampleChildProcessExecutable,
   getRepoRoot,
   getSpawnCwdForIntegration,
+  resolveExampleEntry,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -48,14 +49,14 @@ describe("integration: SSG + View 构建", () => {
   it(
     "build 任务应成功执行并生成 HTML（含 headInject 与客户端激活）",
     async () => {
-      const distDir = join(cwd(), "dist");
+      const distDir = join(exampleDir, "dist");
       if (await exists(distDir)) {
         await remove(distDir, { recursive: true });
       }
 
       const cmd = createCommand(getExampleChildProcessExecutable(), {
-        args: exampleBuildArgs("src/main.ts"),
-        cwd: getSpawnCwdForIntegration(),
+        args: exampleBuildArgs(resolveExampleEntry(exampleDir, "src/main.ts")),
+        cwd: getSpawnCwdForIntegration(exampleDir),
         stdout: "piped",
         stderr: "piped",
       });
@@ -69,7 +70,7 @@ describe("integration: SSG + View 构建", () => {
         throw new Error(`build 失败: ${stderrText}`);
       }
 
-      const indexPath = join(cwd(), "dist", "client", "index.html");
+      const indexPath = join(exampleDir, "dist", "client", "index.html");
       expect(await existsBuildOutput(indexPath)).toBe(true);
 
       const html = await readTextFile(indexPath);

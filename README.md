@@ -94,6 +94,9 @@ deno add jsr:@dreamer/runtime-adapter
 - **Client**: ✅ Browser (SSR, CSR, SSG, Hybrid)
 - **Cross-platform**: ✅ Fully compatible with macOS, Linux, and Windows—works
   out of the box with no extra configuration
+- **Bun build argv**: use `bun run <entry> -- --build` (the `--` ensures
+  `--build` reaches the app on Windows Bun; Deno／Node keep `--build` without
+  `--`)
 - **Dependencies**: Integrates all @dreamer/* libraries
 
 ### Node.js Usage
@@ -2006,6 +2009,8 @@ not locks.
 
 ### [Unreleased] — upgrade campaign (draft)
 
+- **Fixed**: Windows Bun integration tests — `bun run <entry> -- --build`,
+  absolute spawn entry／cwd (no e2e skip).
 - **Breaking**: production defaults — `securityHeaders` + `rateLimit` **on**
   outside `dev` (`false` to escape); `cors` stays opt-in.
 - **Added**: `csrf`, optional `upload` (`@dreamer/upload@^2`, `requireAuth`

@@ -25,6 +25,7 @@ import {
   getExampleChildProcessExecutable,
   getRepoRoot,
   getSpawnCwdForIntegration,
+  resolveExampleEntry,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -47,29 +48,32 @@ describe("integration: SSG + React 构建", () => {
 
   it("build 任务应成功执行并生成 HTML（含 headInject）", async () => {
     // 构建前清空 dist，确保从干净环境开始
-    const distDir = join(cwd(), "dist");
+    const distDir = join(exampleDir, "dist");
     if (await exists(distDir)) {
       await remove(distDir, { recursive: true });
     }
 
     // 子进程与当前测试运行时可执行文件一致，仍由 deno.json 解析依赖
     const cmd = createCommand(getExampleChildProcessExecutable(), {
-      args: exampleBuildArgs("src/main.ts"),
-      cwd: getSpawnCwdForIntegration(),
+      args: exampleBuildArgs(resolveExampleEntry(exampleDir, "src/main.ts")),
+      cwd: getSpawnCwdForIntegration(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
     const proc = cmd.spawn();
 
-    const [status, stderrText] = await Promise.all([
+    const [status, stdoutText, stderrText] = await Promise.all([
       proc.status,
+      proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
       proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
     ]);
     if (!status.success) {
-      throw new Error(`build 失败: ${stderrText}`);
+      throw new Error(
+        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${stdoutText || "(empty)"}`,
+      );
     }
 
-    const indexPath = join(cwd(), "dist", "client", "index.html");
+    const indexPath = join(exampleDir, "dist", "client", "index.html");
     const existsIndex = await existsBuildOutput(indexPath);
     expect(existsIndex).toBe(true);
 

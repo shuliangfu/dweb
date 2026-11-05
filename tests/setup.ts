@@ -74,15 +74,17 @@ export function getExampleChildProcessExecutable(): string {
 
 /**
  * 子进程里执行 `build` 的 argv：
- * - `bun`：`["run", entry, "--build"]`
- * - Node：`["--import", "tsx", entry, "--build"]`（无 `run`/`-A`，tsx 处理 TS）
- * - Deno：`["run", "-A", entry, "--build"]`
+ * - bun: ["run", entry, "--", "--build"]
+ *   （`--` 必需：Windows Bun 否则 `--build` 进不了脚本 argv；
+ *   与 examples 下 package.json scripts、runtime-adapter args() 注释一致）
+ * - Node: ["--import", "tsx", entry, "--build"]（无 run/-A，tsx 处理 TS）
+ * - Deno: ["run", "-A", entry, "--build"]
  *
- * @param entry - 相对 `cwd` 的入口，如 `src/main.ts` 或 `main.ts`（无 src 的 flat 示例）
+ * @param entry - 相对 cwd 或绝对路径的入口，如 src/main.ts / main.ts / abs path
  */
 export function exampleBuildArgs(entry: string): string[] {
   if (IS_BUN) {
-    return ["run", entry, "--build"];
+    return ["run", entry, "--", "--build"];
   }
   if (IS_NODE) {
     return ["--import", "tsx", entry, "--build"];
@@ -180,11 +182,25 @@ export async function ensureExampleDependenciesInstalled(
 
 /**
  * 集成测试中 spawn 子进程时应使用的 cwd。
- * 使用当前进程 cwd()（beforeAll 已 chdir 到 exampleDir），
- * 避免 Windows Bun 下传入由 getRepoRoot() 推导的路径时 spawn 未正确应用 cwd，导致构建写到错误目录。
+ *
+ * 优先传入**绝对** `exampleDir` / `testDir`（与已绿的 console-kind 一致），再做 Windows
+ * 反斜杠规范化。仅 `chdir` 后读 `cwd()` 在 Windows Bun 上仍可能与子进程实际写盘目录不一致。
+ *
+ * @param dir 绝对目录；省略时回退 `cwd()`（兼容旧调用）
  */
-export function getSpawnCwdForIntegration(): string {
-  return getSpawnCwd(cwd());
+export function getSpawnCwdForIntegration(dir?: string): string {
+  return getSpawnCwd(dir ?? cwd());
+}
+
+/**
+ * 将示例入口解析为绝对路径并做 Windows spawn 路径规范化。
+ * Windows Bun 对「显式 cwd + 相对 entry」偶发未在期望目录落盘；绝对 entry 与 console-kind
+ * （绝对 cli 路径）对齐更稳。
+ */
+export function resolveExampleEntry(exampleDir: string, entry: string): string {
+  const isAbs = entry.startsWith("/") || /^[A-Za-z]:[\\/]/.test(entry);
+  const abs = isAbs ? entry : join(exampleDir, entry);
+  return getSpawnCwd(abs);
 }
 
 /**
