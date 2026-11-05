@@ -1,7 +1,9 @@
 # 生产部署检查清单（@dreamer/dweb）
 
 > 与 `OPTIMIZATION_ANALYSIS` 配套。以下配置均为
-> **opt-in**（默认关闭），避免破坏现有项目。
+> 自本战役起：`securityHeaders`／`rateLimit`／`compression` 在 **非 dev
+> 默认开启**； `cors`／`csrf`／`metrics`／`upload` 仍 **opt-in**。显式 `false`
+> 可关默认项。
 
 ## 0. 应用种类（`AppConfig.kind`）
 
@@ -76,13 +78,15 @@ export default {
 
 ## 相关配置键速查
 
-| 键                | 默认              | 说明                        |
-| ----------------- | ----------------- | --------------------------- |
-| `securityHeaders` | 关                | CSP / frame / referrer 等   |
-| `cors`            | 关                | `@dreamer/middlewares` cors |
-| `compression`     | **非 dev 默认开** | 响应 gzip/br；`false` 可关  |
-| `rateLimit`       | 关                | 简易限流                    |
-| `metrics`         | 关                | Prometheus 风格 `/metrics`  |
-| `session`         | 关                | 启用后 ctx.session 可用     |
+| 键                | 默认              | 说明                                   |
+| ----------------- | ----------------- | -------------------------------------- |
+| `securityHeaders` | **非 dev 默认开** | nosniff / frame / referrer；CSP 仍显式 |
+| `cors`            | 关（opt-in）      | 勿默认 `*`；生产用白名单               |
+| `csrf`            | 关（opt-in）      | double-submit cookie                   |
+| `compression`     | **非 dev 默认开** | 响应 gzip/br；`false` 可关             |
+| `rateLimit`       | **非 dev 默认开** | 简易限流；`false` 可关                 |
+| `upload`          | 关（opt-in）      | `@dreamer/upload@^2`；默认 requireAuth |
+| `metrics`         | 关                | Prometheus 风格 `/metrics`             |
+| `session`         | 关                | 启用后 ctx.session 可用                |
 
 更完整的分析见 [OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)。

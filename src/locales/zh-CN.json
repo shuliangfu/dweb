@@ -103,7 +103,9 @@
     "fmtFailed": "fmt 失败",
     "fmtFailedWithMessage": "fmt 失败: {message}",
     "upgradeFailed": "upgrade 失败",
-    "upgradeFailedWithMessage": "upgrade 失败: {message}"
+    "upgradeFailedWithMessage": "upgrade 失败: {message}",
+    "doctorFailedWithMessage": "doctor 失败：{message}",
+    "infoFailedWithMessage": "info 失败：{message}"
   },
   "cliDesc": {
     "toolName": "DWEB CLI 工具",
@@ -153,7 +155,10 @@
     "appOptionalRun": "应用名（多应用时指定 console，默认可解析唯一 console）",
     "runList": "列出可执行的 Console 命令（可跟模块名过滤）",
     "runTimeout": "命令超时毫秒数（超时退出码 124）",
-    "generateTypeOption": "生成类型（route / api / model / service / console；简写 r,a,m,s,c）"
+    "generateTypeOption": "生成类型（route / api / model / service / console；简写 r,a,m,s,c）",
+    "doctor": "检查运行时、deno.json 与关键 @dreamer/* 依赖",
+    "info": "显示项目与框架摘要",
+    "versionCmd": "打印 dweb-cli 版本"
   },
   "run": {
     "missingRoute": "请指定命令路由，例如: dweb-cli run hello/world",

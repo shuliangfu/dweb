@@ -103,7 +103,9 @@
     "fmtFailedWithMessage": "fmt 실패: {message}",
     "upgradeFailed": "upgrade 실패",
     "upgradeFailedWithMessage": "upgrade 실패: {message}",
-    "runFailedWithMessage": "run failed: {message}"
+    "runFailedWithMessage": "run failed: {message}",
+    "doctorFailedWithMessage": "doctor failed: {message}",
+    "infoFailedWithMessage": "info failed: {message}"
   },
   "cliDesc": {
     "toolName": "DWEB CLI 도구",
@@ -153,7 +155,10 @@
     "testReportOut": "JUnit report output path (requires --reporter junit)",
     "testJunitPath": "Alias of --report-out for Deno --junit-path",
     "testProductReport": "Product report formats: json,md,html (from JUnit; comma-separated)",
-    "testReportDir": "Product report output directory (default: reports)"
+    "testReportDir": "Product report output directory (default: reports)",
+    "doctor": "Check runtime, deno.json, and key @dreamer/* deps",
+    "info": "Show project and framework summary",
+    "versionCmd": "Print dweb-cli version"
   },
   "common": {
     "noDenoJson": "deno.json을 찾을 수 없습니다. dweb 루트에서 실행하세요",

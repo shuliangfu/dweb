@@ -103,7 +103,9 @@
     "fmtFailedWithMessage": "fmt 失敗: {message}",
     "upgradeFailed": "upgrade 失敗",
     "upgradeFailedWithMessage": "upgrade 失敗: {message}",
-    "runFailedWithMessage": "run failed: {message}"
+    "runFailedWithMessage": "run failed: {message}",
+    "doctorFailedWithMessage": "doctor failed: {message}",
+    "infoFailedWithMessage": "info failed: {message}"
   },
   "cliDesc": {
     "toolName": "DWEB CLI 工具",
@@ -153,7 +155,10 @@
     "testReportOut": "JUnit 报告输出路径（需配合 --reporter junit）",
     "testJunitPath": "--report-out 别名（对应 Deno --junit-path）",
     "testProductReport": "产品层报告格式：json,md,html（解析 JUnit；可逗号多选）",
-    "testReportDir": "产品报告输出目录（默认 reports）"
+    "testReportDir": "产品报告输出目录（默认 reports）",
+    "doctor": "Check runtime, deno.json, and key @dreamer/* deps",
+    "info": "Show project and framework summary",
+    "versionCmd": "Print dweb-cli version"
   },
   "common": {
     "noDenoJson": "未找到 deno.json，請在 dweb 專案根目錄執行",

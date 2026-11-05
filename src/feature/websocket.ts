@@ -8,7 +8,6 @@
  */
 
 import { createWebSocketContext, type SocketContext } from "@dreamer/plugin";
-import type { HttpContext } from "@dreamer/server";
 import type { Server as HttpServer } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { Server } from "@dreamer/websocket";
@@ -46,7 +45,7 @@ const WEBSOCKET_PATH_KEY = "websocketPath";
  *   onConnection: (ctx) => pluginEvents.emitOnSocket(container, ctx),
  *   onDisconnect: (ctx) => pluginEvents.emitOnSocketClose(container, ctx),
  * });
- * if (path) app.use(createWebSocketMiddleware(container));
+ * if (path) registerWebSocketUpgrade(container, server);
  * ```
  */
 export function initializeWebSocket(
@@ -167,32 +166,4 @@ export function registerWebSocketUpgrade(
   server.http.onWebSocket(path, (req: Request): Response => {
     return ws.handleUpgrade(req);
   });
-}
-
-/**
- * 创建 WebSocket 委托中间件（已废弃：请改用 {@link registerWebSocketUpgrade}）
- *
- * 仅当请求路径以 websocketPath 开头且为 WebSocket 升级时同步处理；非升级请求交给 next。
- *
- * @param container 服务容器
- * @returns 中间件函数
- * @deprecated 使用 registerWebSocketUpgrade(container, server) 代替
- */
-export function createWebSocketMiddleware(
-  container: ServiceContainer,
-): (ctx: HttpContext, next: () => Promise<void>) => Promise<void> {
-  return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
-    const path = getWebSocketPath(container);
-    if (!path || !ctx.path.startsWith(path)) {
-      await next();
-      return;
-    }
-    const upgrade = ctx.request.headers.get("upgrade");
-    if (!upgrade || upgrade.toLowerCase() !== "websocket") {
-      await next();
-      return;
-    }
-    const ws = getWebSocketServer(container);
-    ctx.response = ws.handleUpgrade(ctx.request);
-  };
 }

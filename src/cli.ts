@@ -373,7 +373,8 @@ export function createCLI(version: string): Command {
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: lintMain } = await import("./cmd/lint.ts");
-        await lintMain(args, options);
+        const code = await lintMain(args, options);
+        if (code !== 0) exit(code);
       } catch (err) {
         error(
           $tr("cli.lintFailedWithMessage", {
@@ -391,7 +392,8 @@ export function createCLI(version: string): Command {
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: fmtMain } = await import("./cmd/fmt.ts");
-        await fmtMain(args, options);
+        const code = await fmtMain(args, options);
+        if (code !== 0) exit(code);
       } catch (err) {
         error(
           $tr("cli.fmtFailedWithMessage", {
@@ -537,6 +539,48 @@ export function createCLI(version: string): Command {
           }),
         );
       }
+    });
+
+  // ================================================================================
+  // doctor / info / version（加法诊断）
+  // ================================================================================
+  cli
+    .command("doctor", $tr("cliDesc.doctor"))
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: doctorMain } = await import("./cmd/doctor.ts");
+        await doctorMain(args, options);
+      } catch (err) {
+        error(
+          $tr("cli.doctorFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
+        );
+        exit(1);
+      }
+    });
+
+  cli
+    .command("info", $tr("cliDesc.info"))
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: infoMain } = await import("./cmd/info.ts");
+        await infoMain(args, options);
+      } catch (err) {
+        error(
+          $tr("cli.infoFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
+        );
+        exit(1);
+      }
+    });
+
+  cli
+    .command("version", $tr("cliDesc.versionCmd"))
+    .action(() => {
+      // 独立 version 子命令（与 -V/--version 并存）；直接打印纯版本号便于脚本解析
+      console.log(version);
     });
 
   return cli;

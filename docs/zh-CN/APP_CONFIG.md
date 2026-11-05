@@ -23,11 +23,14 @@
 | `render`               | object                        | 渲染配置（`engine`、`mode`、`debug` 等；详见下文渲染相关小节与 [View 视图模板引擎](#view-视图模板引擎)）                                                                                                |
 | `build`                | BuildAppConfig                | 构建配置                                                                                                                                                                                                |
 | `logger`               | LoggerConfig                  | 日志配置                                                                                                                                                                                                |
-| `securityHeaders`      | boolean \| object             | **可选**安全响应头；默认关闭；`true` 启用 nosniff 等默认头，可配 CSP / frameOptions（见 [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)）                                                             |
+| `securityHeaders`      | boolean \| object             | 安全响应头；**非 dev 默认开**；`false` 逃生；`true`/对象启用；CSP 仍须显式（见 [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)）                                                                      |
 | `cors`                 | boolean \| CorsOptions        | **可选** CORS；默认关闭。`true` ⇒ `origin: "*"`（非 dev 警告）；生产请用白名单。会桥接到未配置 `socket.cors` 的 Socket.IO                                                                               |
 | `onRequestEnd`         | `(info) => void`              | **可选** 请求结束钩子（path/method/status/durationMs）；插件亦可实现同名钩子                                                                                                                            |
 | `compression`          | boolean \| object             | **可选** 响应压缩 gzip/br；**非 dev 默认开启**（`false` 可关）；dev 默认关                                                                                                                              |
-| `rateLimit`            | boolean \| object             | **可选** 简易内存限流；默认关闭                                                                                                                                                                         |
+| `csrf`                 | boolean \| object             | **opt-in** CSRF（`@dreamer/middlewares`）；`true` 用库默认 double-submit cookie                                                                                                                         |
+| `upload`               | boolean \| object             | **opt-in** `@dreamer/upload@^2`；默认 `requireAuth: true`（须 authenticate 或显式 false）；见下文                                                                                                       |
+| `onSSREnd`             | function                      | SSR／Hybrid／SSG 渲染结束钩子（耗时观测）                                                                                                                                                               |
+| `rateLimit`            | boolean \| object             | 简易限流；**非 dev 默认开**（库默认 60s/100）；`false` 逃生                                                                                                                                             |
 | `metrics`              | boolean \| object             | **可选** Prometheus 风格 `/metrics`（`@dreamer/middlewares`）；默认关闭；与 `onRequestEnd` 互补                                                                                                         |
 | `database`             | DatabaseAppConfig             | 数据库配置                                                                                                                                                                                              |
 | `console`              | `{ slim?: boolean }`          | Console 专有（`kind: "console"`）。`slim: true` 跳过 banner / HTTP 中间件管理器以加速 `dweb-cli run` 冷启动（仍加载 plugins/logger/DB）；可用 `DWEB_CONSOLE_SLIM=1` 覆盖                                |
@@ -405,9 +408,16 @@ export default config;
   hydrate。设为 `false` 则仅输出静态 HTML。
 - **`render.hydration.mismatchMode`**（`"continue" | "assert" | "remount"`，**仅
   View**）：整页 Hybrid/SSR 水合错位策略。会注入
-  `globalThis.__DWEB_MISMATCH_MODE__`。**未设置**仍清空再
-  mount（与今日默认一致）。 `continue`/`assert` 走 view `hydrate`；`remount`
-  仍清空再 mount。 **React/Preact 不支持**（忽略）。
+  `globalThis.__DWEB_MISMATCH_MODE__`。
+  - **未设置**：dweb 客户端仍 **清空再 mount**（与历史默认一致）；若走
+    `@dreamer/render` 的 `hydrate()` 且未透传该字段，render 1.4 库默认显式
+    `continue`（2.x 容忍）。
+  - **view 3.0 引擎本身**（省略 mismatchMode 时）：**dev → `assert`／生产 →
+    `remount`**。要恢复 2.x「错位继续」须在 AppConfig **显式**
+    `hydration: { mismatchMode: "continue" }`。
+  - `continue`／`assert`：走 view `hydrate` 复用 SSR DOM；`remount`：清空再
+    mount。
+  - **React／Preact 不支持**（忽略）。
 
 两选项均依赖客户端使用 `@dreamer/router@^1.0.10`（由生成代码引入），以便在启用
 hydrate 时链接使用整页跳转而非客户端路由。

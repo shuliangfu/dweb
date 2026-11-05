@@ -281,16 +281,27 @@ export function createDevNoCacheMiddleware(
 }
 
 /**
- * 解析安全响应头配置。默认关闭；传 `true` 时使用低破坏默认值。
+ * 解析安全响应头配置。
+ *
+ * - `true` / 对象：启用（对象可关 `enabled: false`）
+ * - `false`：显式关闭（逃生）
+ * - `undefined`：非 dev（start/build）默认启用；dev 默认关闭
+ *
+ * 意图：生产默认更安全；dev 少干扰 HMR／内联。不变量：显式 false 永远关。
+ * 为何不默认开 CSP：内联脚本／HMR 易碎，CSP 仍 opt-in。
  *
  * @param input 用户配置
+ * @param isRuntimeDev RUNTIME_ENV===dev
  */
 function resolveSecurityHeadersConfig(
   input: AppConfig["securityHeaders"],
+  isRuntimeDev: boolean,
 ): SecurityHeadersConfig | null {
+  if (input === false) return null;
   if (input === true) return { enabled: true };
-  if (input == null || input === false) return null;
-  return input.enabled === false ? null : input;
+  if (input != null) return input.enabled === false ? null : input;
+  // undefined：生产默认开；dev 关
+  return isRuntimeDev ? null : { enabled: true };
 }
 
 /**
@@ -300,11 +311,16 @@ function resolveSecurityHeadersConfig(
  * CSP 默认不设置，避免破坏现有内联脚本、HMR 与用户自定义资源策略。
  *
  * @param config 应用配置
+ * @param isRuntimeDev RUNTIME_ENV===dev（影响「未配置」时的默认）
  */
 export function createSecurityHeadersMiddleware(
   config: AppConfig,
+  isRuntimeDev: boolean = false,
 ): (ctx: HttpContext, next: () => Promise<void>) => Promise<void> {
-  const security = resolveSecurityHeadersConfig(config.securityHeaders);
+  const security = resolveSecurityHeadersConfig(
+    config.securityHeaders,
+    isRuntimeDev,
+  );
   if (!security) {
     return async (_ctx: HttpContext, next: () => Promise<void>) => {
       await next();

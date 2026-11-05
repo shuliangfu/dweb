@@ -167,6 +167,39 @@ export async function emitOnRequestEnd(
 }
 
 /**
+ * 触发 onSSREnd（SSR／Hybrid 渲染耗时观测）：插件钩子 + 可选 AppConfig.onSSREnd
+ *
+ * 意图：与 onRequestEnd 互补，专测渲染段；失败吞掉以免打断响应。
+ */
+export async function emitOnSSREnd(
+  container: ServiceContainer,
+  info: {
+    path: string;
+    mode: "ssr" | "hybrid" | "ssg";
+    engine?: string;
+    durationMs: number;
+    ok: boolean;
+  },
+): Promise<void> {
+  await emitPluginEvent(container, "onSSREnd", info);
+  if (!container.has("config")) return;
+  const config = container.get<{
+    onSSREnd?: (i: typeof info) => void | Promise<void>;
+  }>("config");
+  if (typeof config?.onSSREnd === "function") {
+    try {
+      await config.onSSREnd(info);
+    } catch (error) {
+      if (container.has("logger")) {
+        getLogger(container).error("onSSREnd failed:", error);
+      } else {
+        console.error("onSSREnd failed:", error);
+      }
+    }
+  }
+}
+
+/**
  * 触发 onBuild 事件（构建开始前）
  *
  * @param container 服务容器
@@ -508,6 +541,7 @@ export const pluginEvents = {
   emitOnRequest,
   emitOnResponse,
   emitOnRequestEnd,
+  emitOnSSREnd,
   emitOnBuild,
   emitOnBuildComplete,
   emitOnStart,

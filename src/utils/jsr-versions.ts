@@ -175,10 +175,10 @@ export async function fetchDreamerVersions(
     // 取 beta 与 stable 中较新的版本（如 v1.0.1 > v1.0.0-beta.10 则用 v1.0.1）
     return {
       dweb: pickNewer(dwebBeta, dwebStable) ?? "3.0.0",
-      render: pickNewer(renderBeta, renderStable) ?? "1.0.0",
-      router: pickNewer(routerBeta, routerStable) ?? "1.0.0",
-      plugins: pickNewer(pluginsBeta, pluginsStable) ?? "1.0.0",
-      view: pickNewer(viewBeta, viewStable) ?? "1.0.6",
+      render: pickNewer(renderBeta, renderStable) ?? "1.4.0",
+      router: pickNewer(routerBeta, routerStable) ?? "1.2.1",
+      plugins: pickNewer(pluginsBeta, pluginsStable) ?? "1.2.0",
+      view: pickNewer(viewBeta, viewStable) ?? "3.0.0",
     };
   }
 
@@ -198,9 +198,9 @@ export async function fetchDreamerVersions(
   ]);
   return {
     dweb: dwebVersion ?? dwebConfig?.version ?? "3.0.0",
-    render: renderVersion ?? "1.0.0",
-    router: routerVersion ?? "1.0.0",
-    plugins: pluginsVersion ?? "1.0.0",
-    view: viewVersion ?? "1.0.6",
+    render: renderVersion ?? "1.4.0",
+    router: routerVersion ?? "1.2.1",
+    plugins: pluginsVersion ?? "1.2.0",
+    view: viewVersion ?? "3.0.0",
   };
 }

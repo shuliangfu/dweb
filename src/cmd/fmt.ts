@@ -23,23 +23,23 @@ import { getFmtArgs, getRuntime } from "../utils/runtime.ts";
  * @param _options 解析后的选项（未使用）
  */
 export async function main(
-  _args: string[],
+  args: string[],
   _options: ParsedOptions,
-): Promise<void> {
+): Promise<number> {
   const runtime = getRuntime();
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
     error($tr("common.noDenoJson"));
-    return;
+    return 2;
   }
 
   const taskName = "fmt";
   if (projectInfo.tasks[taskName]) {
     info($tr("fmt.running"));
     const cmd = createCommand(runtime, {
-      args: getFmtArgs(true),
+      args: [...getFmtArgs(true), ...args],
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -49,16 +49,16 @@ export async function main(
     const status = await child.status;
     if (status.success) {
       success($tr("fmt.complete"));
-    } else {
-      error($tr("fmt.exitCode", { code: String(status.code ?? "?") }));
+      return 0;
     }
-    return;
+    error($tr("fmt.exitCode", { code: String(status.code ?? "?") }));
+    return status.code ?? 1;
   }
 
   // 无 fmt task，直接运行 fmt
   info($tr("fmt.running"));
   const cmd = createCommand(runtime, {
-    args: getFmtArgs(false),
+    args: [...getFmtArgs(false), ...args],
     cwd: projectRoot,
     stdin: "inherit",
     stdout: "inherit",
@@ -68,7 +68,8 @@ export async function main(
   const status = await child.status;
   if (status.success) {
     success($tr("fmt.complete"));
-  } else {
-    error($tr("fmt.exitCode", { code: String(status.code ?? "?") }));
+    return 0;
   }
+  error($tr("fmt.exitCode", { code: String(status.code ?? "?") }));
+  return status.code ?? 1;
 }

@@ -364,13 +364,12 @@ export {
 
 /**
  * WebSocket 模块：
- * - createWebSocketMiddleware: 创建 WebSocket 中间件
  * - getWebSocketPath: 获取 WebSocket 路径
  * - getWebSocketServer: 获取 WebSocket 服务器实例
  * - initializeWebSocket: 初始化 WebSocket
+ * - registerWebSocketUpgrade: 在 HTTP 服务器上注册 Upgrade（主路径）
  */
 export {
-  createWebSocketMiddleware,
   getWebSocketPath,
   getWebSocketServer,
   initializeWebSocket,

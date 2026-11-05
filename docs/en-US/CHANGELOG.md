@@ -10,6 +10,44 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Breaking
+
+- **Safer production defaults** (vs 3.7.x):
+  - `securityHeaders`: **on** outside `RUNTIME_ENV=dev` (low-breakage headers);
+    set `false` to escape; CSP still explicit.
+  - `rateLimit`: **on** outside dev (library default 60s/100); `false` to
+    escape.
+  - `cors`: still **opt-in** (never default `origin: "*"`). `kind: "api"` logs
+    an info hint in production when unset.
+  - Migration: if you relied on bare prod without headers/limits, set
+    `securityHeaders: false` / `rateLimit: false`.
+
+### Added
+
+- **`csrf`**: opt-in (`@dreamer/middlewares` csrf).
+- **`upload`**: opt-in `@dreamer/upload@^2` (default `requireAuth: true`;
+  dynamic import).
+- **`onSSREnd`**: SSR/Hybrid/SSG render timing hook.
+- **CLI**: `dweb-cli doctor` / `info` / standalone `version`.
+- **Docs**: view 3.0 `mismatchMode` (dev assert / prod remount; 2.x tolerance
+  needs explicit `continue`); scaffold pins aligned to view^3 / render^1.4 /
+  preact^10.29.
+
+### Changed
+
+- Dependencies: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.4`,
+  `@dreamer/server@^1.3`, preact^10.29 / react^19.3, etc.
+- CSR entry generation → `csr-client-entry.ts`; App signals → `app-signals.ts`.
+- `lint` / `fmt`: propagate host exit codes; accept path args.
+- Removed deprecated `createWebSocketMiddleware` (use
+  `registerWebSocketUpgrade`).
+
+### Preact
+
+- Scaffold defaults to **preact ^10.29（与 @dreamer/render@1.4 对齐；11 待
+  render 升级）**. view/render may still pair with preact 10 in other apps;
+  **this campaign does not force a dual-track removal**.
+
 ## [3.7.6] - 2026-11-01
 
 ### Changed

@@ -25,11 +25,14 @@ with the following main sections:
 | `render`               | object                        | Render config (`engine`, `mode`, `debug`, etc.; see render-related sections below and [View View Template Engine](#view-view-template-engine))                                                                                            |
 | `build`                | BuildAppConfig                | Build configuration                                                                                                                                                                                                                       |
 | `logger`               | LoggerConfig                  | Logger configuration                                                                                                                                                                                                                      |
-| `securityHeaders`      | boolean \| object             | **Optional** security headers; off by default; see [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)                                                                                                                                      |
+| `securityHeaders`      | boolean \| object             | Security headers; **on by default outside `dev`** (`false` to escape); CSP still explicit — see [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)                                                                                         |
 | `cors`                 | boolean \| CorsOptions        | **Optional** CORS; off by default. `true` ⇒ `origin: "*"` (warns outside dev); prefer an allowlist in prod. Bridged to Socket.IO when `socket.cors` is unset                                                                              |
 | `onRequestEnd`         | `(info) => void`              | **Optional** end-of-request hook (path/method/status/durationMs); plugins may implement the same name                                                                                                                                     |
 | `compression`          | boolean \| object             | **Optional** response compression; **on by default outside `dev`** (`false` to disable); off in `dev`                                                                                                                                     |
-| `rateLimit`            | boolean \| object             | **Optional** simple in-memory rate limit; off by default                                                                                                                                                                                  |
+| `csrf`                 | boolean \| object             | **Opt-in** CSRF (`@dreamer/middlewares`); `true` uses library double-submit cookie defaults                                                                                                                                               |
+| `upload`               | boolean \| object             | **Opt-in** `@dreamer/upload@^2`; default `requireAuth: true` (must supply `authenticate` or set `false`); see below                                                                                                                       |
+| `onSSREnd`             | function                      | SSR / Hybrid / SSG render-end hook (timing / observability)                                                                                                                                                                               |
+| `rateLimit`            | boolean \| object             | Simple in-memory rate limit; **on by default outside `dev`** (library 60s/100); `false` to escape                                                                                                                                         |
 | `metrics`              | boolean \| object             | **Optional** Prometheus-style `/metrics` (`@dreamer/middlewares`); off by default; complements `onRequestEnd`                                                                                                                             |
 | `database`             | DatabaseAppConfig             | Database configuration                                                                                                                                                                                                                    |
 | `console`              | `{ slim?: boolean }`          | Console-only options (`kind: "console"`). `slim: true` skips banner / HTTP middleware manager for faster `dweb-cli run` cold start (keeps plugins/logger/DB); override with `DWEB_CONSOLE_SLIM=1`                                         |
@@ -409,9 +412,15 @@ click handlers, without enabling client-side routing).
   static HTML only.
 - **`render.hydration.mismatchMode`** (`"continue" | "assert" | "remount"`,
   **View only**): Whole-page Hybrid/SSR mismatch strategy. Injects
-  `globalThis.__DWEB_MISMATCH_MODE__`. **Unset** keeps wipe+mount (today's
-  default). `continue`/`assert` call view `hydrate`; `remount` keeps wipe+mount.
-  **React/Preact: unsupported** (ignored).
+  `globalThis.__DWEB_MISMATCH_MODE__`.
+  - **Unset**: dweb client still **wipe+mount** (historical default). If you
+    call `@dreamer/render` `hydrate()` without the field, render 1.4 defaults to
+    explicit `continue` (2.x tolerance).
+  - **view 3.0 engine** (when `mismatchMode` omitted): **dev → `assert` / prod →
+    `remount`**. To keep 2.x “continue on mismatch”, set AppConfig explicitly:
+    `hydration: { mismatchMode: "continue" }`.
+  - `continue`/`assert`: view `hydrate` reuse SSR DOM; `remount`: wipe+mount.
+  - **React/Preact: unsupported** (ignored).
 
 Both options require `@dreamer/router@^1.0.10` on the client (used by the
 generated client bundle) so that when `hydrate` is enabled, link clicks use full

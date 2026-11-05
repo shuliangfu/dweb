@@ -72,6 +72,18 @@
 
 ## 📊 测试结果
 
+### 升级战役本地检查（2026-11-05）
+
+推送前脏树验证（tip 为本 commit／`dev`）：
+
+| 运行时  | 命令                                                                              | 结果                                   |
+| ------- | --------------------------------------------------------------------------------- | -------------------------------------- |
+| Deno    | `deno test -A --no-check --minimum-dependency-age=0 tests/unit tests/integration` | **960 通过**，0 失败，2 忽略（约 51s） |
+| Bun     | `bun test tests/unit tests/integration`                                           | **817 通过**，2 skip，0 失败（约 16s） |
+| Node 22 | `node test-node.mjs`（Node 22.22.2）                                              | **68/68 文件通过**（约 19s）           |
+
+另：`deno check src/ tests/`＋`deno lint` 绿。依赖含 `@dreamer/view@^3.0.1`。
+
 ### 总体统计（Deno 全量，v3.7.1 清单）
 
 | 指标         | 数值                                     |

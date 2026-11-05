@@ -9,6 +9,42 @@
 
 ## [Unreleased]
 
+### 破坏性变更
+
+- **生产安全默认收紧**（相对 3.7.x）：
+  - `securityHeaders`：非 `RUNTIME_ENV=dev` 时**默认开启**低破坏头（nosniff／
+    frame／referrer／permissions）；`false` 显式关闭；CSP 仍须显式配置。
+  - `rateLimit`：非 dev **默认开启**（库默认 60s／100）；`false` 显式关闭。
+  - `cors`：**仍 opt-in**（不能默认 `origin: "*"`）。`kind: "api"` 生产未配时打
+    info 提示。
+  - 迁移：若生产依赖「无安全头／无限流」，请显式
+    `securityHeaders: false`／`rateLimit: false`。
+
+### 新增
+
+- **`csrf`**：opt-in（`@dreamer/middlewares` csrf）。
+- **`upload`**：opt-in `@dreamer/upload@^2` 集成（默认 `requireAuth: true`；
+  动态 import；未装包时配置会报错）。
+- **`onSSREnd`**：SSR／Hybrid／SSG 渲染耗时观测钩子。
+- **CLI**：`dweb-cli doctor`／`info`／独立 `version` 子命令。
+- **文档**：view 3.0 `mismatchMode`（dev assert／prod remount；2.x 容忍须显式
+  `continue`）；脚手架依赖版本对齐 view^3／render^1.4／preact^10.29。
+
+### 变更
+
+- 依赖：`@dreamer/view@^3.0.1`、`@dreamer/render@^1.4`、`@dreamer/server@^1.3`、
+  preact^10.29／react^19.3 等（见 deno.json）。
+- CSR：入口生成拆至 `csr-client-entry.ts`；App 信号装配拆至 `app-signals.ts`。
+- `lint`／`fmt`：失败时透传宿主退出码；可附带路径参数。
+- 移除已废弃的 `createWebSocketMiddleware`（主路径为
+  `registerWebSocketUpgrade`）。
+
+### Preact
+
+- 脚手架默认钉 **preact ^10.29（与 @dreamer/render@1.4 对齐；11 待 render
+  升级）**（与本仓一致）。view／render 仍可与 preact 10
+  项目共存于不同应用；**本战役不强制砍掉双轨**——见 README「Preact 版本」。
+
 ## [3.7.6] - 2026-11-01
 
 ### 变更

@@ -20,7 +20,6 @@ import {
   resolveConsoleSlim,
 } from "../types/app.ts";
 import {
-  addSignalListener,
   args,
   cwd,
   exit,
@@ -30,7 +29,6 @@ import {
   readTextFile,
   realPath,
   relative,
-  removeSignalListener,
   resolve,
   setEnv,
   type SignalHandler,
@@ -74,6 +72,7 @@ import {
 import { getClientOutputDir } from "../utils/build-dirs.ts";
 import { setCacheOptions } from "../utils/constants.ts";
 import { registerAppRenderPipeline } from "./app-render-pipeline.ts";
+import { registerUploadIntegration } from "../feature/upload.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
@@ -100,6 +99,10 @@ import {
 } from "./database.ts";
 import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
 import { registerFrameworkHttpMiddlewares } from "./app-http-middlewares.ts";
+import {
+  removeAppSignalHandlers,
+  setupAppSignalHandlers,
+} from "./app-signals.ts";
 import {
   getServerMiddlewares,
   initializeMiddleware,
@@ -481,6 +484,9 @@ export class App extends EventEmitter implements IApp {
         isRuntimeDev,
         useDetailedRequestLog,
       });
+
+      // 可选 @dreamer/upload@^2（AppConfig.upload）；动态 import，未配置不加载
+      await registerUploadIntegration(server, this.container, mergedConfig);
 
       // socket.adapter 为 socketio 时：路径前缀匹配委托给 Socket.IO 处理
       const socketIoPath = getSocketIoPath(this.container);
@@ -1252,74 +1258,25 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
-   * 设置信号处理器（优雅关闭）
+   * 设置信号处理器（优雅关闭）— 实现见 app-signals.ts
    */
   private _setupSignalHandlers(): void {
-    const logger = this._getLogger();
-
-    // SIGINT 处理器（Ctrl+C）
-    const sigintHandler: SignalHandler = () => {
-      // 防止重复处理
-      if (this.isShuttingDown) {
-        return;
-      }
-      this.isShuttingDown = true;
-      logger.info("\n" + $tr("log.sigintShutdown"));
-      // 异步执行 stop 和 shutdown，不阻塞信号处理
-      this.stop()
-        .then(() => this.shutdown())
-        .then(() => {
-          // 正常退出
-          exit(0);
-        })
-        .catch((error) => {
-          const errorMessage = error instanceof Error
-            ? error.message
-            : String(error);
-          logger.error($tr("log.shutdownError") + ":", errorMessage);
-          // 异常退出
-          exit(1);
-        });
-    };
-    addSignalListener("SIGINT", sigintHandler);
-    this.signalHandlers.set("SIGINT", sigintHandler);
-
-    // SIGTERM 处理器（终止信号）
-    const sigtermHandler: SignalHandler = () => {
-      // 防止重复处理
-      if (this.isShuttingDown) {
-        return;
-      }
-      this.isShuttingDown = true;
-      logger.info("\n" + $tr("log.sigtermShutdown"));
-      // 异步执行 stop 和 shutdown，不阻塞信号处理
-      this.stop()
-        .then(() => this.shutdown())
-        .then(() => {
-          // 正常退出
-          exit(0);
-        })
-        .catch((error) => {
-          const errorMessage = error instanceof Error
-            ? error.message
-            : String(error);
-          logger.error($tr("log.shutdownError") + ":", errorMessage);
-          // 异常退出
-          exit(1);
-        });
-    };
-    addSignalListener("SIGTERM", sigtermHandler);
-    this.signalHandlers.set("SIGTERM", sigtermHandler);
+    this.signalHandlers = setupAppSignalHandlers(
+      this._getLogger(),
+      () => this.isShuttingDown,
+      () => {
+        this.isShuttingDown = true;
+      },
+      () => this.stop(),
+      () => this.shutdown(),
+    );
   }
 
   /**
    * 移除信号处理器
    */
   private _removeSignalHandlers(): void {
-    for (const [signal, handler] of this.signalHandlers.entries()) {
-      removeSignalListener(signal as "SIGINT" | "SIGTERM", handler);
-    }
-    this.signalHandlers.clear();
+    removeAppSignalHandlers(this.signalHandlers);
   }
 
   /**

@@ -1981,19 +1981,30 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ---
 
+## Preact versions
+
+- **Scaffold / this package** pins **preact ^10.29（与 @dreamer/render@1.4
+  对齐；11 待 render 升级）** (and matching `preact-render-to-string`).
+- **view / render** remain usable with preact 10 in older apps; dweb does
+  **not** force-remove the dual track in this release. Prefer one major per app.
+- See `render.hydration.mismatchMode` in
+  [APP_CONFIG](./docs/en-US/APP_CONFIG.md) for view 3.0 assert/remount vs
+  explicit `continue`.
+
 ## 📋 Changelog
 
-### [3.7.6] - 2026-11-01
+### [Unreleased] — upgrade campaign (draft)
 
-- **Changed**: `@dreamer/server` → `^1.2.2` (apiOnly `/` and `/<resource>`
-  action-mode `index` fallback).
+- **Breaking**: production defaults — `securityHeaders` + `rateLimit` **on**
+  outside `dev` (`false` to escape); `cors` stays opt-in.
+- **Added**: `csrf`, optional `upload` (`@dreamer/upload@^2`, `requireAuth`
+  default true), `onSSREnd`, CLI `doctor` / `info` / `version`.
+- **Deps**: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.4`,
+  `@dreamer/server@^1.3`, scaffold **preact ^10.29（与 @dreamer/render@1.4
+  对齐；11 待 render 升级）** (dual preact 10/11 not force-removed).
+- **Removed**: deprecated `createWebSocketMiddleware`.
 
-### [3.7.5] - 2026-10-31
-
-**Fixed** — `dweb-cli init` writes `"minimumDependencyAge": 0` into the
-generated `deno.json`, so a new project can install `@dreamer/*` packages
-published inside Deno 2.9's 24-hour dependency age window. Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md). Test report:
+Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md). Test report:
 [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 ---

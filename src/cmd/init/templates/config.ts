@@ -118,9 +118,13 @@ export default {
       useNativeCompile: false,
     },
   },
-  // securityHeaders: true,
+  // Production defaults (non-dev): securityHeaders + rateLimit + compression ON.
+  // Escape: securityHeaders: false, rateLimit: false, compression: false
+  // Opt-in: cors allowlist (never cors: true in prod), csrf: true, upload: { requireAuth: true }
   // cors: { origin: ["https://app.example.com"], credentials: true },
-  // rateLimit: { windowMs: 60_000, max: 120 },
+  // csrf: true,
+  // upload: { localDir: "./uploads", requireAuth: false }, // demo only; prod: authenticate
+  // rateLimit: { windowMs: 60_000, max: 120 }, // override defaults
 } satisfies AppConfig;
 `;
     }

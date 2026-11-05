@@ -22,6 +22,7 @@ import { createRendererHybrid } from "../feature/render-hybrid.ts";
 import { createRendererSSG } from "../feature/render-ssg.ts";
 import { createRendererSSR } from "../feature/render-ssr.ts";
 import type { AppConfig } from "../types/app.ts";
+import { emitOnSSREnd } from "./plugin-events.ts";
 import { getClientOutputDir } from "../utils/build-dirs.ts";
 import {
   CLIENT_OUTPUT_MAIN_FILENAME,
@@ -151,6 +152,44 @@ export function planRenderPipeline(
 }
 
 /**
+ * 为 SSR／Hybrid／SSG 渲染器包一层耗时观测（加法；失败不打断响应）。
+ * CSR 无整页服务端渲染，不包。
+ */
+function withSSRTiming(
+  container: ServiceContainer,
+  mode: "ssr" | "hybrid" | "ssg",
+  engine: string | undefined,
+  render: (
+    ctx: HttpContext,
+    // deno-lint-ignore no-explicit-any
+    match: any,
+  ) => Promise<Response | null>,
+): (
+  ctx: HttpContext,
+  // deno-lint-ignore no-explicit-any
+  match: any,
+) => Promise<Response | null> {
+  return async (ctx, match) => {
+    const started = performance.now();
+    let ok = true;
+    try {
+      return await render(ctx, match);
+    } catch (err) {
+      ok = false;
+      throw err;
+    } finally {
+      await emitOnSSREnd(container, {
+        path: ctx.path,
+        mode,
+        engine,
+        durationMs: Math.round(performance.now() - started),
+        ok,
+      });
+    }
+  };
+}
+
+/**
  * 注册 Web 应用渲染管线（非 api / console HTTP 路径）。
  */
 export async function registerAppRenderPipeline(
@@ -163,14 +202,37 @@ export async function registerAppRenderPipeline(
   );
   const renderLogger = getLogger(container);
 
+  const engine = (config.render as { engine?: string } | undefined)?.engine ??
+    "preact";
   if (plan.mode === "csr") {
     server.setSSRRender(createRendererCSR(container, router, config));
   } else if (plan.mode === "hybrid") {
-    server.setSSRRender(createRendererHybrid(container, router, config));
+    server.setSSRRender(
+      withSSRTiming(
+        container,
+        "hybrid",
+        engine,
+        createRendererHybrid(container, router, config),
+      ),
+    );
   } else if (plan.mode === "ssg") {
-    server.setSSRRender(createRendererSSG(container, router, config));
+    server.setSSRRender(
+      withSSRTiming(
+        container,
+        "ssg",
+        engine,
+        createRendererSSG(container, router, config),
+      ),
+    );
   } else {
-    server.setSSRRender(createRendererSSR(container, router, config));
+    server.setSSRRender(
+      withSSRTiming(
+        container,
+        "ssr",
+        engine,
+        createRendererSSR(container, router, config),
+      ),
+    );
   }
 
   if (plan.loadData) {

@@ -8,12 +8,25 @@
 | ---------------- | --------------------------------------------------- |
 | Framework        | 3.7.6                                               |
 | Test framework   | @dreamer/test@^1.2.3                                |
-| Test date        | 2026-11-01                                          |
+| Test date        | 2026-11-05                                          |
 | Test environment | Local Deno for the 3.7.6 change; CI below is v3.7.3 |
 
 ---
 
 ## 📊 Test Results
+
+### Upgrade-campaign local check (2026-11-05)
+
+Dirty-tree validation before push (tip will be this commit on `dev`):
+
+| Runtime | Command                                                                           | Result                                     |
+| ------- | --------------------------------------------------------------------------------- | ------------------------------------------ |
+| Deno    | `deno test -A --no-check --minimum-dependency-age=0 tests/unit tests/integration` | **960 passed**, 0 failed, 2 ignored (~51s) |
+| Bun     | `bun test tests/unit tests/integration`                                           | **817 pass**, 2 skip, 0 fail (~16s)        |
+| Node 22 | `node test-node.mjs` (PATH Node 22.22.2)                                          | **68/68 files passed** (~19s)              |
+
+Also: `deno check src/ tests/` + `deno lint` green. Dependencies include
+`@dreamer/view@^3.0.1`.
 
 ### v3.7.6 local check
 

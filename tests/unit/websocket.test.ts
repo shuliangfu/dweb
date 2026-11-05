@@ -4,17 +4,17 @@
  * 测试 src/feature/websocket.ts：
  * - initializeWebSocket 启用/未启用
  * - getWebSocketServer、getWebSocketPath
- * - createWebSocketMiddleware 返回函数
+ * - registerWebSocketUpgrade 主路径（废弃中间件已移除）
  */
 
 import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import {
-  createWebSocketMiddleware,
   getWebSocketPath,
   getWebSocketServer,
   initializeWebSocket,
+  registerWebSocketUpgrade,
 } from "../../src/feature/websocket.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -79,7 +79,7 @@ describe("WebSocket 集成 (websocket.ts)", () => {
     expect(typeof ws.on).toBe("function");
   });
 
-  it("createWebSocketMiddleware 应返回中间件函数", () => {
+  it("registerWebSocketUpgrade 在已初始化时应挂上 onWebSocket", () => {
     const container = initializeServiceContainer();
     const config: AppConfig = {
       socket: { adapter: "websocket" },
@@ -87,8 +87,16 @@ describe("WebSocket 集成 (websocket.ts)", () => {
     initializeLogger(container, config);
     initializeWebSocket(container, config);
 
-    const middleware = createWebSocketMiddleware(container);
-    expect(typeof middleware).toBe("function");
+    const paths: string[] = [];
+    const server = {
+      http: {
+        onWebSocket: (path: string, _handler: (req: Request) => Response) => {
+          paths.push(path);
+        },
+      },
+    };
+    registerWebSocketUpgrade(container, server as never);
+    expect(paths).toEqual(["/ws"]);
   });
 
   it("传入 handlers 时 connection 应触发 onConnection 回调", () => {

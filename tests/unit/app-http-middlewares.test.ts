@@ -9,7 +9,37 @@ import { initializeServiceContainer } from "../../src/core/service.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
 
 describe("registerFrameworkHttpMiddlewares", () => {
-  it("非 dev 默认应注册 compression；cors/rateLimit/metrics 仍 opt-in", () => {
+  it(
+    "非 dev 默认应注册 compression／rate-limit；cors／csrf／metrics 仍 opt-in",
+    () => {
+      const names: string[] = [];
+      const server = {
+        use: (_mw: unknown, _cond?: unknown, name?: string) => {
+          if (name) names.push(name);
+        },
+      };
+      const container = initializeServiceContainer();
+      initializeLogger(container, {});
+      registerFrameworkHttpMiddlewares(server, {}, container, {
+        isRuntimeDev: false,
+        useDetailedRequestLog: false,
+      });
+      expect(names).toContain("dev-no-cache");
+      expect(names).toContain("security-headers");
+      expect(names).toContain("health-check");
+      expect(names).toContain("compression");
+      expect(names).toContain("rate-limit");
+      expect(names).not.toContain("cors");
+      expect(names).not.toContain("csrf");
+      expect(names).not.toContain("metrics");
+    },
+    {
+      sanitizeOps: false,
+      sanitizeResources: false,
+    },
+  );
+
+  it("非 dev 显式 rateLimit:false／securityHeaders:false 应关闭默认", () => {
     const names: string[] = [];
     const server = {
       use: (_mw: unknown, _cond?: unknown, name?: string) => {
@@ -18,20 +48,19 @@ describe("registerFrameworkHttpMiddlewares", () => {
     };
     const container = initializeServiceContainer();
     initializeLogger(container, {});
-    registerFrameworkHttpMiddlewares(server, {}, container, {
-      isRuntimeDev: false,
-      useDetailedRequestLog: false,
-    });
-    expect(names).toContain("dev-no-cache");
-    expect(names).toContain("security-headers");
-    expect(names).toContain("health-check");
-    expect(names).toContain("compression");
-    expect(names).not.toContain("cors");
+    registerFrameworkHttpMiddlewares(
+      server,
+      { rateLimit: false, securityHeaders: false, compression: false },
+      container,
+      { isRuntimeDev: false, useDetailedRequestLog: false },
+    );
     expect(names).not.toContain("rate-limit");
-    expect(names).not.toContain("metrics");
+    expect(names).not.toContain("compression");
+    // security-headers 中间件仍注册（no-op 透传），名仍在栈中
+    expect(names).toContain("security-headers");
   });
 
-  it("dev 默认不注册 compression", () => {
+  it("dev 默认不注册 compression／rate-limit", () => {
     const names: string[] = [];
     const server = {
       use: (_mw: unknown, _cond?: unknown, name?: string) => {
@@ -45,6 +74,7 @@ describe("registerFrameworkHttpMiddlewares", () => {
       useDetailedRequestLog: false,
     });
     expect(names).not.toContain("compression");
+    expect(names).not.toContain("rate-limit");
   });
 
   it("显式 compression: false 在非 dev 也应关闭", () => {
@@ -66,7 +96,7 @@ describe("registerFrameworkHttpMiddlewares", () => {
   });
 
   // rateLimit() 内部会起清理 interval，装配侧无法释放；仅断言注册名，忽略 ops/resource 泄漏
-  it("opt-in 应注册 cors / compression / rate-limit / metrics", () => {
+  it("opt-in 应注册 cors / csrf / compression / rate-limit / metrics", () => {
     const names: string[] = [];
     const server = {
       use: (_mw: unknown, _cond?: unknown, name?: string) => {
@@ -79,6 +109,7 @@ describe("registerFrameworkHttpMiddlewares", () => {
       server,
       {
         cors: true,
+        csrf: true,
         compression: true,
         rateLimit: true,
         metrics: true,
@@ -87,6 +118,7 @@ describe("registerFrameworkHttpMiddlewares", () => {
       { isRuntimeDev: true, useDetailedRequestLog: true },
     );
     expect(names).toContain("cors");
+    expect(names).toContain("csrf");
     expect(names).toContain("compression");
     expect(names).toContain("rate-limit");
     expect(names).toContain("metrics");

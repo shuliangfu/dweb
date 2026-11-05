@@ -38,27 +38,27 @@ export const EXAMPLE_LEVELS: ExampleLevel[] = ["with-about", "minimal"];
 export const DEFAULT_PORT_BASE = 3000;
 
 /** fetchDreamerVersions 失败时 view 引擎的兜底版本 */
-export const FALLBACK_VIEW_VERSION = "1.0.6";
+export const FALLBACK_VIEW_VERSION = "3.0.0";
 
 /**
  * Preact 基准版本（模板中写成 `^${PREACT_VERSION}`，与根项目一致）
  */
-export const PREACT_VERSION = "10.29.2";
+export const PREACT_VERSION = "10.29.8";
 
 /** React / React-DOM 的范围起点必须一致，React 19 会在实际版本不一致时拒绝启动。 */
-export const REACT_VERSION = "19.2.7";
-export const REACT_DOM_VERSION = "19.2.7";
-export const SCHEDULER_VERSION = "0.27.0";
+export const REACT_VERSION = "19.3.1";
+export const REACT_DOM_VERSION = "19.3.1";
+export const SCHEDULER_VERSION = "0.28.0";
 
 /** Tailwind v4 / PostCSS 基准版本（输出带 ^） */
-export const TAILWIND_VERSION = "4.1.18";
-export const POSTCSS_VERSION = "8.5.10";
+export const TAILWIND_VERSION = "4.3.4";
+export const POSTCSS_VERSION = "8.5.32";
 
 /** UnoCSS 基准版本（输出带 ^） */
-export const UNOCSS_CORE_VERSION = "66.0.0";
+export const UNOCSS_CORE_VERSION = "66.12.0";
 
 /**
  * 脚手架写入的 `@dreamer/test` 版本（与 dweb 本仓 imports 对齐）
  * 用例层 describe/it/expect；执行仍由 `dweb-cli test` → 宿主 test
  */
-export const DREAMER_TEST_VERSION = "1.1.10";
+export const DREAMER_TEST_VERSION = "1.2.3";

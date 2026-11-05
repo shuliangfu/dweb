@@ -41,7 +41,7 @@
     "examples/*/advanced"
   ],
   "dependencies": {
-    "@dreamer/config": "npm:@jsr/dreamer__config@^1.1.0",
+    "@dreamer/config": "npm:@jsr/dreamer__config@^1.1.1",
     "@dreamer/console": "npm:@jsr/dreamer__console@^1.1.1",
     "@dreamer/database": "npm:@jsr/dreamer__database@^1.2.0",
     "@dreamer/esbuild": "npm:@jsr/dreamer__esbuild@^1.4.0",
@@ -52,35 +52,36 @@
     "@dreamer/middlewares": "npm:@jsr/dreamer__middlewares@^1.1.0",
     "@dreamer/plugin": "npm:@jsr/dreamer__plugin@^1.1.0",
     "@dreamer/plugins": "npm:@jsr/dreamer__plugins@^1.2.0",
-    "@dreamer/render": "npm:@jsr/dreamer__render@^1.3.0",
+    "@dreamer/render": "npm:@jsr/dreamer__render@^1.4.0",
     "@dreamer/router": "npm:@jsr/dreamer__router@^1.2.1",
     "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.2.2",
-    "@dreamer/server": "npm:@jsr/dreamer__server@^1.2.2",
+    "@dreamer/server": "npm:@jsr/dreamer__server@^1.3.0",
     "@dreamer/service": "npm:@jsr/dreamer__service@^1.1.0",
     "@dreamer/session": "npm:@jsr/dreamer__session@^1.1.0",
     "@dreamer/socket-io": "npm:@jsr/dreamer__socket-io@^1.2.1",
     "@dreamer/utils": "npm:@jsr/dreamer__utils@^1.1.0",
-    "@dreamer/view": "npm:@jsr/dreamer__view@^2.2.0",
+    "@dreamer/view": "npm:@jsr/dreamer__view@^3.0.1",
     "@dreamer/websocket": "npm:@jsr/dreamer__websocket@^1.1.0",
-    "autoprefixer": "^10.5.5",
-    "chart.js": "npm:chart.js@4.5.1",
-    "cssnano": "^7.1.9",
-    "lightningcss": "1.31.1",
-    "postcss": "^8.5.28",
+    "autoprefixer": "^10.6.2",
+    "chart.js": "npm:chart.js@4.6.1",
+    "cssnano": "^9.9.0",
+    "lightningcss": "1.33.0",
+    "postcss": "^8.5.32",
     "preact": "^10.29.8",
-    "preact-render-to-string": "^6.7.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "scheduler": "^0.27.0",
-    "tailwindcss": "4.2.0"
+    "preact-render-to-string": "^6.8.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "scheduler": "^0.28.0",
+    "tailwindcss": "4.3.4",
+    "@dreamer/upload": "npm:@jsr/dreamer__upload@^2.0.0"
   },
   "devDependencies": {
     "@dreamer/test": "npm:@jsr/dreamer__test@^1.2.3",
-    "tsx": "^4.23.13"
+    "tsx": "^4.23.15"
   },
   "overrides": {
     "preact": "^10.29.8",
-    "preact-render-to-string": "^6.7.0",
+    "preact-render-to-string": "^6.8.2",
     "bson": "7.2.0"
   },
   "engines": {

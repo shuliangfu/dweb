@@ -2030,21 +2030,29 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ---
 
+## Preact 版本
+
+- **脚手架／本仓**默认钉 **preact ^10.29（与 @dreamer/render@1.4 对齐；11 待
+  render 升级）**。
+- **view／render** 仍可与 preact 10
+  旧应用搭配；本战役**不强制**砍掉双轨。单应用内 建议只钉一个 major。
+- view 3.0 `mismatchMode`：dev assert／生产 remount；2.x 容忍须显式
+  `continue`——见 [APP_CONFIG](./APP_CONFIG.md)。
+
 ## 📋 变更日志
 
-### [3.7.6] - 2026-11-01
+### [Unreleased] — 升级战役（草稿）
 
-- **变更**：`@dreamer/server` → `^1.2.2`（apiOnly 根 `/` 与 `/<resource>` 的
-  action 模式 `index` 回落）。
+- **破坏性**：生产默认 — 非 dev 开启 `securityHeaders`＋`rateLimit`（`false`
+  逃生）； `cors` 仍 opt-in。
+- **新增**：`csrf`、可选 `upload`（`@dreamer/upload@^2`，`requireAuth` 默认
+  true）、 `onSSREnd`、CLI `doctor`／`info`／`version`。
+- **依赖**：`@dreamer/view@^3.0.1`、`@dreamer/render@^1.4`、`@dreamer/server@^1.3`，
+  脚手架 **preact ^10.29（与 @dreamer/render@1.4 对齐；11 待 render
+  升级）**（不强制砍 preact 10／11 双轨）。
+- **移除**：废弃的 `createWebSocketMiddleware`。
 
-### [3.7.5] - 2026-10-31
-
-**修复** — `dweb-cli init` 会在生成的 `deno.json` 里写入
-`"minimumDependencyAge": 0`，新建项目可以安装 Deno 2.9 的 24
-小时依赖年龄窗口内刚发布的 `@dreamer/*` 包。完整记录见
-[CHANGELOG.md](./CHANGELOG.md)。测试报告：[TEST_REPORT.md](./TEST_REPORT.md)。
-
----
+完整历史：[CHANGELOG.md](./CHANGELOG.md)。测试报告：[TEST_REPORT.md](./TEST_REPORT.md)。
 
 ## 📝 注意事项
 

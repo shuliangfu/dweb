@@ -19,6 +19,7 @@ import type {
 import type {
   CompressionOptions,
   CorsOptions,
+  CsrfOptions,
   MetricsOptions,
   RateLimitOptions,
 } from "@dreamer/middlewares";
@@ -63,7 +64,11 @@ export type BuildAppConfig = Omit<BuilderConfig, "server"> & {
   devCache?: DevCacheOptions;
 };
 
-/** 安全响应头配置；默认不启用，避免破坏已有 CSP / iframe / HMR 场景。 */
+/**
+ * 安全响应头配置。
+ * 未配置时：非 dev 默认启用低破坏头；dev 默认关；`false` 显式关。
+ * CSP 仍须显式 `contentSecurityPolicy`（避免打碎内联／HMR）。
+ */
 export interface SecurityHeadersConfig {
   /** 是否启用安全响应头。`securityHeaders: true` 等价于启用默认安全头。 */
   enabled?: boolean;
@@ -109,6 +114,64 @@ export interface RequestEndInfo {
   method: string;
   status: number;
   durationMs: number;
+}
+
+/**
+ * SSR／Hybrid／SSG 渲染结束观测信息（`AppConfig.onSSREnd` / 插件 `onSSREnd`）
+ */
+export interface SSREndInfo {
+  /** 请求路径 */
+  path: string;
+  /** 渲染模式 */
+  mode: "ssr" | "hybrid" | "ssg";
+  /** 引擎 */
+  engine?: string;
+  /** 耗时（毫秒） */
+  durationMs: number;
+  /** 是否成功（未抛错） */
+  ok: boolean;
+}
+
+/**
+ * 可选 `@dreamer/upload@^2` 集成配置（加法；未设则不挂载）。
+ *
+ * 默认 `requireAuth: true`（与 upload 2.0 一致）——未配 `authenticate` 则拒写。
+ * 迁移／本地演示：显式 `requireAuth: false`。
+ */
+export interface UploadAppConfig {
+  /** 路由前缀，默认 `/upload` */
+  basePath?: string;
+  /** 本地磁盘根目录（无自定义 storage 时用 local-cloud），默认 `./uploads` */
+  localDir?: string;
+  /** 公开下载路径前缀，默认 `${basePath}/file` */
+  publicFileBasePath?: string;
+  /**
+   * 自定义云存储适配器（`CloudStorageAdapter`）。
+   * 传入时忽略 localDir。类型放宽为 unknown 以免强制依赖 upload 类型。
+   */
+  storage?: unknown;
+  /**
+   * 是否要求鉴权。默认 **true**（upload 2.0）。
+   * 1.x／演示：`false`；生产请接 authenticate。
+   */
+  requireAuth?: boolean;
+  /** 鉴权钩子（透传 upload MultipartUploadHandlerConfig.authenticate） */
+  authenticate?: (
+    request: Request,
+  ) => unknown | Promise<unknown>;
+  /** 授权钩子（透传 authorizeUpload） */
+  authorizeUpload?: (
+    ctx: unknown,
+    init: unknown,
+    request: Request,
+  ) => boolean | Response | Promise<boolean | Response>;
+  maxFileSize?: number;
+  maxPartSize?: number;
+  allowedMimeTypes?: string[];
+  pathPrefix?: string;
+  verifyContentAfterComplete?: boolean;
+  sessionTtlMs?: number;
+  onEvent?: (event: unknown) => void;
 }
 
 /**
@@ -306,16 +369,29 @@ export interface AppConfig extends Record<string, unknown> {
   >;
   /** 日志配置 */
   logger?: LoggerConfig;
-  /** 可选安全响应头；默认关闭，启用后在所有框架响应上追加安全头。 */
+  /**
+   * 安全响应头（基于框架内置中间件）。
+   * - 非 dev（start/build）：**默认开启**低破坏头（nosniff / frame / referrer / permissions）
+   * - dev：默认关闭；`true`/对象显式开
+   * - `false`：显式关闭（逃生；生产不推荐）
+   * CSP 不默认设置——需显式 `contentSecurityPolicy`。
+   */
   securityHeaders?: boolean | SecurityHeadersConfig;
   /**
    * 可选 CORS 中间件（基于 `@dreamer/middlewares` cors）。
-   * 默认关闭。
-   * - `true`：库默认 `origin: "*"`（非 credentials）；生产请改用对象白名单
+   * **始终 opt-in**（不能默认 `origin: "*"`，否则生产更不安全）。
+   * - `true`：库默认 `origin: "*"`（非 credentials）；生产会打警告，请改用对象白名单
    * - 对象：透传 `CorsOptions`（推荐 `origin: ["https://app.example.com"]`）
+   * - 未设置：同域；`kind: "api"` 生产未配时打 info 提示
    * 若同时配置 `socket`（socketio）且未写 socket.cors，会把此处 `origin` 桥接到 Socket.IO。
    */
   cors?: boolean | CorsOptions;
+  /**
+   * 可选 CSRF 保护（基于 `@dreamer/middlewares` csrf，double-submit cookie）。
+   * **opt-in**：`true` 用库默认；对象透传 `CsrfOptions`。
+   * 不默认开：纯 API／无 cookie 客户端会被误伤。需 session／cookie 表单时再开。
+   */
+  csrf?: boolean | CsrfOptions;
   /**
    * 可选响应压缩（基于 `@dreamer/middlewares` compression，gzip/可选 brotli）。
    * - `RUNTIME_ENV=dev`：默认关闭（可用 `true`/对象显式开启）
@@ -324,8 +400,10 @@ export interface AppConfig extends Record<string, unknown> {
    */
   compression?: boolean | CompressionOptions;
   /**
-   * 可选简易限流（基于 `@dreamer/middlewares` rateLimit）。
-   * 默认关闭；`true` 使用库默认，对象则透传 `RateLimitOptions`。
+   * 简易限流（基于 `@dreamer/middlewares` rateLimit）。
+   * - 非 dev：**默认开启**（库默认 windowMs=60_000 / max=100）
+   * - `false`：显式关闭（逃生）
+   * - `true`/对象：显式开启或透传 `RateLimitOptions`
    */
   rateLimit?: boolean | RateLimitOptions;
   /**
@@ -339,6 +417,20 @@ export interface AppConfig extends Record<string, unknown> {
    * 插件也可实现同名 `onRequestEnd`。
    */
   onRequestEnd?: (info: RequestEndInfo) => void | Promise<void>;
+  /**
+   * SSR／Hybrid 服务端渲染结束钩子（耗时观测，加法）。
+   * 失败不会打断响应；插件也可实现同名 `onSSREnd`。
+   */
+  onSSREnd?: (info: SSREndInfo) => void | Promise<void>;
+  /**
+   * 可选文件上传（`@dreamer/upload@^2`）。
+   * - 未设／`false`：不挂载
+   * - `true`：本机 `./uploads`，`requireAuth: true`（须自接 authenticate 或显式 false）
+   * - 对象：见 {@link UploadAppConfig}
+   *
+   * 依赖：项目需安装 `jsr:@dreamer/upload@^2`（动态 import）。
+   */
+  upload?: boolean | UploadAppConfig;
   /** 数据库配置 */
   database?: DatabaseAppConfig;
   /**

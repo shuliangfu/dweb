@@ -239,8 +239,37 @@ describe("中间件系统 (middleware.ts)", () => {
   });
 
   describe("createSecurityHeadersMiddleware()", () => {
-    it("默认关闭时不应修改响应头", async () => {
-      const middleware = createSecurityHeadersMiddleware({});
+    it("dev 未配置时不应修改响应头", async () => {
+      const middleware = createSecurityHeadersMiddleware({}, true);
+      const ctx = {
+        response: undefined as Response | undefined,
+      };
+      await middleware(ctx as never, async () => {
+        ctx.response = new Response("ok");
+      });
+
+      expect(ctx.response?.headers.has("X-Content-Type-Options")).toBe(false);
+    });
+
+    it("非 dev 未配置时应默认追加安全响应头", async () => {
+      const middleware = createSecurityHeadersMiddleware({}, false);
+      const ctx = {
+        response: undefined as Response | undefined,
+      };
+      await middleware(ctx as never, async () => {
+        ctx.response = new Response("ok");
+      });
+
+      expect(ctx.response?.headers.get("X-Content-Type-Options")).toBe(
+        "nosniff",
+      );
+    });
+
+    it("显式 securityHeaders:false 在非 dev 也应关闭", async () => {
+      const middleware = createSecurityHeadersMiddleware(
+        { securityHeaders: false },
+        false,
+      );
       const ctx = {
         response: undefined as Response | undefined,
       };

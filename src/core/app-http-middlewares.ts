@@ -1,8 +1,11 @@
 /**
  * 框架内置 HTTP 中间件装配（从 app.ts 拆出，行为不变）
  *
- * 顺序：dev-no-cache → security-headers → 可选 cors/rateLimit/metrics →
+ * 顺序：dev-no-cache → security-headers → 可选 cors/csrf → rateLimit/metrics →
  * compression（非 dev 默认开）→ requestId / requestLogger → 可选 session → /health
+ *
+ * 生产（非 dev）默认：securityHeaders 开、rateLimit 开、compression 开；
+ * cors／csrf／metrics 仍 opt-in（cors 不能默认 `*`）。显式 `false` 可关默认项。
  *
  * Socket / 用户 middlewares / 路由 仍由 App 后续注册。
  *
@@ -13,6 +16,7 @@ import type { Middleware } from "@dreamer/middleware";
 import {
   compression,
   cors,
+  csrf,
   metrics,
   rateLimit,
   requestId,
@@ -65,8 +69,12 @@ export function registerFrameworkHttpMiddlewares(
     undefined,
     "dev-no-cache",
   );
+  /**
+   * 安全头：非 dev 默认开；`securityHeaders: false` 逃生；dev 未配置则关。
+   * BREAKING（相对 3.7.x）：生产未写配置也会挂 security-headers。
+   */
   server.use(
-    createSecurityHeadersMiddleware(config),
+    createSecurityHeadersMiddleware(config, opts.isRuntimeDev),
     undefined,
     "security-headers",
   );
@@ -79,9 +87,36 @@ export function registerFrameworkHttpMiddlewares(
       );
     }
     server.use(cors(corsOpts), undefined, "cors");
+  } else if (
+    !opts.isRuntimeDev &&
+    (config.kind === "api" || config.router?.apiOnly === true)
+  ) {
+    // cors 不能默认开 *；api 生产未配时提示白名单（同域可不配）
+    getLogger(container).info(
+      "kind/api production: set cors: { origin: [...] } if browsers call this API cross-origin; leaving cors unset keeps same-origin-only",
+    );
   }
-  if (config.rateLimit) {
-    const rateOpts = config.rateLimit === true ? {} : config.rateLimit;
+
+  // CSRF：显式 opt-in（需 cookie + 写方法校验）；不默认开以免破坏纯 API／无 cookie 客户端
+  if (config.csrf) {
+    const csrfOpts = config.csrf === true ? {} : config.csrf;
+    server.use(csrf(csrfOpts), undefined, "csrf");
+  }
+
+  /**
+   * 限流：非 dev 默认开（库默认 60s/100）；`rateLimit: false` 逃生。
+   * BREAKING（相对 3.7.x）：生产未写配置也会挂 rate-limit。
+   */
+  const rateOpt = config.rateLimit;
+  const enableRateLimit = rateOpt === false
+    ? false
+    : rateOpt != null
+    ? true
+    : !opts.isRuntimeDev;
+  if (enableRateLimit) {
+    const rateOpts = typeof rateOpt === "object" && rateOpt !== null
+      ? rateOpt
+      : {};
     server.use(rateLimit(rateOpts), undefined, "rate-limit");
   }
   if (config.metrics) {

@@ -103,7 +103,9 @@
     "fmtFailed": "Fmt failed",
     "fmtFailedWithMessage": "Fmt failed: {message}",
     "upgradeFailed": "Upgrade failed",
-    "upgradeFailedWithMessage": "Upgrade failed: {message}"
+    "upgradeFailedWithMessage": "Upgrade failed: {message}",
+    "doctorFailedWithMessage": "doctor failed: {message}",
+    "infoFailedWithMessage": "info failed: {message}"
   },
   "cliDesc": {
     "toolName": "DWEB CLI Tool",
@@ -153,7 +155,10 @@
     "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
     "runList": "List console commands (optional module filter)",
     "runTimeout": "Command timeout in ms (exit 124 on timeout)",
-    "generateTypeOption": "Type: route / api / model / service / console (r,a,m,s,c)"
+    "generateTypeOption": "Type: route / api / model / service / console (r,a,m,s,c)",
+    "doctor": "Check runtime, deno.json, and key @dreamer/* deps",
+    "info": "Show project and framework summary",
+    "versionCmd": "Print dweb-cli version"
   },
   "run": {
     "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",

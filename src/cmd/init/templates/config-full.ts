@@ -118,8 +118,12 @@ const config: AppConfig = {
     },
   },
   // Opt-in security (recommended in production):
-  // securityHeaders: true,
-  // cors: { origin: ["https://app.example.com"], credentials: true }, // not cors: true (* )
+  // Production defaults (non-dev): securityHeaders + rateLimit + compression ON.
+  // Escape: securityHeaders: false, rateLimit: false, compression: false
+  // Opt-in: cors allowlist (never cors: true in prod), csrf: true, upload
+  // cors: { origin: ["https://app.example.com"], credentials: true }, // not cors: true (*)
+  // csrf: true,
+  // upload: { localDir: "./uploads", requireAuth: false }, // demo only; prod: authenticate
   // rateLimit: { windowMs: 60_000, max: 120 },
   // compression is on by default outside RUNTIME_ENV=dev
 };
@@ -352,8 +356,8 @@ ${lines}
 
   // ========== Production security / transport (opt-in; see docs PRODUCTION_CHECKLIST) ==========
   /** Security response headers (default off). true or { contentSecurityPolicy, frameOptions, ... } */
-  // securityHeaders: true,
-  // securityHeaders: { enabled: true, contentSecurityPolicy: "default-src 'self'" },
+  // securityHeaders: false, // escape prod default
+  // securityHeaders: { contentSecurityPolicy: "default-src 'self'" }, // CSP still explicit
   /**
    * CORS via @dreamer/middlewares (default off).
    * Prefer an origin allowlist in production — \`cors: true\` means origin "*".
@@ -365,8 +369,10 @@ ${lines}
   // compression: false,
   // compression: { threshold: 1024, enableBrotli: true },
   /** Simple in-memory rate limit (default off). Do not trust X-Forwarded-For unless the proxy strips client spoofing. */
-  // rateLimit: true,
+  // rateLimit: false, // escape prod default
   // rateLimit: { windowMs: 60_000, max: 120 },
+  // csrf: true,
+  // upload: { requireAuth: true, authenticate: async (req) => ({ userId: "..." }) },
 
   // ========== Database (optional; uncomment and configure to use) ==========
   /** ${$tr("init.comments.databaseDesc")} */

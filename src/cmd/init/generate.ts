@@ -282,9 +282,9 @@ export async function generate(opts: InitOptions): Promise<void> {
     failSpinner($tr("init.fetchFailed"));
     jsrVersions = {
       dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
-      render: "1.0.0",
-      router: "1.0.0",
-      plugins: "1.0.0",
+      render: "1.4.0",
+      router: "1.2.1",
+      plugins: "1.2.0",
       view: FALLBACK_VIEW_VERSION,
     };
   }
