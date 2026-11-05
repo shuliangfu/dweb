@@ -31,12 +31,16 @@ and this project adheres to
 - **CLI**: `dweb-cli doctor` / `info` / standalone `version`.
 - **Docs**: view 3.0 `mismatchMode` (dev assert / prod remount; 2.x tolerance
   needs explicit `continue`); scaffold pins aligned to view^3 / render^1.4 /
-  preact^10.29.
+  preact^10.29.8.
 
 ### Changed
 
+- **Examples**: all `examples/*` deps refreshed (view/react/preact/app-kinds).
+  Workspace root `minimumDependencyAge: 0`; `dweb update` passes
+  `--min-dep-age=0`. Users may pin their own versions.
+
 - Dependencies: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.4`,
-  `@dreamer/server@^1.3`, preact^10.29 / react^19.3, etc.
+  `@dreamer/server@^1.3`, **preact^10.29.8** / react^19.3, etc.
 - CSR entry generation → `csr-client-entry.ts`; App signals → `app-signals.ts`.
 - `lint` / `fmt`: propagate host exit codes; accept path args.
 - Removed deprecated `createWebSocketMiddleware` (use
@@ -44,9 +48,9 @@ and this project adheres to
 
 ### Preact
 
-- Scaffold defaults to **preact ^10.29（与 @dreamer/render@1.4 对齐；11 待
-  render 升级）**. view/render may still pair with preact 10 in other apps;
-  **this campaign does not force a dual-track removal**.
+- Scaffold / package stay on **preact ^10.29.8** (latest coexistable with
+  render@1.4). Tried ^11.1.1 → empty SSR via `@dreamer/render` (dual 10/11
+  instances). **HOLD 11** until render pins ^11.
 
 ## [3.7.6] - 2026-11-01
 

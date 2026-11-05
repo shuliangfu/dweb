@@ -2030,12 +2030,24 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ---
 
+## 示例依赖
+
+`examples/` 下全部示例（view／react／preact／app-kinds）对齐本仓当前
+`@dreamer/*` 范围（如 `@dreamer/view@^3.0.1`、`@dreamer/render@^1.4`、react
+`^19.3.1`、preact `^10.29.8`）。dweb workspace 根 `deno.json` 写
+`minimumDependencyAge: 0`（成员包不能写该字段），便于立刻安装刚发的 JSR；
+`dweb init` 脚手架在独立项目里同样写入，`dweb update` 会透传
+`--min-dep-age=0`。**你可在各示例的 `deno.json`／`package.json`
+自行钉死或改范围**； 示例树是起点，不是强制锁。
+
 ## Preact 版本
 
-- **脚手架／本仓**默认钉 **preact ^10.29（与 @dreamer/render@1.4 对齐；11 待
-  render 升级）**。
-- **view／render** 仍可与 preact 10
-  旧应用搭配；本战役**不强制**砍掉双轨。单应用内 建议只钉一个 major。
+- **脚手架／本仓**钉 **preact ^10.29.8**（与 `@dreamer/render@1.4`
+  可共存的最新版； render 自身 import map 仍嵌入 `preact@^10.29`）。
+- **本战役曾试 ^11.1.1**：直接 `renderToString` 正常，但经 `@dreamer/render` SSR
+  得到空 HTML（Preact 10／11 双实例：测例 VNode 来自
+  11，适配器／`renderToString` 走 10）。**HOLD Preact 11** 直至 render 发布兼容
+  ^11 的钉版后再一键升脚手架。 单应用内建议只钉一个 major。
 - view 3.0 `mismatchMode`：dev assert／生产 remount；2.x 容忍须显式
   `continue`——见 [APP_CONFIG](./APP_CONFIG.md)。
 
@@ -2048,8 +2060,8 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 - **新增**：`csrf`、可选 `upload`（`@dreamer/upload@^2`，`requireAuth` 默认
   true）、 `onSSREnd`、CLI `doctor`／`info`／`version`。
 - **依赖**：`@dreamer/view@^3.0.1`、`@dreamer/render@^1.4`、`@dreamer/server@^1.3`，
-  脚手架 **preact ^10.29（与 @dreamer/render@1.4 对齐；11 待 render
-  升级）**（不强制砍 preact 10／11 双轨）。
+  脚手架 **preact ^10.29.8**（11 HOLD，待 render）（本战役脚手架默认
+  11；render@1.4 自身 map 或仍写 ^10）。
 - **移除**：废弃的 `createWebSocketMiddleware`。
 
 完整历史：[CHANGELOG.md](./CHANGELOG.md)。测试报告：[TEST_REPORT.md](./TEST_REPORT.md)。

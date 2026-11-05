@@ -39,8 +39,15 @@ export async function main(
 
   info($tr("update.running"));
 
+  // Deno 默认拒绝「过新」依赖；透传 --min-dep-age=0，便于装上刚发的 JSR（与脚手架 deno.json minimumDependencyAge:0 一致）。
+  // 用户仍可在 deno.json 改回更大值，或在本命令后自行收紧。
+  const updateArgs = runtime === "deno" &&
+      !args.some((a) => a === "--min-dep-age" || a.startsWith("--min-dep-age="))
+    ? ["update", "--min-dep-age=0", ...args]
+    : ["update", ...args];
+
   const cmd = createCommand(runtime, {
-    args: ["update", ...args],
+    args: updateArgs,
     cwd: projectRoot,
     stdin: "inherit",
     stdout: "inherit",
