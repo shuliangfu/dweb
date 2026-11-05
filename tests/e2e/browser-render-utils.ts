@@ -29,14 +29,13 @@ import {
 /**
  * Bun 下是否跳过 **浏览器** e2e（Playwright）。
  *
- * 【Why 默认跳过】oven-sh/bun 上 Playwright 兼容仍不完整（Windows launch、CDP/WebSocket、
- * 长连跑 timeout/`killed dangling processes` 等仍有 open issue）。macOS 可偶发通过，
- * 但不作为 CI/默认验收门槛。Deno 浏览器 e2e 不受影响。
+ * 【终态】Bun ≥1.4 起 Playwright／Chromium（含 Windows launch）可跑；矩阵要求
+ * ubuntu／macos／windows × Bun 与 Deno 一样跑全量 e2e。默认**不跳过**。
  *
- * 需要本机强行跑 Bun 浏览器 e2e 时：`DWEB_BUN_BROWSER_E2E=1 bun test tests/e2e/...`
+ * 本机临时关掉（调试／已知环境问题）：`DWEB_BUN_BROWSER_E2E=0 bun test ...`
  */
 const SKIP_BROWSER_E2E_ON_BUN = IS_BUN &&
-  getEnv("DWEB_BUN_BROWSER_E2E") !== "1";
+  getEnv("DWEB_BUN_BROWSER_E2E") === "0";
 import {
   afterAll,
   afterEach,

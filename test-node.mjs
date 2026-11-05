@@ -18,8 +18,7 @@
  * ensures the process exits even if a test leaves dangling handles (timers etc.).
  *
  * 【Invariant】One file per process invocation; exit code is the single source of
- * truth for pass/fail. 仅跑 unit 测试；e2e 浏览器测试由 test-node-e2e.mjs 单独跑
- * （需 Playwright Chromium），integration 需 spawn 示例子进程亦排除。
+ * truth for pass/fail. unit 由本脚本全量跑；e2e → test-node-e2e.mjs；integration → test-node-integration.mjs。
  *
  * 【排除清单】以下 unit 测试因运行时专有行为或外部依赖在 Node CI 中排除：
  * - cmd-*.test.ts：测试 dweb CLI 命令参数拼装，部分断言依赖 Deno/Bun 子进程行为
@@ -38,21 +37,8 @@ import { join, relative, resolve } from "node:path";
 process.env.CI = "true";
 
 // Node CI 下排除的测试文件（运行时专有行为或需子进程/外部服务）
-const EXCLUDE_PATTERNS = [
-  "cmd-build.test.ts",
-  "cmd-clean.test.ts",
-  "cmd-dev.test.ts",
-  "cmd-fmt.test.ts",
-  "cmd-lint.test.ts",
-  "cmd-preview.test.ts",
-  "cmd-start.test.ts",
-  "cmd-test.test.ts",
-  "cmd-update.test.ts",
-  "cmd-upgrade.test.ts",
-  "init.test.ts",
-  "project.test.ts",
-  "test-launcher.test.ts",
-];
+/** 终态全量：与 Deno／Bun unit 对齐，无排除。 */
+const EXCLUDE_PATTERNS = [];
 
 function collectTests(dir, base = dir) {
   const results = [];

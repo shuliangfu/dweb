@@ -1,6 +1,6 @@
-# CI: 在 macOS、Ubuntu、Windows 上运行测试，验证跨平台兼容性
-# 结构参考 view 包：Deno 与 Bun 拆成独立 job；Windows 上 Bun 不跑浏览器 e2e
-# 暂不跑 Bun 浏览器 e2e（unit/integration 保留）；恢复时取消 test-*-bun 中 e2e 与 Playwright 注释
+# CI: macOS / Ubuntu / Windows × Deno / Bun / Node — 全量 unit + integration + e2e
+# Bun e2e 需 Playwright Chromium；Bun ≥1.4（CI bun-version: latest）。
+# unit / integration / e2e 分步跑，避免 integration 结束 cleanupSuiteBrowser 拖垮 e2e。
 name: CI
 
 # Pin Linux to ubuntu-24.04: ubuntu-latest is 26.04; Playwright rejects
@@ -118,24 +118,22 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      # 暂不跑 Bun e2e，无需 Playwright
-      # - name: Install Playwright Chromium
-      #   run: npx -y playwright@1.59.1 install --with-deps chromium
+      - name: Install Playwright Chromium
+        run: npx -y playwright@1.59.1 install --with-deps chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun) unit
         run: bun test --max-concurrency=1 tests/unit
       - name: Test (Bun) integration
         run: bun test --max-concurrency=1 tests/integration
-      # 暂不跑 Bun 浏览器 e2e（稳定性/耗时）；恢复时取消注释并恢复上面 Playwright 安装
-      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
-      # - name: Test (Bun) e2e
-      #   run: |
-      #     failed=0
-      #     for f in tests/e2e/*.test.ts; do
-      #       bun test --max-concurrency=1 "$f" || failed=1
-      #     done
-      #     exit $failed
+      # e2e 按文件串行，减少 afterAll 超时 / dangling / browser close 互相干扰
+      - name: Test (Bun) e2e
+        run: |
+          failed=0
+          for f in tests/e2e/*.test.ts; do
+            bun test --max-concurrency=1 "$f" || failed=1
+          done
+          exit $failed
 
   test-macos-bun:
     runs-on: macos-latest
@@ -152,24 +150,21 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      # 暂不跑 Bun e2e，无需 Playwright
-      # - name: Install Playwright Chromium
-      #   run: npx -y playwright@1.59.1 install chromium
+      - name: Install Playwright Chromium
+        run: npx -y playwright@1.59.1 install chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun, macOS) unit
         run: bun test --max-concurrency=1 tests/unit
       - name: Test (Bun, macOS) integration
         run: bun test --max-concurrency=1 tests/integration
-      # 暂不跑 Bun 浏览器 e2e（稳定性/耗时）；恢复时取消注释并恢复上面 Playwright 安装
-      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
-      # - name: Test (Bun, macOS) e2e
-      #   run: |
-      #     failed=0
-      #     for f in tests/e2e/*.test.ts; do
-      #       bun test --max-concurrency=1 "$f" || failed=1
-      #     done
-      #     exit $failed
+      - name: Test (Bun, macOS) e2e
+        run: |
+          failed=0
+          for f in tests/e2e/*.test.ts; do
+            bun test --max-concurrency=1 "$f" || failed=1
+          done
+          exit $failed
 
   test-windows-bun:
     runs-on: windows-latest
@@ -183,11 +178,26 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      # 仅跑 unit不跑 integration 与 e2e
+      - name: Setup Chrome (for browser E2E tests)
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install Playwright Chromium
+        run: npx -y playwright@1.59.1 install chromium
+
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
+      - name: Test (Bun, Windows) integration
+        run: bun test --max-concurrency=1 tests/integration
+      - name: Test (Bun, Windows) e2e
+        run: |
+          $failed = 0
+          Get-ChildItem tests/e2e/*.test.ts | ForEach-Object {
+            bun test --max-concurrency=1 $_.FullName
+            if ($LASTEXITCODE -ne 0) { $failed = 1 }
+          }
+          exit $failed
 
-  # ─── Node.js jobs（unit + e2e 浏览器测试，排除 integration）───
+  # ─── Node.js jobs（unit + integration + e2e 全量）───
   test-linux-node:
     runs-on: ubuntu-24.04
     steps:
@@ -208,6 +218,9 @@ jobs:
 
       - name: Test (Node, Linux) unit
         run: npm run test:node
+
+      - name: Test (Node, Linux) integration
+        run: npm run test:node:integration
 
       - name: Test (Node, Linux) e2e
         run: npm run test:node:e2e
@@ -233,6 +246,9 @@ jobs:
       - name: Test (Node, macOS) unit
         run: npm run test:node
 
+      - name: Test (Node, macOS) integration
+        run: npm run test:node:integration
+
       - name: Test (Node, macOS) e2e
         run: npm run test:node:e2e
 
@@ -256,6 +272,9 @@ jobs:
 
       - name: Test (Node, Windows) unit
         run: npm run test:node
+
+      - name: Test (Node, Windows) integration
+        run: npm run test:node:integration
 
       - name: Test (Node, Windows) e2e
         run: npm run test:node:e2e
