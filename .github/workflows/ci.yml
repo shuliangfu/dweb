@@ -118,6 +118,12 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
+      # Bun job PATH may lack a working npm/npx CLI for playwright@1.59.1
+      # (CI log: "playwright: not found" exit 127). Pin Node then use npx like Deno/Node jobs.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
       - name: Install Playwright Chromium
         run: npx -y playwright@1.59.1 install --with-deps chromium
 
@@ -150,6 +156,10 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
       - name: Install Playwright Chromium
         run: npx -y playwright@1.59.1 install chromium
 
@@ -177,6 +187,10 @@ jobs:
 
       - name: Install dependencies (Bun)
         run: bun install
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
 
       - name: Setup Chrome (for browser E2E tests)
         uses: browser-actions/setup-chrome@v1
