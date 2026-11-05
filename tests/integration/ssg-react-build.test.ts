@@ -69,7 +69,9 @@ describe("integration: SSG + React 构建", () => {
     ]);
     if (!status.success) {
       throw new Error(
-        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${stdoutText || "(empty)"}`,
+        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${
+          stdoutText || "(empty)"
+        }`,
       );
     }
 

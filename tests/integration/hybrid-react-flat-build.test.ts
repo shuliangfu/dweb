@@ -69,14 +69,18 @@ describe("integration: Hybrid + React 构建（无 src 目录）", () => {
     ]);
     if (!status.success) {
       throw new Error(
-        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${stdoutText || "(empty)"}`,
+        `build 失败: ${stderrText || "(no stderr)"}\nstdout: ${
+          stdoutText || "(empty)"
+        }`,
       );
     }
 
     const serverJs = join(exampleDir, "dist", "server.js");
     if (!(await existsBuildOutput(serverJs))) {
       throw new Error(
-        `build 退出 0 但缺少 ${serverJs}（exampleDir=${exampleDir}）。stderr: ${stderrText || "(empty)"}\nstdout: ${stdoutText || "(empty)"}`,
+        `build 退出 0 但缺少 ${serverJs}（exampleDir=${exampleDir}）。stderr: ${
+          stderrText || "(empty)"
+        }\nstdout: ${stdoutText || "(empty)"}`,
       );
     }
     expect(await existsBuildOutput(serverJs)).toBe(true);

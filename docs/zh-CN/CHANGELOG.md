@@ -13,8 +13,8 @@
 
 - **Windows Bun CI 集成测试**：示例子进程构建改为
   `bun run <entry> -- --build`（`--` 必需，否则 Windows Bun 下 `--build`
-  进不了脚本 argv；与示例 `package.json`、`@dreamer/runtime-adapter` 的
-  `args()` 说明一致）。spawn 使用绝对 entry＋规范化 `cwd`
+  进不了脚本 argv；与示例 `package.json`、`@dreamer/runtime-adapter` 的 `args()`
+  说明一致）。spawn 使用绝对 entry＋规范化 `cwd`
   （`getSpawnCwd`／`resolveExampleEntry`），并在示例目录下断言 dist——未关
   e2e／未假绿。
 
