@@ -28,17 +28,20 @@
 - **`onSSREnd`**：SSR／Hybrid／SSG 渲染耗时观测钩子。
 - **CLI**：`dweb-cli doctor`／`info`／独立 `version` 子命令。
 - **文档**：view 3.0 `mismatchMode`（dev assert／prod remount；2.x 容忍须显式
-  `continue`）；脚手架依赖版本对齐 view^3／render^1.4／preact^10.29.8。
+  `continue`）；脚手架依赖版本对齐 view^3／render^1.5／preact^11.1.1。
 
 ### 变更
+
+- **依赖**：`@dreamer/render@^1.5.0`、`preact@^11.1.1`、`preact-render-to-string@6.8.2`（随
+  render 1.5 落地 Preact 11）。示例与脚手架对齐。
 
 - **示例**：`examples/*`
   全部依赖刷新（view／react／preact／app-kinds）。workspace 根
   `minimumDependencyAge: 0`；`dweb update` 透传
   `--min-dep-age=0`。用户可自钉版本。
 
-- 依赖：`@dreamer/view@^3.0.1`、`@dreamer/render@^1.4`、`@dreamer/server@^1.3`、
-  **preact^10.29.8**／react^19.3 等（见 deno.json）。
+- 依赖：`@dreamer/view@^3.0.1`、`@dreamer/render@^1.5`、`@dreamer/server@^1.3`、
+  **preact^11.1.1**／react^19.3 等（见 deno.json）。
 - CSR：入口生成拆至 `csr-client-entry.ts`；App 信号装配拆至 `app-signals.ts`。
 - `lint`／`fmt`：失败时透传宿主退出码；可附带路径参数。
 - 移除已废弃的 `createWebSocketMiddleware`（主路径为
@@ -46,9 +49,8 @@
 
 ### Preact
 
-- 脚手架／本仓仍钉 **preact ^10.29.8**（与 render@1.4 可共存最新）。曾试 ^11.1.1
-  → 经 `@dreamer/render` SSR 空 HTML（10／11 双实例）。**HOLD 11** 直至 render
-  钉 ^11。
+- 脚手架／本仓钉 **preact ^11.1.1** + `preact-render-to-string@6.8.2`，与
+  `@dreamer/render@^1.5.0` 对齐（原 HOLD 11 已落地）。
 
 ## [3.7.6] - 2026-11-01
 

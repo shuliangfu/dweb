@@ -41,9 +41,9 @@ export const DEFAULT_PORT_BASE = 3000;
 export const FALLBACK_VIEW_VERSION = "3.0.0";
 
 /**
- * Preact 基准版本（模板中写成 `^${PREACT_VERSION}`，与根项目一致；本战役试升 11：与 render@1.4 内嵌 preact^10 双实例冲突，落地钉最新可共存 10.29.8）
+ * Preact 基准版本（模板中写成 `^${PREACT_VERSION}`，与根项目一致；与 @dreamer/render@^1.5（Preact 11）对齐）
  */
-export const PREACT_VERSION = "10.29.8";
+export const PREACT_VERSION = "11.1.1";
 
 /** React / React-DOM 的范围起点必须一致，React 19 会在实际版本不一致时拒绝启动。 */
 export const REACT_VERSION = "19.3.1";

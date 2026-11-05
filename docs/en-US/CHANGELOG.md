@@ -30,17 +30,21 @@ and this project adheres to
 - **`onSSREnd`**: SSR/Hybrid/SSG render timing hook.
 - **CLI**: `dweb-cli doctor` / `info` / standalone `version`.
 - **Docs**: view 3.0 `mismatchMode` (dev assert / prod remount; 2.x tolerance
-  needs explicit `continue`); scaffold pins aligned to view^3 / render^1.4 /
-  preact^10.29.8.
+  needs explicit `continue`); scaffold pins aligned to view^3 / render^1.5 /
+  preact^11.1.1.
 
 ### Changed
+
+- **Dependencies**: `@dreamer/render@^1.5.0`, `preact@^11.1.1`,
+  `preact-render-to-string@6.8.2` (Preact 11 landable with render 1.5).
+  Examples + scaffold aligned.
 
 - **Examples**: all `examples/*` deps refreshed (view/react/preact/app-kinds).
   Workspace root `minimumDependencyAge: 0`; `dweb update` passes
   `--min-dep-age=0`. Users may pin their own versions.
 
-- Dependencies: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.4`,
-  `@dreamer/server@^1.3`, **preact^10.29.8** / react^19.3, etc.
+- Dependencies: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.5`,
+  `@dreamer/server@^1.3`, **preact^11.1.1** / react^19.3, etc.
 - CSR entry generation → `csr-client-entry.ts`; App signals → `app-signals.ts`.
 - `lint` / `fmt`: propagate host exit codes; accept path args.
 - Removed deprecated `createWebSocketMiddleware` (use
@@ -48,9 +52,8 @@ and this project adheres to
 
 ### Preact
 
-- Scaffold / package stay on **preact ^10.29.8** (latest coexistable with
-  render@1.4). Tried ^11.1.1 → empty SSR via `@dreamer/render` (dual 10/11
-  instances). **HOLD 11** until render pins ^11.
+- Scaffold / package pin **preact ^11.1.1** + `preact-render-to-string@6.8.2`,
+  aligned with `@dreamer/render@^1.5.0` (former HOLD 11 landed).
 
 ## [3.7.6] - 2026-11-01
 

@@ -1985,7 +1985,7 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 All packages under `examples/` (view / react / preact / app-kinds) pin current
 `@dreamer/*` ranges used by this repo (e.g. `@dreamer/view@^3.0.1`,
-`@dreamer/render@^1.4`, react `^19.3.1`, preact `^10.29.8`). The dweb workspace
+`@dreamer/render@^1.5`, react `^19.3.1`, preact `^11.1.1`). The dweb workspace
 root `deno.json` sets `minimumDependencyAge: 0` (members cannot set this field)
 so freshly published JSR builds install immediately; new apps from `dweb init`
 get the same in their own `deno.json`, and `dweb update` passes
@@ -1995,13 +1995,9 @@ not locks.
 
 ## Preact versions
 
-- **Scaffold / this package** pin **preact ^10.29.8** (latest that coexists with
-  `@dreamer/render@1.4`, which embeds `preact@^10.29` in its own import map).
-- **Tried preact ^11.1.1** this campaign: direct `renderToString` works, but SSR
-  via `@dreamer/render` returns empty HTML (dual Preact 10/11 instances — test
-  VNodes from 11 vs adapter/`renderToString` on 10). **HOLD Preact 11** until
-  render publishes a ^11-compatible pin; then scaffold can move in one bump.
-  Prefer **one Preact major per app**.
+- **Scaffold / this package** pin **preact ^11.1.1** with
+  `preact-render-to-string@6.8.2`, aligned to `@dreamer/render@^1.5.0` (Preact
+  11). Prefer **one Preact major per app**.
 - See `render.hydration.mismatchMode` in
   [APP_CONFIG](./docs/en-US/APP_CONFIG.md) for view 3.0 assert/remount vs
   explicit `continue`.
@@ -2014,9 +2010,8 @@ not locks.
   outside `dev` (`false` to escape); `cors` stays opt-in.
 - **Added**: `csrf`, optional `upload` (`@dreamer/upload@^2`, `requireAuth`
   default true), `onSSREnd`, CLI `doctor` / `info` / `version`.
-- **Deps**: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.4`,
-  `@dreamer/server@^1.3`, scaffold **preact ^10.29.8** (11 HOLD vs render@1.4)
-  (scaffold defaults to Preact 11).
+- **Deps**: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.5`,
+  `@dreamer/server@^1.3`, scaffold **preact ^11.1.1** (with render@1.5).
 - **Removed**: deprecated `createWebSocketMiddleware`.
 
 Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md). Test report:
