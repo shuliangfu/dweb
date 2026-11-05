@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-11-05
+
 ### 变更
 
 - **Windows Bun 子进程 integration 临时 skip**：在 Windows＋Bun 上，示例子进程
@@ -65,6 +67,8 @@
 
 - 脚手架／本仓钉 **preact ^11.1.1** + `preact-render-to-string@6.8.2`，与
   `@dreamer/render@^1.5.0` 对齐（原 HOLD 11 已落地）。
+
+---
 
 ## [3.7.6] - 2026-11-01
 

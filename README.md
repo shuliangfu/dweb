@@ -2012,15 +2012,15 @@ not locks.
 
 ## 📋 Changelog
 
-### [Unreleased] — upgrade campaign (draft)
+### [3.8.0] - 2026-11-05
 
-- **Changed**: temporary skip of Windows+Bun child-process **integration**
-  (`SKIP_WINDOWS_BUN_CHILD_PROCESS`); **CI disables** Windows Bun e2e step;
-  Linux/macOS Bun e2e and other matrix cells unchanged.
 - **Breaking**: production defaults — `securityHeaders` + `rateLimit` **on**
   outside `dev` (`false` to escape); `cors` stays opt-in.
 - **Added**: `csrf`, optional `upload` (`@dreamer/upload@^2`, `requireAuth`
   default true), `onSSREnd`, CLI `doctor` / `info` / `version`.
+- **Changed**: temporary skip of Windows+Bun child-process **integration**
+  (`SKIP_WINDOWS_BUN_CHILD_PROCESS`); **CI disables** Windows Bun e2e step;
+  Linux/macOS Bun e2e and other matrix cells unchanged.
 - **Deps**: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.5`,
   `@dreamer/server@^1.3`, scaffold **preact ^11.1.1** (with render@1.5).
 - **Removed**: deprecated `createWebSocketMiddleware`.

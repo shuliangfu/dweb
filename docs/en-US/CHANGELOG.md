@@ -10,6 +10,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-11-05
+
 ### Changed
 
 - **Temporary skip: Windows Bun child-process integration**: on Windows+Bun,
@@ -69,6 +71,8 @@ and this project adheres to
 
 - Scaffold / package pin **preact ^11.1.1** + `preact-render-to-string@6.8.2`,
   aligned with `@dreamer/render@^1.5.0` (former HOLD 11 landed).
+
+---
 
 ## [3.7.6] - 2026-11-01
 

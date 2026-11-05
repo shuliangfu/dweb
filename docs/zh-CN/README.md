@@ -2056,15 +2056,15 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [Unreleased] — 升级战役（草稿）
+### [3.8.0] - 2026-11-05
 
+- **破坏性**：生产默认 — 非 dev 开启 `securityHeaders`＋`rateLimit`（`false`
+  逃生）；`cors` 仍 opt-in。
+- **新增**：`csrf`、可选 `upload`（`@dreamer/upload@^2`，`requireAuth` 默认
+  true）、`onSSREnd`、CLI `doctor`／`info`／`version`。
 - **变更**：临时 skip Windows＋Bun 子进程相关 **integration**
   （`SKIP_WINDOWS_BUN_CHILD_PROCESS`）；**CI 关闭** Windows Bun e2e 步骤；
   Linux／macOS Bun e2e 与其它矩阵岗不变。
-- **破坏性**：生产默认 — 非 dev 开启 `securityHeaders`＋`rateLimit`（`false`
-  逃生）； `cors` 仍 opt-in。
-- **新增**：`csrf`、可选 `upload`（`@dreamer/upload@^2`，`requireAuth` 默认
-  true）、 `onSSREnd`、CLI `doctor`／`info`／`version`。
 - **依赖**：`@dreamer/view@^3.0.1`、`@dreamer/render@^1.5`、`@dreamer/server@^1.3`，
   脚手架 **preact ^11.1.1**（随 render@1.5）。
 - **移除**：废弃的 `createWebSocketMiddleware`。
