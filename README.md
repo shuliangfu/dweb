@@ -97,9 +97,9 @@ deno add jsr:@dreamer/runtime-adapter
 - **Bun build argv**: use `bun run <entry> -- --build` (the `--` ensures
   `--build` reaches the app on Windows Bun; Deno／Node keep `--build` without
   `--`)
-- **Windows Bun (known limits)**: on Windows+Bun, spawned
-  `bun run … -- --build` / init-and-serve may exit 0 with empty stdout and no
-  dist (upstream Bun)—related **integration** cases temporarily skipped via
+- **Windows Bun (known limits)**: on Windows+Bun, spawned `bun run … -- --build`
+  / init-and-serve may exit 0 with empty stdout and no dist (upstream
+  Bun)—related **integration** cases temporarily skipped via
   `SKIP_WINDOWS_BUN_CHILD_PROCESS`. **CI also disables** Windows Bun **e2e**
   (browser); Linux/macOS Bun e2e and other OS/runtimes stay on
 - **Dependencies**: Integrates all @dreamer/* libraries

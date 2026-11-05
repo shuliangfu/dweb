@@ -22,8 +22,8 @@ and this project adheres to
   `bun run <entry> -- --build` so `--build` reaches argv.
 - **CI disables Windows Bun e2e**: `test-windows-bun` in
   `.github/workflows/ci.yml` **no longer runs** `Test (Bun, Windows) e2e` (nor
-  the Chrome/Playwright install steps for that job)—upstream Bun browser e2e
-  on Windows cannot pass. **Does not** touch Linux/macOS Bun e2e.
+  the Chrome/Playwright install steps for that job)—upstream Bun browser e2e on
+  Windows cannot pass. **Does not** touch Linux/macOS Bun e2e.
 
 ### Breaking
 
