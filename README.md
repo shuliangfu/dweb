@@ -2012,6 +2012,10 @@ not locks.
 
 ## 📋 Changelog
 
+### [3.8.3] - 2026-11-06
+
+- **Fixed**: Bun prod `dist/server.js` now resolves `@tailwindcss/postcss` (declared on root + examples; matches `dweb init`).
+
 ### [3.8.2] - 2026-11-06
 
 - **Deps**: `@dreamer/view@^3.0.4`, `@dreamer/render@^1.5.3` (root + all

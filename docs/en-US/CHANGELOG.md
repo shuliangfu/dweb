@@ -10,6 +10,19 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.8.3] - 2026-11-06
+
+### Fixed
+
+- **Bun production start**: `dist/server.js` keeps an external
+  `import "@tailwindcss/postcss"` from `@dreamer/plugins/tailwindcss`; Bun does
+  not hoist that transitive plugins dependency to a top-level link visible from
+  example `dist/server.js`, so CI `prod-start-listen` failed with
+  `Cannot find module '@tailwindcss/postcss'`. Root `package.json` and every
+  example that lists `tailwindcss` now declare `@tailwindcss/postcss` (matching
+  `dweb init`); Bun server-external helpers and hybrid example configs also list
+  `@tailwindcss/postcss` / `postcss`.
+
 ## [3.8.2] - 2026-11-06
 
 ### Changed

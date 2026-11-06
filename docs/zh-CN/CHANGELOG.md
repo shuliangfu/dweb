@@ -9,6 +9,18 @@
 
 ## [Unreleased]
 
+## [3.8.3] - 2026-11-06
+
+### 修复
+
+- **Bun 生产 start**：`dist/server.js` 经 `@dreamer/plugins/tailwindcss` 留下
+  `import "@tailwindcss/postcss"` external；Bun 不把 plugins 传递依赖提升到可被
+  示例 `dist/server.js` 解析的顶层，CI `prod-start-listen` 报
+  `Cannot find module '@tailwindcss/postcss'`。根 `package.json`、全部含
+  `tailwindcss` 的示例 `package.json`／对应 `deno.json` imports 显式声明
+  `@tailwindcss/postcss`（与 `dweb init` 脚手架一致）；Bun server external 辅助与
+  hybrid 示例 config 同步列入 `@tailwindcss/postcss`／`postcss`。
+
 ## [3.8.2] - 2026-11-06
 
 ### 变更

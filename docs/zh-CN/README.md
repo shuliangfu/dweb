@@ -2056,6 +2056,10 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
+### [3.8.3] - 2026-11-06
+
+- **修复**：Bun 生产 `dist/server.js` 可解析 `@tailwindcss/postcss`（根与示例显式声明，对齐 `dweb init`）。
+
 ### [3.8.2] - 2026-11-06
 
 - **依赖**：`@dreamer/view@^3.0.4`、`@dreamer/render@^1.5.3`（本体＋全部示例）。
