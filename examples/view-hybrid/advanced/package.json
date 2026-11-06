@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "@dreamer/dweb": "file:../../../",
-    "@dreamer/render": "npm:@jsr/dreamer__render@^1.5.1",
+    "@dreamer/render": "npm:@jsr/dreamer__render@^1.5.2",
     "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.2.2",
-    "@dreamer/view": "npm:@jsr/dreamer__view@^3.0.2",
+    "@dreamer/view": "npm:@jsr/dreamer__view@^3.0.3",
     "tailwindcss": "4.2.0"
   }
 }
