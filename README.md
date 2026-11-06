@@ -2014,10 +2014,10 @@ not locks.
 
 ### [3.8.2] - 2026-11-06
 
-- **Deps**: `@dreamer/view@^3.0.4`, `@dreamer/render@^1.5.3` (root + all examples).
+- **Deps**: `@dreamer/view@^3.0.4`, `@dreamer/render@^1.5.3` (root + all
+  examples).
 
 ### [3.8.1] - 2026-11-06
-
 
 - **Deps**: `@dreamer/view@^3.0.2`, `@dreamer/render@^1.5.1`.
 - **DEV**: view engine auto-mounts DevTools overlay (`VIEW_DEV` +

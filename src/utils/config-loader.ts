@@ -21,7 +21,9 @@ import {
 } from "@dreamer/runtime-adapter";
 import { configProfileFromRuntimeEnv } from "./runtime.ts";
 import { preloadProjectEnvSync } from "./env-loader.ts";
-import { deepMergeConfig } from "../core/config.ts";
+import { deepMergeConfig } from "../core/config-merge.ts";
+// 勿从 core/config.ts 取 deepMergeConfig：该文件 re-export config-infer（用 $tr），
+// 与 i18n → loadProjectConfig → config 形成生产 bundle TLA 环。
 import type { AppConfig } from "../types/app.ts";
 
 /** 扫描最大深度：root/src/app/config 为 3 层 */

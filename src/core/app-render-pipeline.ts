@@ -13,9 +13,9 @@ import type { ServiceContainer } from "@dreamer/service";
 import { cwd, exists, getEnv, join } from "./runtime-adapter.ts";
 import {
   buildClientScript,
-  createClientScriptMiddleware,
   ensureClientEntryFile,
 } from "../feature/csr-client-builder.ts";
+import { createClientScriptMiddleware } from "../feature/csr-client-middleware.ts";
 import { createLoadDataMiddleware } from "../feature/load-data-middleware.ts";
 import { createRendererCSR } from "../feature/render-csr.ts";
 import { createRendererHybrid } from "../feature/render-hybrid.ts";

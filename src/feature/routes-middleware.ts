@@ -9,13 +9,17 @@ import type { Middleware } from "@dreamer/middleware";
 import type { Router } from "@dreamer/router";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
-import { getApp } from "../core/app.ts";
+import type { App } from "../core/app.ts";
 import { getRouter } from "./router.ts";
 
+/**
+ * 勿值导入 `getApp`：`app.ts` 已静态导入本模块，生产 bundle（含 i18n 顶层 await）
+ * 会因此形成 App⇄routes-middleware TLA 死锁。运行时直接 `container.get("app")`。
+ */
 /** 路由中间件上下文：注入 container / app，供 routes/_middleware.ts 使用 */
 type RouteMiddlewareContext = HttpContext & {
   container: ServiceContainer;
-  app?: ReturnType<typeof getApp>;
+  app?: App;
 };
 
 /** 路由中间件函数：可返回 Response 以短路后续链 */
@@ -41,7 +45,7 @@ function ensureRouteMiddlewareContext(
   }
   if (!routeCtx.app && container.has("app")) {
     try {
-      routeCtx.app = getApp(container);
+      routeCtx.app = container.get<App>("app");
     } catch {
       // app 尚未注册时忽略
     }

@@ -138,7 +138,11 @@ export function generateStaticClientEntry(
   _hmrCssEntries: Array<{ url: string; styleId: string }>,
 ): string {
   return `/**
- * 客户端入口文件（由 @dreamer/dweb 自动生成，仅当不存在时生成，可手动编辑）
+ * @generated-scaffold by @dreamer/dweb (only written when the file is missing)
+ *
+ * 本文件存在后不会被框架覆盖，可手动编辑业务钩子。
+ * AI: 可改本文件；勿改同目录 "_client.dep.tsx"（每次构建／启动会重生，DO NOT EDIT）。
+ *
  * 从 _client.dep.tsx 导入 initApp；在 .then((app) => { ... }) 中可直接使用 app。
  * - i18n：i18n.onChange(() => app.renderCurrentRoute())
  * - 路由拦截：app.router.beforeRoute((to, from) => { ... })、app.router.afterRoute((to, from) => { ... })
