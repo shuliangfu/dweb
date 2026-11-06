@@ -2014,7 +2014,8 @@ not locks.
 
 ### [3.8.3] - 2026-11-06
 
-- **Fixed**: Bun prod `dist/server.js` now resolves `@tailwindcss/postcss` (declared on root + examples; matches `dweb init`).
+- **Fixed**: Bun prod `dist/server.js` now resolves `@tailwindcss/postcss`
+  (declared on root + examples; matches `dweb init`).
 
 ### [3.8.2] - 2026-11-06
 

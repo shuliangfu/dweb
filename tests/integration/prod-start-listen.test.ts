@@ -101,6 +101,20 @@ async function buildExample(exampleDir: string): Promise<void> {
   }
 }
 
+/**
+ * 从 stdout 解析实际听口。@dreamer/server 在 PORT 占用时会顺次 +1，
+ * 仅轮询请求端口会假红（ECONNREFUSED），须跟随 "running at http://127.0.0.1:N"。
+ */
+function parseAdvertisedListenPort(stdout: string, fallback: number): number {
+  const m = stdout.match(
+    /(?:Production|Dev) server running at https?:\/\/127\.0\.0\.1:(\d+)/i,
+  );
+  if (m) return Number(m[1]);
+  const m2 = stdout.match(/using port (\d+)/i);
+  if (m2) return Number(m2[1]);
+  return fallback;
+}
+
 async function assertProdStartListens(
   exampleDir: string,
   port: number,
@@ -145,6 +159,7 @@ async function assertProdStartListens(
   const deadline = Date.now() + maxWaitMs;
   let lastErr: unknown;
   let ready = false;
+  let listenPort = port;
   try {
     while (Date.now() < deadline) {
       // 子进程若因 TLA 秒退，尽早失败
@@ -162,8 +177,9 @@ async function assertProdStartListens(
             }`,
         );
       }
+      listenPort = parseAdvertisedListenPort(stdoutBuf, port);
       try {
-        const res = await fetch(`http://127.0.0.1:${port}/`);
+        const res = await fetch(`http://127.0.0.1:${listenPort}/`);
         if (res.ok) {
           const html = await res.text();
           if (html.length > 50) {
@@ -178,7 +194,10 @@ async function assertProdStartListens(
     }
     if (!ready) {
       throw new Error(
-        `生产 start ${maxWaitMs}ms 内未听口 http://127.0.0.1:${port}/。` +
+        `生产 start ${maxWaitMs}ms 内未听口 http://127.0.0.1:${listenPort}/` +
+          (listenPort !== port
+            ? `（请求 PORT=${port}，stdout 听口 ${listenPort}）。`
+            : `。`) +
           (lastErr instanceof Error ? lastErr.message : String(lastErr)) +
           `\nstderr: ${stderrBuf || "(empty)"}\nstdout: ${
             stdoutBuf || "(empty)"
