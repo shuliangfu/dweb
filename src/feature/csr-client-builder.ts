@@ -726,6 +726,6 @@ export async function clearClientScriptCache(options?: {
  * 客户端脚本中间件已拆至 `csr-client-middleware.ts`。
  * 勿在此 re-export：与 middleware 对 `buildClientScript` 的静态 import 会在生产
  * bundle（含 i18n 顶层 await → 异步模块 init）中形成 TLA 死锁
- *（`Top-level await promise never resolved`＠`dist/server.js`）。
+ * （`Top-level await promise never resolved`＠`dist/server.js`）。
  * 请从 `./csr-client-middleware.ts` 直接导入 `createClientScriptMiddleware`。
  */

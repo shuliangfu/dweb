@@ -2,7 +2,7 @@
  * 集成测试：生产 `dist/server.js` 启动必须听口
  *
  * 回归：生产 bundle 在 i18n 顶层 await 下，静态环会变成 TLA 死锁
- *（`Top-level await promise never resolved`，`deno task start` 秒退）。
+ * （`Top-level await promise never resolved`，`deno task start` 秒退）。
  * 已拆：builder⇄middleware 再导出、config-loader→config-infer（经 config）、
  * App⇄routes-middleware（getApp 值导入）。本测对 hybrid 示例 build→start，
  * 断言端口可连后杀进程。
@@ -155,7 +155,9 @@ async function assertProdStartListens(
         throw new Error(
           `生产 start 提前退出 code=${early.code}。` +
             `若含 Top-level await promise never resolved 则为 TLA 回归。\n` +
-            `stderr: ${stderrBuf || "(empty)"}\nstdout: ${stdoutBuf || "(empty)"}`,
+            `stderr: ${stderrBuf || "(empty)"}\nstdout: ${
+              stdoutBuf || "(empty)"
+            }`,
         );
       }
       try {
@@ -176,7 +178,9 @@ async function assertProdStartListens(
       throw new Error(
         `生产 start ${maxWaitMs}ms 内未听口 http://127.0.0.1:${port}/。` +
           (lastErr instanceof Error ? lastErr.message : String(lastErr)) +
-          `\nstderr: ${stderrBuf || "(empty)"}\nstdout: ${stdoutBuf || "(empty)"}`,
+          `\nstderr: ${stderrBuf || "(empty)"}\nstdout: ${
+            stdoutBuf || "(empty)"
+          }`,
       );
     }
   } finally {
