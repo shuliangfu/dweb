@@ -17,11 +17,13 @@
   `^1.5.1`（承接 view DEV DevTools 自动挂载链）。
 
 - **DEV View DevTools 零调用挂载**：`generateClientDepContent` 在 view＋DEV 时
-  自动 `VIEW_DEV=true` 并 `mountDevtoolsOverlay`（`@dreamer/view/devtools/overlay`）；
-  prod／build 不静态 import。CSR／hybrid／SSR HTML 在 DEV＋view 时同步注入
+  自动 `VIEW_DEV=true` 并
+  `mountDevtoolsOverlay`（`@dreamer/view/devtools/overlay`）； prod／build
+  不静态 import。CSR／hybrid／SSR HTML 在 DEV＋view 时同步注入
   `globalThis.VIEW_DEV = true`。
 
-- **依赖**：`@dreamer/esbuild` `^1.4.0` → `^1.4.1`（JSON loader，使 view DevTools locales 可打进客户端）。
+- **依赖**：`@dreamer/esbuild` `^1.4.0` → `^1.4.1`（JSON loader，使 view
+  DevTools locales 可打进客户端）。
 
 ## [3.8.0] - 2026-11-05
 

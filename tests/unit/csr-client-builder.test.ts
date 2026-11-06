@@ -249,7 +249,7 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(code).not.toContain("mountDevtoolsOverlay");
     });
 
-        it("Windows 下 componentPath 误为整段 D: 时仍用 fullPath+routes 生成相对 import", () => {
+    it("Windows 下 componentPath 误为整段 D: 时仍用 fullPath+routes 生成相对 import", () => {
       const routesDir = "D:/a/dweb/dweb/examples/preact-ssg/basic/src/routes";
       const file = `${routesDir}/about.tsx`;
       const code = generateClientDepContent(

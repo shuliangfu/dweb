@@ -22,7 +22,8 @@ and this project adheres to
   (`@dreamer/view/devtools/overlay`); prod/build does not statically import it.
   CSR/hybrid/SSR HTML also sets `globalThis.VIEW_DEV = true` when DEV+view.
 
-- **Dependencies**: `@dreamer/esbuild` `^1.4.0` → `^1.4.1` (JSON loader so view DevTools locales bundle).
+- **Dependencies**: `@dreamer/esbuild` `^1.4.0` → `^1.4.1` (JSON loader so view
+  DevTools locales bundle).
 
 ## [3.8.0] - 2026-11-05
 

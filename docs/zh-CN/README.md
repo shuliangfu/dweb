@@ -2059,7 +2059,8 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 ### [3.8.1] - 2026-11-06
 
 - **依赖**：`@dreamer/view@^3.0.2`、`@dreamer/render@^1.5.1`。
-- **DEV**：view 引擎零业务调用自动挂载 DevTools 浮标（`VIEW_DEV`＋`mountDevtoolsOverlay`）；prod 构建不引入。
+- **DEV**：view 引擎零业务调用自动挂载 DevTools
+  浮标（`VIEW_DEV`＋`mountDevtoolsOverlay`）；prod 构建不引入。
 
 ### [3.8.0] - 2026-11-05
 

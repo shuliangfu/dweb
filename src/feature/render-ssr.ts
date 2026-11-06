@@ -356,7 +356,9 @@ ${
           isDev && engine === "view"
             ? "  globalThis.VIEW_DEV = true;\n"
             : ""
-        }  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
+        }  globalThis.__DWEB_ROUTES__ = ${
+          serializeJsonForInlineScript(clientRoutes)
+        };
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
   globalThis.__DWEB_MODE__ = "ssr";
