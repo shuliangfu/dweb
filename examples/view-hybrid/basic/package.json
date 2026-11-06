@@ -14,6 +14,7 @@
     "@dreamer/render": "npm:@jsr/dreamer__render@^1.5.3",
     "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.2.2",
     "@dreamer/view": "npm:@jsr/dreamer__view@^3.0.4",
-    "tailwindcss": "4.2.0"
+    "tailwindcss": "4.2.0",
+    "@tailwindcss/postcss": "4.2.0"
   }
 }

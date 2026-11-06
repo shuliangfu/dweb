@@ -14,6 +14,7 @@
     "lightningcss": "1.31.1",
     "preact": "^11.1.1",
     "preact-render-to-string": "^6.8.2",
-    "tailwindcss": "4.2.0"
+    "tailwindcss": "4.2.0",
+    "@tailwindcss/postcss": "4.2.0"
   }
 }

@@ -45,7 +45,12 @@ const config: AppConfig = {
   build: {
     server: {
       useNativeCompile: false,
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "@tailwindcss/postcss",
+        "postcss",
+      ],
     },
     /** 资源处理：复制 src/assets、压缩并 hash 化图片后输出到 client/assets/images */
     assets: {

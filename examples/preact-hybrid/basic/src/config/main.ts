@@ -45,6 +45,8 @@ const config: AppConfig = {
       external: [
         "tailwindcss",
         "lightningcss",
+        "@tailwindcss/postcss",
+        "postcss",
         "preact",
         "preact-render-to-string",
         "preact/hooks",

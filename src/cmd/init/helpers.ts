@@ -293,7 +293,13 @@ export function getBuildServerExternal(
   if (opts.runtime !== "bun") return undefined;
   const list: string[] = [];
   if (opts.style === "tailwind") {
-    list.push("tailwindcss", "lightningcss");
+    // @tailwindcss/postcss／postcss 亦须 external＋装进依赖：Bun 不会把 plugins 传递依赖提升到可被 dist/server.js 解析的顶层
+    list.push(
+      "tailwindcss",
+      "lightningcss",
+      "@tailwindcss/postcss",
+      "postcss",
+    );
   }
   if (opts.engine === "preact") {
     list.push(
