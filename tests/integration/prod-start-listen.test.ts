@@ -43,12 +43,14 @@ const PREACT_HYBRID_START_PORT = 39812;
 
 function exampleProdStartArgs(serverJsRel: string): string[] {
   // Deno：`deno run -A dist/server.js --start`；Bun：`bun run dist/server.js`
-  // （与各示例 deno.json / package.json 的 start task 对齐）
+  // Node：`node --import tsx dist/server.js`（hybrid 生产仍会动态加载 .tsx 路由，
+  // 与 exampleBuildArgs 一致；无 tsx 则 ERR_UNKNOWN_FILE_EXTENSION → 404）
+  // （与各示例 deno.json / package.json 的 start task 对齐；Node 无独立 start script）
   if (IS_BUN) {
     return ["run", serverJsRel];
   }
   if (IS_NODE) {
-    return [serverJsRel];
+    return ["--import", "tsx", serverJsRel];
   }
   return ["run", "-A", serverJsRel, "--start"];
 }

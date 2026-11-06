@@ -33,6 +33,7 @@ import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { resolveRouterRoutesDirPath } from "../utils/path.ts";
+import { rewriteServerExternalSpecifiers } from "../utils/rewrite-server-externals.ts";
 import {
   createDwebClientBundlePlugins,
   prepareClientBuildEntry,
@@ -316,10 +317,12 @@ export async function runBuildWithBuilder(
     );
     if (await exists(serverJsPath)) {
       const content = await readTextFile(serverJsPath);
+      // 将 jsr:/npm:/@jsr/ external 改成裸包名，Bun/Node 才能解析（Deno import map 同样认裸名）
+      const rewritten = rewriteServerExternalSpecifiers(content);
       const versionBanner = `globalThis.__DWEB_VERSION__ = ${
         JSON.stringify(version)
       };\n`;
-      await writeTextFile(serverJsPath, versionBanner + content);
+      await writeTextFile(serverJsPath, versionBanner + rewritten);
     }
   }
 }
