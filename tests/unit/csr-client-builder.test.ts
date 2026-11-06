@@ -178,7 +178,78 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(code).toContain("mount(rootFn, host)");
     });
 
-    it("Windows 下 componentPath 误为整段 D: 时仍用 fullPath+routes 生成相对 import", () => {
+    it("view+DEV 生成物应含 DevTools overlay 自动挂载与 VIEW_DEV", () => {
+      const code = generateClientDepContent(
+        "view",
+        [
+          {
+            componentPath: "index",
+            fullPath: "/tmp/routes/index.tsx",
+            importName: "Route_index",
+          },
+        ],
+        "/tmp/routes",
+        false,
+        [],
+        "hybrid",
+        {},
+        true,
+      );
+
+      expect(code).toContain(
+        'import { mountDevtoolsOverlay } from "@dreamer/view/devtools/overlay";',
+      );
+      expect(code).toContain("mountDevtoolsOverlay");
+      expect(code).toContain("VIEW_DEV");
+      expect(code).toContain("__dwebBootViewDevtools");
+    });
+
+    it("view+prod 生成物不得静态 import DevTools overlay", () => {
+      const code = generateClientDepContent(
+        "view",
+        [
+          {
+            componentPath: "index",
+            fullPath: "/tmp/routes/index.tsx",
+            importName: "Route_index",
+          },
+        ],
+        "/tmp/routes",
+        false,
+        [],
+        "hybrid",
+        {},
+        false,
+      );
+
+      expect(code).not.toContain("@dreamer/view/devtools/overlay");
+      expect(code).not.toContain("mountDevtoolsOverlay");
+      expect(code).not.toContain("__dwebBootViewDevtools");
+    });
+
+    it("preact+DEV 生成物不得引入 view DevTools overlay", () => {
+      const code = generateClientDepContent(
+        "preact",
+        [
+          {
+            componentPath: "index",
+            fullPath: "/tmp/routes/index.tsx",
+            importName: "Route_index",
+          },
+        ],
+        "/tmp/routes",
+        false,
+        [],
+        "hybrid",
+        {},
+        true,
+      );
+
+      expect(code).not.toContain("@dreamer/view/devtools/overlay");
+      expect(code).not.toContain("mountDevtoolsOverlay");
+    });
+
+        it("Windows 下 componentPath 误为整段 D: 时仍用 fullPath+routes 生成相对 import", () => {
       const routesDir = "D:/a/dweb/dweb/examples/preact-ssg/basic/src/routes";
       const file = `${routesDir}/about.tsx`;
       const code = generateClientDepContent(

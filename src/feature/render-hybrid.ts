@@ -347,7 +347,11 @@ export function createRendererHybrid(
   globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
   // 客户端路由配置
   globalThis.__DWEB_DEV__ = ${isDev};
-  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
+${
+        isDev && engine === "view"
+          ? "  globalThis.VIEW_DEV = true;\n"
+          : ""
+      }  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${hybridOptions.containerId}";
   globalThis.__DWEB_MODE__ = "hybrid";

@@ -44,7 +44,7 @@
     "@dreamer/config": "jsr:@dreamer/config@^1.1.1",
     "@dreamer/console": "jsr:@dreamer/console@^1.1.1",
     "@dreamer/database": "jsr:@dreamer/database@^1.2.0",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.4.0",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.4.1",
     "@dreamer/upload": "jsr:@dreamer/upload@^2.0.0",
     "@dreamer/upload/adapters": "jsr:@dreamer/upload@^2.0.0/adapters",
     "@dreamer/upload/server": "jsr:@dreamer/upload@^2.0.0/server",

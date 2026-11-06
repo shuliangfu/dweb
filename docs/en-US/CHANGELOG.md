@@ -17,6 +17,13 @@ and this project adheres to
 - **Dependencies**: `@dreamer/view` `^3.0.1` → `^3.0.2`; `@dreamer/render`
   `^1.5.0` → `^1.5.1` (view DEV DevTools auto-mount chain).
 
+- **DEV View DevTools zero-call mount**: `generateClientDepContent` for view+DEV
+  sets `VIEW_DEV=true` and calls `mountDevtoolsOverlay`
+  (`@dreamer/view/devtools/overlay`); prod/build does not statically import it.
+  CSR/hybrid/SSR HTML also sets `globalThis.VIEW_DEV = true` when DEV+view.
+
+- **Dependencies**: `@dreamer/esbuild` `^1.4.0` → `^1.4.1` (JSON loader so view DevTools locales bundle).
+
 ## [3.8.0] - 2026-11-05
 
 ### Changed

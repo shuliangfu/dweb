@@ -405,7 +405,11 @@ ${overlayHtml}
           : ""
       }
 ${dataScript}  globalThis.__DWEB_DEV__ = ${isDevCsr};
-  globalThis.__DWEB_MODE__ = "csr";
+${
+        isDevCsr && engine === "view"
+          ? "  globalThis.VIEW_DEV = true;\n"
+          : ""
+      }  globalThis.__DWEB_MODE__ = "csr";
   globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";

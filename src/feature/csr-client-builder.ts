@@ -307,6 +307,7 @@ export async function buildClientScript(
       hmrCssEntries,
       renderMode,
       routeLayoutKeys,
+      !isProd,
     );
     if (!skipWritingClientDep) {
       await writeTextFile(clientDepPath, clientDepCode);

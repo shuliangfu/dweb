@@ -98,6 +98,7 @@ function routeLoaderKeyForClientDep(
  * @param hmrCssEntries 开发态 HMR CSS 配置
  * @param renderMode 渲染模式（view 时用于选择 view/csr 或 view/hybrid）
  * @param routeLayoutKeys 可选，路由路径 -> 布局 key 链（支持嵌套布局）；有则生成 loadLayouts(pathname)
+ * @param isDev 是否为 DEV 构建；view+DEV 时零调用注入 DevTools overlay（prod 不引入）
  * @returns client.dep.tsx 的完整源码
  */
 export function generateClientDepContent(
@@ -108,6 +109,8 @@ export function generateClientDepContent(
   hmrCssEntries: Array<{ url: string; styleId: string }>,
   renderMode: ClientDepRenderMode = "hybrid",
   routeLayoutKeys?: Record<string, string[]>,
+  /** 仅 DEV 构建为 true；prod／build 不得静态 import overlay */
+  isDev: boolean = false,
 ): string {
   const useNestedLayouts = Boolean(
     routeLayoutKeys && Object.keys(routeLayoutKeys).length > 0,
@@ -127,6 +130,32 @@ export function generateClientDepContent(
     ? `import { buildViewTree } from "${viewAdapterPath}";
 import { createSignal, hydrate, mount, type Signal } from "@dreamer/view";`
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
+  /**
+   * view + DEV：对齐 view prepareDevBuild 的零调用浮标挂载。
+   * 仅生成期 isDev 时静态 import overlay；prod／build 路径不得带入。
+   */
+  const viewDevtoolsBoot = isViewEngine && isDev
+    ? `import { mountDevtoolsOverlay } from "@dreamer/view/devtools/overlay";
+
+/** DEV：与 view prepareDevBuild 语义对齐，零业务调用自动挂载 DevTools 浮标 */
+(globalThis as { VIEW_DEV?: boolean }).VIEW_DEV = true;
+(function __dwebBootViewDevtools() {
+  function mountSafe() {
+    try {
+      mountDevtoolsOverlay();
+    } catch (err) {
+      console.warn("[dweb] View DevTools overlay failed to mount:", err);
+    }
+  }
+  if (typeof document === "undefined") return;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mountSafe, { once: true });
+  } else {
+    mountSafe();
+  }
+})();
+`
+    : "";
   /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
   const pageComponents = components.filter(
     (c) => !routeLoaderKeyForClientDep(routesDirPath, c).startsWith("api/"),
@@ -533,7 +562,7 @@ export function clearLayoutCache(): void {
 
 import { createRouter } from "@dreamer/router/client";
 ${renderAdapterImport}
-
+${viewDevtoolsBoot}
 /** 客户端路由类型（与 @dreamer/router ClientRoute 一致） */
 export type RouteType = "static" | "dynamic" | "wildcard" | "optional";
 

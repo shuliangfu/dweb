@@ -14,6 +14,7 @@ import {
   dirname,
   ensureDir,
   exists,
+  getEnv,
   join,
   resolve,
   writeTextFile,
@@ -230,6 +231,7 @@ export async function ensureClientEntryFile(
 
   const hmrCssEntries = getHmrCssEntries(container);
   const clientDepPath = join(srcDir, CLIENT_DEP_FILENAME);
+  const clientDepIsDev = getEnv("RUNTIME_ENV") === "dev";
   const clientDepCode = generateClientDepContent(
     engine,
     components,
@@ -238,6 +240,7 @@ export async function ensureClientEntryFile(
     hmrCssEntries,
     renderMode,
     routeLayoutKeys,
+    clientDepIsDev,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug($tr("log.clientDepGenerated", {
@@ -317,6 +320,7 @@ export async function prepareClientBuildEntry(
   await ensureDir(dirname(clientDepPath));
 
   // 每次构建都刷新 _client.dep.tsx
+  const clientDepIsDev = getEnv("RUNTIME_ENV") === "dev";
   const clientDepCode = generateClientDepContent(
     engine,
     components,
@@ -325,6 +329,7 @@ export async function prepareClientBuildEntry(
     hmrCssEntries,
     renderMode,
     routeLayoutKeys,
+    clientDepIsDev,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug(

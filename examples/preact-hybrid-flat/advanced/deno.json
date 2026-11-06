@@ -15,7 +15,7 @@
     "@dreamer/config": "jsr:@dreamer/config@^1.1.1",
     "@dreamer/console": "jsr:@dreamer/console@^1.1.1",
     "@dreamer/database": "jsr:@dreamer/database@^1.2.0",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.4.0",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.4.1",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.1.0",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.1.0",
     "@dreamer/middleware": "jsr:@dreamer/middleware@^1.1.0",

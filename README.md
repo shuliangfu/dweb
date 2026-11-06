@@ -2015,6 +2015,7 @@ not locks.
 ### [3.8.1] - 2026-11-06
 
 - **Deps**: `@dreamer/view@^3.0.2`, `@dreamer/render@^1.5.1`.
+- **DEV**: view engine auto-mounts DevTools overlay (`VIEW_DEV` + `mountDevtoolsOverlay`) with zero app code; prod builds omit it.
 
 ### [3.8.0] - 2026-11-05
 
