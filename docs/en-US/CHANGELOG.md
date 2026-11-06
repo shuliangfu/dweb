@@ -10,6 +10,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.8.2] - 2026-11-06
+
+### Changed
+
+- **Dependencies**: `@dreamer/view` `^3.0.3` → `^3.0.4`; `@dreamer/render`
+  `^1.5.2` → `^1.5.3` (DevTools float default bottom-right; root + all examples).
+
 ## [3.8.1] - 2026-11-06
 
 ### Changed
