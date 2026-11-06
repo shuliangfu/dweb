@@ -1992,7 +1992,7 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 ## Examples dependencies
 
 All packages under `examples/` (view / react / preact / app-kinds) pin current
-`@dreamer/*` ranges used by this repo (e.g. `@dreamer/view@^3.0.1`,
+`@dreamer/*` ranges used by this repo (e.g. `@dreamer/view@^3.0.2`,
 `@dreamer/render@^1.5`, react `^19.3.1`, preact `^11.1.1`). The dweb workspace
 root `deno.json` sets `minimumDependencyAge: 0` (members cannot set this field)
 so freshly published JSR builds install immediately; new apps from `dweb init`
@@ -2004,13 +2004,17 @@ not locks.
 ## Preact versions
 
 - **Scaffold / this package** pin **preact ^11.1.1** with
-  `preact-render-to-string@6.8.2`, aligned to `@dreamer/render@^1.5.0` (Preact
+  `preact-render-to-string@6.8.2`, aligned to `@dreamer/render@^1.5.1` (Preact
   11). Prefer **one Preact major per app**.
 - See `render.hydration.mismatchMode` in
   [APP_CONFIG](./docs/en-US/APP_CONFIG.md) for view 3.0 assert/remount vs
   explicit `continue`.
 
 ## 📋 Changelog
+
+### [3.8.1] - 2026-11-06
+
+- **Deps**: `@dreamer/view@^3.0.2`, `@dreamer/render@^1.5.1`.
 
 ### [3.8.0] - 2026-11-05
 
@@ -2021,7 +2025,7 @@ not locks.
 - **Changed**: temporary skip of Windows+Bun child-process **integration**
   (`SKIP_WINDOWS_BUN_CHILD_PROCESS`); **CI disables** Windows Bun e2e step;
   Linux/macOS Bun e2e and other matrix cells unchanged.
-- **Deps**: `@dreamer/view@^3.0.1`, `@dreamer/render@^1.5`,
+- **Deps**: `@dreamer/view@^3.0.2`, `@dreamer/render@^1.5`,
   `@dreamer/server@^1.3`, scaffold **preact ^11.1.1** (with render@1.5).
 - **Removed**: deprecated `createWebSocketMiddleware`.
 

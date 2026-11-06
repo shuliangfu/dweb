@@ -2040,7 +2040,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 ## 示例依赖
 
 `examples/` 下全部示例（view／react／preact／app-kinds）对齐本仓当前
-`@dreamer/*` 范围（如 `@dreamer/view@^3.0.1`、`@dreamer/render@^1.5`、react
+`@dreamer/*` 范围（如 `@dreamer/view@^3.0.2`、`@dreamer/render@^1.5`、react
 `^19.3.1`、preact `^11.1.1`）。dweb workspace 根 `deno.json` 写
 `minimumDependencyAge: 0`（成员包不能写该字段），便于立刻安装刚发的 JSR；
 `dweb init` 脚手架在独立项目里同样写入，`dweb update` 会透传
@@ -2050,11 +2050,15 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 ## Preact 版本
 
 - **脚手架／本仓**钉 **preact ^11.1.1**，配 `preact-render-to-string@6.8.2`，与
-  `@dreamer/render@^1.5.0`（Preact 11）对齐。单应用内建议只钉一个 major。
+  `@dreamer/render@^1.5.1`（Preact 11）对齐。单应用内建议只钉一个 major。
 - view 3.0 `mismatchMode`：dev assert／生产 remount；2.x 容忍须显式
   `continue`——见 [APP_CONFIG](./APP_CONFIG.md)。
 
 ## 📋 变更日志
+
+### [3.8.1] - 2026-11-06
+
+- **依赖**：`@dreamer/view@^3.0.2`、`@dreamer/render@^1.5.1`。
 
 ### [3.8.0] - 2026-11-05
 
@@ -2065,7 +2069,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 - **变更**：临时 skip Windows＋Bun 子进程相关 **integration**
   （`SKIP_WINDOWS_BUN_CHILD_PROCESS`）；**CI 关闭** Windows Bun e2e 步骤；
   Linux／macOS Bun e2e 与其它矩阵岗不变。
-- **依赖**：`@dreamer/view@^3.0.1`、`@dreamer/render@^1.5`、`@dreamer/server@^1.3`，
+- **依赖**：`@dreamer/view@^3.0.2`、`@dreamer/render@^1.5`、`@dreamer/server@^1.3`，
   脚手架 **preact ^11.1.1**（随 render@1.5）。
 - **移除**：废弃的 `createWebSocketMiddleware`。
 
