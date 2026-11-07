@@ -299,6 +299,7 @@ export async function buildClientScript(
 
     // client.dep.tsx 每次构建/启动都重新生成（路由、HMR CSS、loadLayouts、setupHydrationRouterAndHmr 等）
     // 开发态且本次由 client 入口文件变更触发时跳过写入，避免 watch 循环
+    const has404 = await exists(join(routesDirPath, "_404.tsx"));
     const clientDepCode = generateClientDepContent(
       engine,
       components,
@@ -308,6 +309,7 @@ export async function buildClientScript(
       renderMode,
       routeLayoutKeys,
       !isProd,
+      has404,
     );
     if (!skipWritingClientDep) {
       await writeTextFile(clientDepPath, clientDepCode);

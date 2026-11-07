@@ -17,6 +17,7 @@ import {
 } from "../feature/csr-client-builder.ts";
 import { createClientScriptMiddleware } from "../feature/csr-client-middleware.ts";
 import { createLoadDataMiddleware } from "../feature/load-data-middleware.ts";
+import { createNotFoundMiddleware } from "../feature/not-found-middleware.ts";
 import { createRendererCSR } from "../feature/render-csr.ts";
 import { createRendererHybrid } from "../feature/render-hybrid.ts";
 import { createRendererSSG } from "../feature/render-ssg.ts";
@@ -204,36 +205,44 @@ export async function registerAppRenderPipeline(
 
   const engine = (config.render as { engine?: string } | undefined)?.engine ??
     "preact";
+
+  // Keep a single renderer reference for setSSRRender + unmatched `_404` middleware.
+  let pageRender: (
+    ctx: HttpContext,
+    // deno-lint-ignore no-explicit-any
+    match: any,
+  ) => Promise<Response | null>;
   if (plan.mode === "csr") {
-    server.setSSRRender(createRendererCSR(container, router, config));
+    pageRender = createRendererCSR(container, router, config);
   } else if (plan.mode === "hybrid") {
-    server.setSSRRender(
-      withSSRTiming(
-        container,
-        "hybrid",
-        engine,
-        createRendererHybrid(container, router, config),
-      ),
+    pageRender = withSSRTiming(
+      container,
+      "hybrid",
+      engine,
+      createRendererHybrid(container, router, config),
     );
   } else if (plan.mode === "ssg") {
-    server.setSSRRender(
-      withSSRTiming(
-        container,
-        "ssg",
-        engine,
-        createRendererSSG(container, router, config),
-      ),
+    pageRender = withSSRTiming(
+      container,
+      "ssg",
+      engine,
+      createRendererSSG(container, router, config),
     );
   } else {
-    server.setSSRRender(
-      withSSRTiming(
-        container,
-        "ssr",
-        engine,
-        createRendererSSR(container, router, config),
-      ),
+    pageRender = withSSRTiming(
+      container,
+      "ssr",
+      engine,
+      createRendererSSR(container, router, config),
     );
   }
+  server.setSSRRender(pageRender);
+  // After useRouter: no match → project `_404` (docs); skip /api /_ /assets.
+  server.use(
+    createNotFoundMiddleware(router, pageRender),
+    undefined,
+    "not-found",
+  );
 
   if (plan.loadData) {
     server.use(

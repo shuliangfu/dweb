@@ -111,6 +111,8 @@ export function generateClientDepContent(
   routeLayoutKeys?: Record<string, string[]>,
   /** 仅 DEV 构建为 true；prod／build 不得静态 import overlay */
   isDev: boolean = false,
+  /** When true, include `_404` in ROUTE_LOADERS and prefer it in renderNotFound */
+  has404: boolean = false,
 ): string {
   const useNestedLayouts = Boolean(
     routeLayoutKeys && Object.keys(routeLayoutKeys).length > 0,
@@ -161,13 +163,21 @@ import { createSignal, hydrate, mount, type Signal } from "@dreamer/view";`
     (c) => !routeLoaderKeyForClientDep(routesDirPath, c).startsWith("api/"),
   );
   const routeExt = ".tsx";
-  const routeLoaders = pageComponents
+  const routeLoadersBase = pageComponents
     .map((c) => {
       const k = routeLoaderKeyForClientDep(routesDirPath, c);
       const spec = `./routes/${k}${routeExt}`;
       return `  ${JSON.stringify(k)}: () => import(${JSON.stringify(spec)}),`;
     })
     .join("\n");
+  const notFoundLoaderLine = has404
+    ? `  "_404": () => import("./routes/_404${routeExt}"),`
+    : "";
+  const routeLoaders = notFoundLoaderLine
+    ? (routeLoadersBase
+      ? `${routeLoadersBase}\n${notFoundLoaderLine}`
+      : notFoundLoaderLine)
+    : routeLoadersBase;
 
   const layoutExt = ".tsx";
   const routeLayoutKeysJson = useNestedLayouts && routeLayoutKeys
@@ -597,7 +607,7 @@ export interface DwebGlobal {
   __HMR_REFRESH__?: (options?: {
     chunkUrl?: string;
     routeChunkUrls?: Record<string, string>;
-  }) => void;
+  }) => void | Promise<void>;
   /** CSR 模式下页面渲染完成时调用，用于淡出 loading 遮罩 */
   __DWEB_ON_READY__?: () => void;
   /** 开发模式 HMR 调试日志开关（控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志） */
@@ -718,11 +728,30 @@ export async function loadPageModule(componentPath: string): Promise<unknown> {
   return module;
 }
 
-/** 渲染 404 页面 */
-export function renderNotFound(containerId: string): void {
+/** 渲染 404：优先动态加载项目 _404，否则回落内置占位 */
+export async function renderNotFound(containerId: string): Promise<void> {
   const container = _win.document?.getElementById(containerId);
-  if (container) {
-    container.innerHTML = \`
+  if (!container) return;
+  const loader = ROUTE_LOADERS["_404"];
+  if (loader) {
+    try {
+      const mod = await loader() as Record<string, unknown>;
+      const PageComponent = (mod?.default ?? mod?.Page) as unknown;
+      if (PageComponent && (typeof PageComponent === "function" || typeof PageComponent === "object")) {
+        const layouts = await loadLayouts(null);
+        const pageProps = { params: {}, query: {} };
+        ${
+    isViewEngine
+      ? 'setViewState({ page: PageComponent as never, routeComponent: "_404", props: pageProps, layouts, skipLayouts: false });'
+      : "renderCSR(PageComponent as never, pageProps, { target: container, layouts });"
+  }
+        return;
+      }
+    } catch (e) {
+      console.warn("[dweb] renderNotFound: _404 load failed", e);
+    }
+  }
+  container.innerHTML = \`
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
         <h1 style="font-size:72px;margin:0;color:#e5e5e5;">404</h1>
         <p style="color:#666;margin-top:16px;">${$tr("client.pageNotFound")}</p>
@@ -731,7 +760,6 @@ export function renderNotFound(containerId: string): void {
   }</a>
       </div>
     \`;
-  }
 }
 
 /** 将字符串转义为安全 HTML 文本，防止 XSS */
@@ -1037,7 +1065,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       }
     }
   }
-  g.__HMR_REFRESH__ = (hmrOpts) => {
+  g.__HMR_REFRESH__ = async (hmrOpts) => {
     const chunkUrl = hmrOpts?.chunkUrl;
     const routeChunkUrls = hmrOpts?.routeChunkUrls;
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
@@ -1051,7 +1079,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
         console.log(${JSON.stringify($tr("client.hmrNoMatchRenderNotFound"))});
       }
-      unmountPrevious(); renderNotFound(containerId); return;
+      unmountPrevious(); await renderNotFound(containerId); return;
     }
     // 有 chunkUrl 且匹配当前路由时，用 import(chunkUrl + "?t=" + ts) 强制拉取新 chunk（绕过浏览器模块缓存）
     // 否则 loadPageModule 返回缓存，拿不到新代码。多段路由如 admin/index 的 chunk 可能为 admin-index-XXX.js，需按完整路径匹配
@@ -1114,16 +1142,16 @@ export async function setupHydrationRouterAndHmr(opts: {
       : [];
     // 先加载新模块（旧内容保持可见），加载完成后再 unmount + 移除旧 CSS + render，避免长时间空白导致闪动
     loadModule()
-      .then((mod) => {
+      .then(async (mod) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
           console.log(${
     JSON.stringify($tr("client.hmrLoadModuleComplete"))
   }, { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
         }
         const modObj = mod as Record<string, unknown>;
-        if (!modObj) { renderNotFound(containerId); return; }
+        if (!modObj) { await renderNotFound(containerId); return; }
         const PageComponent = modObj.default ?? modObj.Page;
-        if (!PageComponent) { renderNotFound(containerId); return; }
+        if (!PageComponent) { await renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
         return ${loadLayoutsCallRender}.then(async (layoutList) => {
           type _HmrNavProps = { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown };
@@ -1217,7 +1245,7 @@ export async function setupHydrationRouterAndHmr(opts: {
   // onRouteChange 注册时 router 会立即用当前路由触发一次。CSR 下若执行会导致先渲染一次（_navProps 可能无 data），再 renderCurrentRoute 用 __DATA__ 又渲染一次，出现双渲染；Hybrid 下该次会与 hydrate 冲突。故首轮均跳过，由 renderCurrentRoute（CSR）或 hydrate（Hybrid）负责首屏。
   let skipNextRouteChange = true;
   router.onRouteChange(async (match) => {
-    if (!match) { unmountPrevious(); renderNotFound(containerId); return; }
+    if (!match) { unmountPrevious(); await renderNotFound(containerId); return; }
     if (skipNextRouteChange) {
       skipNextRouteChange = false;
       return;
@@ -1225,9 +1253,9 @@ export async function setupHydrationRouterAndHmr(opts: {
     if (isHybridMode && !isHydratedRef.current) { isHydratedRef.current = true; return; }
     try {
       ${deferredNavLoadModuleSnippet}
-      if (!module) { unmountPrevious(); renderNotFound(containerId); return; }
+      if (!module) { unmountPrevious(); await renderNotFound(containerId); return; }
       const PageComponent = module.default ?? module.Page;
-      if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
+      if (!PageComponent) { unmountPrevious(); await renderNotFound(containerId); return; }
       const skipLayouts = module.inheritLayout === false;
       /**
        * 两阶段导航渲染：首帧只带 params/query（不阻塞等 __data）；__data 返回后 patch head 并二次渲染。
@@ -1307,7 +1335,7 @@ ${initAppLayoutsAndHydrateBody}
     const match = router.match(pathname);
     if (!match) {
       if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
-      renderNotFound(containerId);
+      await renderNotFound(containerId);
       return;
     }
     try {
@@ -1315,13 +1343,13 @@ ${initAppLayoutsAndHydrateBody}
       if (myToken !== _dwebRcrCoalesceToken) return;
       if (!module) {
         if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
-        renderNotFound(containerId);
+        await renderNotFound(containerId);
         return;
       }
       const PageComponent = module.default ?? module.Page;
       if (!PageComponent) {
         if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
-        renderNotFound(containerId);
+        await renderNotFound(containerId);
         return;
       }
       const skipLayouts = module.inheritLayout === false;
