@@ -650,10 +650,12 @@ describe("special routes — resolveErrorSpecialFile prefers _500", () => {
     expect(code).toContain("inheritLayout === false");
     expect(code).toContain('ROUTE_LOADERS["_404"]');
     expect(code).toContain('ROUTE_LOADERS["_500"]');
-    expect(code).toContain("const skipLayouts = (mod as Record<string, unknown>).inheritLayout === false");
+    expect(code).toContain(
+      "const skipLayouts = (mod as Record<string, unknown>).inheritLayout === false",
+    );
     expect(code).toContain("skipLayouts ? [] : await loadLayouts(null)");
     // must not hardcode skipLayouts: false on special-page branches
-    expect(code.includes('skipLayouts: false });')).toBe(false);
+    expect(code.includes("skipLayouts: false });")).toBe(false);
   });
 });
 

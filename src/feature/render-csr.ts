@@ -203,16 +203,13 @@ export function createRendererCSR(
       if (fullPathEarly) {
         pageModuleEarly = await loadRouteModule(fullPathEarly, loadOpts);
         if (pageModuleEarly) {
-          pageSkipLayouts =
-            pageModuleEarly.inheritLayout === false;
+          pageSkipLayouts = pageModuleEarly.inheritLayout === false;
         }
       }
 
-      const layoutModulesRaw = pageSkipLayouts
-        ? []
-        : await Promise.all(
-          layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
-        );
+      const layoutModulesRaw = pageSkipLayouts ? [] : await Promise.all(
+        layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
+      );
       // 若某层 _layout 导出 inheritLayout = false，则不继承其之上的父级 layout，仅保留从该层起的链
       const inheritBreakIndex = layoutModulesRaw.findIndex(
         (m) => m && (m as Record<string, unknown>).inheritLayout === false,
