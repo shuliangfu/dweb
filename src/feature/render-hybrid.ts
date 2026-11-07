@@ -40,6 +40,7 @@ import {
   resolveRouterRoutesDirPath,
 } from "../utils/path.ts";
 import { loadRouteModule } from "./load-route-module.ts";
+import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import { getRender } from "./render.ts";
 import {
   collectClientRoutes,
@@ -170,6 +171,10 @@ export function createRendererHybrid(
         return null;
       }
 
+      /** Page `export const inheritLayout = false` → skip route `_layout` chain (keep `_app`). */
+      const pageSkipLayouts =
+        (pageModule as Record<string, unknown>).inheritLayout === false;
+
       const AppComponent = appModule?.default ?? appModule?.App ?? null;
       // 若某层 _layout 导出 inheritLayout = false，则不继承其之上的父级 layout，仅保留从该层起的链
       const inheritBreakIndex = layoutModulesRaw.findIndex(
@@ -201,18 +206,21 @@ export function createRendererHybrid(
       });
 
       // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data
+      // Page inheritLayout=false → skip layout loads entirely.
       const layoutPropsList: Array<Record<string, unknown>> = [];
-      for (const mod of modulesToUse as Array<Record<string, unknown>>) {
-        if (!mod || typeof mod.load !== "function") {
-          layoutPropsList.push({});
-          continue;
+      if (!pageSkipLayouts) {
+        for (const mod of modulesToUse as Array<Record<string, unknown>>) {
+          if (!mod || typeof mod.load !== "function") {
+            layoutPropsList.push({});
+            continue;
+          }
+          const raw = await mod.load(loadContext);
+          if (raw instanceof Response) {
+            return raw;
+          }
+          const data = (raw as Record<string, unknown> | null) ?? {};
+          layoutPropsList.push({ data });
         }
-        const raw = await mod.load(loadContext);
-        if (raw instanceof Response) {
-          return raw;
-        }
-        const data = (raw as Record<string, unknown> | null) ?? {};
-        layoutPropsList.push({ data });
       }
 
       // 调用 load 函数获取服务端数据（如果存在）；若返回 Response 则直接作为响应（服务端跳转等）。返回值以 props.data 传入页面，与 layout 一致。
@@ -241,12 +249,15 @@ export function createRendererHybrid(
       }
 
       // 布局链作为中间层（从外到内依次包裹），传入各层 load 的返回值作为 props.data
-      layoutComponents.forEach((LayoutComponent, i) => {
-        layouts.push({
-          component: LayoutComponent,
-          props: layoutPropsList[i],
+      // Page inheritLayout=false → do not wrap route `_layout`s (fullpage error chrome etc.)
+      if (!pageSkipLayouts) {
+        layoutComponents.forEach((LayoutComponent, i) => {
+          layouts.push({
+            component: LayoutComponent,
+            props: layoutPropsList[i],
+          });
         });
-      });
+      }
 
       // 从已 import 的路由模块读取 metadata（支持常量对象或方法），解析后交给 render 生成 meta 标签（复用 loadContext）
       let contextData: SSROptions["contextData"];
@@ -405,46 +416,18 @@ ${hybridOptions.bodyTags || ""}`;
     } catch (error) {
       console.error($tr("log.hybridError"), error);
 
-      // 尝试加载 _error.tsx 进行错误处理
-      const errorPath = router.getSpecialFile("_error");
-      if (errorPath) {
-        try {
-          const errorModule = await loadRouteModule(errorPath, {
-            logger: container.has("logger") ? getLogger(container) : undefined,
-            engine: renderConfig.engine,
-            routesDirPath,
-          });
-          const ErrorComponent = errorModule?.default ?? errorModule?.Error;
-          if (ErrorComponent) {
-            const result = await renderService.renderSSR({
-              engine: renderConfig.engine || "preact",
-              component: ErrorComponent,
-              props: (() => {
-                const isDev = getEnv("RUNTIME_ENV") === "dev";
-                return {
-                  error: isDev
-                    ? (error instanceof Error ? error.message : String(error))
-                    : "An unexpected error occurred.",
-                  stack: isDev && error instanceof Error
-                    ? error.stack
-                    : undefined,
-                };
-              })(),
-              debug: renderConfig.debug === true,
-            });
-            return new Response(result.html, {
-              status: 500,
-              headers: {
-                "Content-Type": "text/html; charset=utf-8",
-              },
-            });
-          }
-        } catch {
-          // 错误页面也加载失败，使用默认错误响应
-        }
-      }
+      // Prefer project `_500`, fall back to legacy `_error`, else default HTML.
+      const special = await tryRenderErrorSpecialPage({
+        router,
+        container,
+        renderService,
+        engine: renderConfig.engine || "preact",
+        routesDirPath,
+        error,
+        debug: renderConfig.debug === true,
+      });
+      if (special) return special;
 
-      // 默认错误响应
       return new Response(
         createDefaultErrorHtml(error),
         {

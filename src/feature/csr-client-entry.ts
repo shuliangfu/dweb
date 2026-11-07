@@ -237,6 +237,7 @@ export async function ensureClientEntryFile(
   const clientDepPath = join(srcDir, CLIENT_DEP_FILENAME);
   const clientDepIsDev = getEnv("RUNTIME_ENV") === "dev";
   const has404 = await exists(join(routesDirPath, "_404.tsx"));
+  const has500 = await exists(join(routesDirPath, "_500.tsx"));
   const clientDepCode = generateClientDepContent(
     engine,
     components,
@@ -247,6 +248,7 @@ export async function ensureClientEntryFile(
     routeLayoutKeys,
     clientDepIsDev,
     has404,
+    has500,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug($tr("log.clientDepGenerated", {
@@ -328,6 +330,7 @@ export async function prepareClientBuildEntry(
   // 每次构建都刷新 _client.dep.tsx
   const clientDepIsDev = getEnv("RUNTIME_ENV") === "dev";
   const has404 = await exists(join(routesDirPath, "_404.tsx"));
+  const has500 = await exists(join(routesDirPath, "_500.tsx"));
   const clientDepCode = generateClientDepContent(
     engine,
     components,
@@ -338,6 +341,7 @@ export async function prepareClientBuildEntry(
     routeLayoutKeys,
     clientDepIsDev,
     has404,
+    has500,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug(

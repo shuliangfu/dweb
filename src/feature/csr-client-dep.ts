@@ -113,6 +113,8 @@ export function generateClientDepContent(
   isDev: boolean = false,
   /** When true, include `_404` in ROUTE_LOADERS and prefer it in renderNotFound */
   has404: boolean = false,
+  /** When true, include `_500` in ROUTE_LOADERS and prefer it in renderError */
+  has500: boolean = false,
 ): string {
   const useNestedLayouts = Boolean(
     routeLayoutKeys && Object.keys(routeLayoutKeys).length > 0,
@@ -173,10 +175,16 @@ import { createSignal, hydrate, mount, type Signal } from "@dreamer/view";`
   const notFoundLoaderLine = has404
     ? `  "_404": () => import("./routes/_404${routeExt}"),`
     : "";
-  const routeLoaders = notFoundLoaderLine
+  const error500LoaderLine = has500
+    ? `  "_500": () => import("./routes/_500${routeExt}"),`
+    : "";
+  const specialLoaderLines = [notFoundLoaderLine, error500LoaderLine].filter(
+    Boolean,
+  ).join("\n");
+  const routeLoaders = specialLoaderLines
     ? (routeLoadersBase
-      ? `${routeLoadersBase}\n${notFoundLoaderLine}`
-      : notFoundLoaderLine)
+      ? `${routeLoadersBase}\n${specialLoaderLines}`
+      : specialLoaderLines)
     : routeLoadersBase;
 
   const layoutExt = ".tsx";
@@ -738,12 +746,13 @@ export async function renderNotFound(containerId: string): Promise<void> {
       const mod = await loader() as Record<string, unknown>;
       const PageComponent = (mod?.default ?? mod?.Page) as unknown;
       if (PageComponent && (typeof PageComponent === "function" || typeof PageComponent === "object")) {
-        const layouts = await loadLayouts(null);
+        const skipLayouts = (mod as Record<string, unknown>).inheritLayout === false;
+        const layouts = skipLayouts ? [] : await loadLayouts(null);
         const pageProps = { params: {}, query: {} };
         ${
     isViewEngine
-      ? 'setViewState({ page: PageComponent as never, routeComponent: "_404", props: pageProps, layouts, skipLayouts: false });'
-      : "renderCSR(PageComponent as never, pageProps, { target: container, layouts });"
+      ? 'setViewState({ page: PageComponent as never, routeComponent: "_404", props: pageProps, layouts, skipLayouts });'
+      : "renderCSR(PageComponent as never, pageProps, { target: container, layouts, skipLayouts });"
   }
         return;
       }
@@ -772,12 +781,32 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/** 渲染错误页面（error.message 经 escapeHtml 转义，防止 XSS） */
-export function renderError(containerId: string, error: unknown): void {
+/** 渲染错误页：优先动态加载项目 _500，否则回落内置占位（message 经 escapeHtml） */
+export async function renderError(containerId: string, error: unknown): Promise<void> {
   const container = _win.document?.getElementById(containerId);
-  if (container) {
-    const message = error instanceof Error ? error.message : String(error);
-    container.innerHTML = \`
+  if (!container) return;
+  const message = error instanceof Error ? error.message : String(error);
+  const loader = ROUTE_LOADERS["_500"];
+  if (loader) {
+    try {
+      const mod = await loader() as Record<string, unknown>;
+      const PageComponent = (mod?.default ?? mod?.Page ?? mod?.Error) as unknown;
+      if (PageComponent && (typeof PageComponent === "function" || typeof PageComponent === "object")) {
+        const skipLayouts = (mod as Record<string, unknown>).inheritLayout === false;
+        const layouts = skipLayouts ? [] : await loadLayouts(null);
+        const pageProps = { params: {}, query: {}, error: message, stack: error instanceof Error ? error.stack : undefined };
+        ${
+    isViewEngine
+      ? 'setViewState({ page: PageComponent as never, routeComponent: "_500", props: pageProps, layouts, skipLayouts });'
+      : "renderCSR(PageComponent as never, pageProps, { target: container, layouts, skipLayouts });"
+  }
+        return;
+      }
+    } catch (e) {
+      console.warn("[dweb] renderError: _500 load failed", e);
+    }
+  }
+  container.innerHTML = \`
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
         <h1 style="font-size:48px;margin:0;color:#ef4444;">${
     $tr("client.errorOccurred")
@@ -788,7 +817,6 @@ export function renderError(containerId: string, error: unknown): void {
         </button>
       </div>
     \`;
-  }
 }
 
 /** 路由匹配结果（与 @dreamer/router 一致） */
@@ -1052,7 +1080,7 @@ export async function setupHydrationRouterAndHmr(opts: {
     JSON.stringify($tr("client.hydrationFailed"))
   } + (componentPath ? \`: component "\${componentPath}" not found\` : "");
           console.error(msg);
-          renderError(containerId, new Error(msg));
+          await renderError(containerId, new Error(msg));
           return;
         }
         const skipLayouts = module?.inheritLayout === false;
@@ -1061,7 +1089,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         console.error(${
     JSON.stringify($tr("client.hydrationFailed"))
   } + ":", error);
-        renderError(containerId, error);
+        await renderError(containerId, error);
       }
     }
   }
@@ -1292,7 +1320,7 @@ export async function setupHydrationRouterAndHmr(opts: {
     JSON.stringify($tr("client.pageLoadError"))
   } + ":", error);
       unmountPrevious();
-      renderError(containerId, error);
+      await renderError(containerId, error);
     }
   });
 }
@@ -1362,7 +1390,7 @@ ${initAppLayoutsAndHydrateBody}
     JSON.stringify($tr("client.pageLoadError"))
   } + ":", error);
       if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
-      renderError(containerId, error);
+      await renderError(containerId, error);
     }
   }
 

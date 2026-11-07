@@ -38,6 +38,7 @@ import {
   serializeJsonForInlineScript,
 } from "../utils/security.ts";
 import { loadRouteModule } from "./load-route-module.ts";
+import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import {
   collectClientRoutes,
   hasContainerElementInHtml,
@@ -195,9 +196,23 @@ export function createRendererCSR(
         );
       }
 
-      const layoutModulesRaw = await Promise.all(
-        layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
-      );
+      // Probe page inheritLayout before layout loads (fullpage `_404`/`_500` must not run layout guards).
+      const fullPathEarly = (match.route as { fullPath?: string }).fullPath;
+      let pageSkipLayouts = false;
+      let pageModuleEarly: Record<string, unknown> | null = null;
+      if (fullPathEarly) {
+        pageModuleEarly = await loadRouteModule(fullPathEarly, loadOpts);
+        if (pageModuleEarly) {
+          pageSkipLayouts =
+            pageModuleEarly.inheritLayout === false;
+        }
+      }
+
+      const layoutModulesRaw = pageSkipLayouts
+        ? []
+        : await Promise.all(
+          layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
+        );
       // 若某层 _layout 导出 inheritLayout = false，则不继承其之上的父级 layout，仅保留从该层起的链
       const inheritBreakIndex = layoutModulesRaw.findIndex(
         (m) => m && (m as Record<string, unknown>).inheritLayout === false,
@@ -248,9 +263,9 @@ export function createRendererCSR(
         layoutData?: Array<Record<string, unknown>>;
       } | null = null;
       let csrMetaTags = "";
-      const fullPath = (match.route as { fullPath?: string }).fullPath;
+      const fullPath = fullPathEarly;
       if (fullPath) {
-        const pageModule = await loadRouteModule(fullPath, loadOpts);
+        const pageModule = pageModuleEarly;
         if (pageModule) {
           const loadContext = createLoadContext({
             app,
@@ -292,7 +307,7 @@ export function createRendererCSR(
               params: match.params,
               query: match.query,
               component: normalizedComponent,
-              layoutData: layoutPropsList,
+              layoutData: pageSkipLayouts ? [] : layoutPropsList,
             };
           } else if (layoutPropsList.length > 0) {
             // 页面无 load 时仍注入 layoutData，供客户端首屏合并到 Layout props
@@ -314,7 +329,7 @@ export function createRendererCSR(
               params: match.params,
               query: match.query,
               component: normalizedComponent,
-              layoutData: layoutPropsList,
+              layoutData: pageSkipLayouts ? [] : layoutPropsList,
             };
           }
           // 从已 import 的路由模块读取 metadata（常量或方法），注入首屏 head
@@ -351,12 +366,14 @@ export function createRendererCSR(
       > = [
         { component: AppComponent },
       ];
-      layoutComponents.forEach((LayoutComponent, i) => {
-        layouts.push({
-          component: LayoutComponent,
-          props: layoutPropsList[i],
+      if (!pageSkipLayouts) {
+        layoutComponents.forEach((LayoutComponent, i) => {
+          layouts.push({
+            component: LayoutComponent,
+            props: layoutPropsList[i],
+          });
         });
-      });
+      }
 
       const result = await renderService.renderSSR({
         engine,
@@ -441,6 +458,19 @@ ${csrOptions.bodyTags || ""}`;
     } catch (error) {
       console.error($tr("log.csrError"), error);
       const isDevCsr = getEnv("RUNTIME_ENV") === "dev";
+      const special = await tryRenderErrorSpecialPage({
+        router,
+        container,
+        renderService,
+        engine: engine as "react" | "preact" | "view",
+        routesDirPath,
+        error,
+        debug: renderConfig.debug === true,
+        headers: isDevCsr
+          ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
+          : undefined,
+      });
+      if (special) return special;
       return new Response(
         createDefaultErrorHtml(error),
         {
