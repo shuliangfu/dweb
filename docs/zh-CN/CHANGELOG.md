@@ -9,6 +9,27 @@
 
 ## [Unreleased]
 
+## [3.8.4] - 2026-11-07
+
+### 新增
+
+- **框架 `_500`**：渲染／load 失败优先项目 `routes/_500`（可 `inheritLayout = false`），
+  再回落 `_error`／默认页；依赖 `@dreamer/router@^1.2.2` 的 `_500` 特殊文件发现。
+
+### 修复
+
+- **Windows + Bun/Node**：`import "*.css"` 在 short↔long 路径混用时被路径守卫
+  静默丢弃，导致 SSR／Hybrid 缺 `data-dweb-route-css`；`loadRouteModule` 为 CSS
+  增加与模块侧一致的规范化前缀兜底。
+
+### 变更
+
+- **依赖**：`@dreamer/router` `^1.2.1` → `^1.2.2`；`@dreamer/upload` `^2.0.0` →
+  `^2.0.1`（默认 basePath／`virusScan` 透传）；`@dreamer/esbuild` `^1.4.1` →
+  `^1.4.2`；`preact` `^11.1.1` → `^11.2.0`。
+
+---
+
 ## [3.8.3] - 2026-11-06
 
 ### 修复

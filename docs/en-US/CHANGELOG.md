@@ -10,6 +10,29 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.8.4] - 2026-11-07
+
+### Added
+
+- **Framework `_500`**: prefer project `routes/_500` on render/load failures
+  (honors `inheritLayout = false`), then fall back to `_error` / default page;
+  requires `@dreamer/router@^1.2.2` `_500` special-file discovery.
+
+### Fixed
+
+- **Windows + Bun/Node**: `import "*.css"` could be silently dropped when
+  short↔long path forms mixed in the path guard, so SSR/Hybrid HTML lacked
+  `data-dweb-route-css`. `loadRouteModule` now applies the same normalized
+  prefix fallback used for route modules.
+
+### Changed
+
+- **Dependencies**: `@dreamer/router` `^1.2.1` → `^1.2.2`; `@dreamer/upload`
+  `^2.0.0` → `^2.0.1` (default basePath / `virusScan` passthrough);
+  `@dreamer/esbuild` `^1.4.1` → `^1.4.2`; `preact` `^11.1.1` → `^11.2.0`.
+
+---
+
 ## [3.8.3] - 2026-11-06
 
 ### Fixed
