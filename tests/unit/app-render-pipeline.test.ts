@@ -110,7 +110,7 @@ describe("registerAppRenderPipeline", () => {
     const router = {
       getSpecialFile: () => undefined,
       getLayoutPathsForPath: () => [],
-    }
+    };
     await registerAppRenderPipeline(server, {
       container,
       router,
@@ -144,7 +144,7 @@ describe("registerAppRenderPipeline", () => {
       getSpecialFile: () => undefined,
       getLayoutPathsForPath: () => [],
       getRoutes: () => [],
-    }
+    };
     const prev = getEnv("RUNTIME_ENV");
     // start + isBuildMode true → ensureClientBuild skips heavy buildClientScript
     setEnv("RUNTIME_ENV", "start");
@@ -186,7 +186,7 @@ describe("registerAppRenderPipeline", () => {
     const router = {
       getSpecialFile: () => undefined,
       getLayoutPathsForPath: () => [],
-    }
+    };
     const prev = getEnv("RUNTIME_ENV");
     setEnv("RUNTIME_ENV", "start");
     try {
@@ -227,7 +227,7 @@ describe("registerAppRenderPipeline", () => {
       getSpecialFile: () => undefined,
       getLayoutPathsForPath: () => [],
       getRoutes: () => [],
-    }
+    };
     const prev = getEnv("RUNTIME_ENV");
     setEnv("RUNTIME_ENV", "start");
     try {
@@ -290,7 +290,6 @@ describe("ensureClientBuildForRender", () => {
   });
 });
 
-
 describe("registerAppRenderPipeline — timing + debug log branches", () => {
   it("ssr pageRender 成功路径应走 withSSRTiming finally（ok）", async () => {
     let pageRender:
@@ -346,5 +345,4 @@ describe("registerAppRenderPipeline — timing + debug log branches", () => {
     const out = await pageRender!(ctx, match);
     expect(out).toBeNull();
   });
-
 });

@@ -57,7 +57,6 @@ function makeCtx(path: string, response?: Response): HttpContext {
   } as HttpContext;
 }
 
-
 async function linkPreact(testDir: string) {
   const nm = join(testDir, "node_modules");
   await ensureDir(nm);
@@ -366,15 +365,17 @@ describe("special routes — not-found skip paths", () => {
       rendered++;
       return new Response("x");
     });
-    for (const path of [
-      "/assets/a.css",
-      "/_client.js",
-      "/_client/chunk.js",
-      "/__data",
-      "/__data?x=1",
-      "/__hmr",
-      "/_/internal",
-    ]) {
+    for (
+      const path of [
+        "/assets/a.css",
+        "/_client.js",
+        "/_client/chunk.js",
+        "/__data",
+        "/__data?x=1",
+        "/__hmr",
+        "/_/internal",
+      ]
+    ) {
       const ctx = makeCtx(path.split("?")[0]!);
       await mw(ctx, async () => {});
       expect(ctx.response).toBeUndefined();
