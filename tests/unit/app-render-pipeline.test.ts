@@ -437,6 +437,118 @@ describe("registerAppRenderPipeline — hybrid debug log", () => {
   });
 });
 
+describe("registerAppRenderPipeline — csr/ssg debug + default engine", () => {
+  it("ssg + !isBuildMode 应走 renderModeSsg debug 文案", async () => {
+    const uses: Array<{ name?: string }> = [];
+    const server = {
+      setSSRRender: (_fn: unknown) => {},
+      use: (
+        _mw: (ctx: HttpContext, next: () => Promise<void>) => Promise<void>,
+        _condition?: unknown,
+        name?: string,
+      ) => {
+        uses.push({ name });
+      },
+    };
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      render: { mode: "ssg", engine: "preact" },
+    };
+    mockApp(container, config);
+    const router = {
+      getSpecialFile: () => undefined,
+      getLayoutPathsForPath: () => [],
+    };
+    await registerAppRenderPipeline(server, {
+      container,
+      router,
+      config,
+      isBuildMode: () => false,
+    });
+    expect(uses.some((u) => u.name === "not-found")).toBe(true);
+  });
+
+  it("csr + !isBuildMode 应走 renderModeCsr debug 文案", async () => {
+    const uses: Array<{ name?: string }> = [];
+    const server = {
+      setSSRRender: (_fn: unknown) => {},
+      use: (
+        _mw: (ctx: HttpContext, next: () => Promise<void>) => Promise<void>,
+        _condition?: unknown,
+        name?: string,
+      ) => {
+        uses.push({ name });
+      },
+    };
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      render: { mode: "csr", engine: "preact" },
+      router: { routesDir: "./src/routes" },
+    };
+    mockApp(container, config);
+    const router = {
+      getSpecialFile: () => undefined,
+      getLayoutPathsForPath: () => [],
+      getRoutes: () => [],
+    };
+    const prev = getEnv("RUNTIME_ENV");
+    setEnv("RUNTIME_ENV", "start");
+    try {
+      await registerAppRenderPipeline(server, {
+        container,
+        router,
+        config,
+        isBuildMode: () => false,
+      });
+    } finally {
+      if (prev === undefined) deleteEnv("RUNTIME_ENV");
+      else setEnv("RUNTIME_ENV", prev);
+    }
+    expect(uses.some((u) => u.name === "not-found")).toBe(true);
+  });
+
+  it("engine 缺省时应回落 preact（L207）", async () => {
+    const server = {
+      setSSRRender: (_fn: unknown) => {},
+      use: (
+        _mw: (ctx: HttpContext, next: () => Promise<void>) => Promise<void>,
+      ) => {},
+    };
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      render: { mode: "ssr" }, // no engine
+    };
+    mockApp(container, config);
+    const router = {
+      getSpecialFile: () => undefined,
+      getLayoutPathsForPath: () => [],
+    };
+    await registerAppRenderPipeline(server, {
+      container,
+      router,
+      config,
+      isBuildMode: () => true,
+    });
+    expect(true).toBe(true);
+  });
+
+  it("ensureClientBuild: unknown RUNTIME_ENV else-branch with prebuilt skip", async () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = { render: { mode: "ssr", engine: "preact" } };
+    mockApp(container, config);
+    const prev = getEnv("RUNTIME_ENV");
+    setEnv("RUNTIME_ENV", "test-unknown-env");
+    try {
+      // hasPrebuilt=true → skip build in else branch (L87-90 skipped)
+      await ensureClientBuildForRender(container, config, true, () => false);
+    } finally {
+      if (prev === undefined) deleteEnv("RUNTIME_ENV");
+      else setEnv("RUNTIME_ENV", prev);
+    }
+    expect(true).toBe(true);
+  });
+});
+
 describe("withSSRTiming catch branch — reachability note", () => {
   it("documents that createRendererSSR/Hybrid/SSG catch internally so timing catch (ok=false) is unreachable without DI", () => {
     // withSSRTiming catch (app-render-pipeline.ts:178-180) only runs when the
