@@ -139,7 +139,7 @@ export interface SSREndInfo {
  * 迁移／本地演示：显式 `requireAuth: false`。
  */
 export interface UploadAppConfig {
-  /** 路由前缀，默认 `/upload` */
+  /** 路由前缀，默认 `/ui-view-upload`（与 uiViewUploadPlugin 对齐；可覆盖） */
   basePath?: string;
   /** 本地磁盘根目录（无自定义 storage 时用 local-cloud），默认 `./uploads` */
   localDir?: string;
@@ -172,6 +172,18 @@ export interface UploadAppConfig {
   verifyContentAfterComplete?: boolean;
   sessionTtlMs?: number;
   onEvent?: (event: unknown) => void;
+  /**
+   * complete 路径病毒扫描（透传 MultipartUploadHandlerConfig.virusScan）。
+   * 默认关；`{ enable: true }` 开 ClamAV（可配 host／port／required／scanner）。
+   */
+  virusScan?: false | {
+    enable?: boolean;
+    required?: boolean;
+    host?: string;
+    port?: number;
+    timeout?: number;
+    scanner?: unknown;
+  };
 }
 
 /**

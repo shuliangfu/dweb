@@ -523,12 +523,21 @@ describe("registerAppRenderPipeline — csr/ssg debug + default engine", () => {
       getSpecialFile: () => undefined,
       getLayoutPathsForPath: () => [],
     };
-    await registerAppRenderPipeline(server, {
-      container,
-      router,
-      config,
-      isBuildMode: () => true,
-    });
+    // Isolate from earlier suites that leave RUNTIME_ENV=dev (which would
+    // force ensureClientEntryFile → Router.scan on a missing src/routes).
+    const prev = getEnv("RUNTIME_ENV");
+    setEnv("RUNTIME_ENV", "start");
+    try {
+      await registerAppRenderPipeline(server, {
+        container,
+        router,
+        config,
+        isBuildMode: () => true,
+      });
+    } finally {
+      if (prev === undefined) deleteEnv("RUNTIME_ENV");
+      else setEnv("RUNTIME_ENV", prev);
+    }
     expect(true).toBe(true);
   });
 

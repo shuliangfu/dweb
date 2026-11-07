@@ -40,7 +40,8 @@ export async function registerUploadIntegration(
   if (uploadCfg == null || uploadCfg === false) return undefined;
 
   const opts: UploadAppConfig = uploadCfg === true ? {} : uploadCfg;
-  const basePath = (opts.basePath ?? "/upload").replace(/\/$/, "") || "/upload";
+  const basePath = (opts.basePath ?? "/ui-view-upload").replace(/\/$/, "") ||
+    "/ui-view-upload";
 
   type UploadHandler = {
     handle: (
@@ -64,6 +65,7 @@ export async function registerUploadIntegration(
     onEvent?: UploadAppConfig["onEvent"];
     verifyContentAfterComplete?: boolean;
     sessionTtlMs?: number;
+    virusScan?: UploadAppConfig["virusScan"];
   }) => UploadHandler;
 
   let createLocalCloudStorageAdapter: CreateLocal;
@@ -106,6 +108,7 @@ export async function registerUploadIntegration(
     onEvent: opts.onEvent,
     verifyContentAfterComplete: opts.verifyContentAfterComplete,
     sessionTtlMs: opts.sessionTtlMs,
+    virusScan: opts.virusScan,
   });
 
   container.registerSingleton(UPLOAD_HANDLER_KEY, () => handler);
