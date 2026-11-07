@@ -248,6 +248,32 @@ async function computeContentHash(
  * 错误边界约定：失败时不抛错，仅返回 null 并记录日志（logger 或 console）。
  * 由调用方决定返回 404、降级渲染或其它处理，避免静默吞错导致排查困难。
  */
+
+/**
+ * CSS 依赖是否允许读取。
+ *
+ * 主路径走 `isPathWithinProject`（含 Windows 8.3/长名 realPath 对齐）。
+ * Windows + Bun/Node 上偶发 short↔long 混用导致假阴性时，再用
+ * `normalizePathForCompare` 对 cssSecurityRoot / pathSecurityRoot / routeDir
+ * 做前缀兜底——与模块侧 routesDir 前缀兜底同思路，避免静默丢掉
+ * `import "./*.css"` 导致 SSR/Hybrid 缺 `data-dweb-route-css`。
+ */
+function isCssPathAllowed(
+  cssAbsPath: string,
+  routeDir: string,
+  cssSecurityRoot: string,
+  pathSecurityRoot: string,
+): boolean {
+  if (isPathWithinProject(cssAbsPath, cssSecurityRoot)) return true;
+  if (isPathWithinProject(cssAbsPath, pathSecurityRoot)) return true;
+  const cssNorm = normalizePathForCompare(cssAbsPath);
+  for (const root of [cssSecurityRoot, pathSecurityRoot, routeDir]) {
+    const r = normalizePathForCompare(root);
+    if (cssNorm === r || cssNorm.startsWith(r + "/")) return true;
+  }
+  return false;
+}
+
 export async function loadRouteModule(
   filePath: string,
   options?: {
@@ -358,7 +384,14 @@ export async function loadRouteModule(
       for (const p of cssPaths.sort()) {
         try {
           const cssAbsPath = await realPath(join(routeDir, p));
-          if (isPathWithinProject(cssAbsPath, cssSecurityRoot)) {
+          if (
+            isCssPathAllowed(
+              cssAbsPath,
+              routeDir,
+              cssSecurityRoot,
+              pathSecurityRoot,
+            )
+          ) {
             const cssContent = await readTextFile(cssAbsPath);
             cssEntries.push([p, cssContent]);
           }
