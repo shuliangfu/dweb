@@ -136,7 +136,6 @@ describe("嵌套路由中间件 (routes-middleware.ts)", () => {
     expect(seenContainer).toBe(container);
   });
 
-
   it("named middleware export 应一并加入链", async () => {
     const order: string[] = [];
     const mockRouter = {
@@ -271,5 +270,4 @@ describe("嵌套路由中间件 (routes-middleware.ts)", () => {
     await middleware(createTestContext("/"), async () => {});
     expect(seenApp).toBe(mockApp);
   });
-
 });

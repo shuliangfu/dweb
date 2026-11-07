@@ -353,7 +353,10 @@ describe("Hybrid prod (!isDev) asset replace + routeCss", () => {
     appPath = join(routeDir, "_app.tsx");
     pagePath = join(routeDir, "home.tsx");
     await writeTextFile(appPath, PREACT_APP_ASSET);
-    await writeTextFile(join(routeDir, "assets", "style.css"), "body{color:red}");
+    await writeTextFile(
+      join(routeDir, "assets", "style.css"),
+      "body{color:red}",
+    );
     await writeTextFile(pagePath, PREACT_PAGE_CSS);
     const clientOut = join(testDir, "dist", "client");
     await ensureDir(clientOut);
