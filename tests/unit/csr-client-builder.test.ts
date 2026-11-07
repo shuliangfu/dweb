@@ -432,3 +432,114 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
     });
   });
 });
+
+
+describe("generateClientDepContent — engine / path / nested branches", () => {
+  it("react engine should import react client adapter", () => {
+    const code = generateClientDepContent(
+      "react",
+      [{
+        componentPath: "about",
+        fullPath: "/tmp/routes/about.tsx",
+        importName: "Route_about",
+      }],
+      "/tmp/routes",
+      false,
+      [],
+      "hybrid",
+      {},
+      false,
+      false,
+    );
+    expect(code).toContain("@dreamer/render/client/react");
+    expect(code).toContain('"about"');
+  });
+
+  it("unknown engine falls back to preact adapter", () => {
+    const code = generateClientDepContent(
+      "nope" as "preact",
+      [{
+        componentPath: "index",
+        fullPath: "/tmp/routes/index.tsx",
+        importName: "Route_index",
+      }],
+      "/tmp/routes",
+      false,
+      [],
+      "ssr",
+    );
+    expect(code).toContain("@dreamer/render/client/preact");
+  });
+
+  it("has404 with empty page components still emits _404 loader", () => {
+    const code = generateClientDepContent(
+      "preact",
+      [],
+      "/tmp/routes",
+      false,
+      [],
+      "hybrid",
+      {},
+      false,
+      true,
+    );
+    expect(code).toContain('"_404": () => import("./routes/_404.tsx")');
+  });
+
+  it("nested routeLayoutKeys emit ROUTE_LAYOUT_KEYS + loadLayouts(match)", () => {
+    const code = generateClientDepContent(
+      "preact",
+      [{
+        componentPath: "admin/users",
+        fullPath: "/tmp/routes/admin/users.tsx",
+        importName: "Route_admin_users",
+      }],
+      "/tmp/routes",
+      true,
+      [],
+      "hybrid",
+      { "/admin/users": ["_layout", "admin/_layout"], "/": ["_layout"] },
+      false,
+      false,
+    );
+    expect(code).toContain("ROUTE_LAYOUT_KEYS");
+    expect(code).toContain("loadLayouts(match)");
+    expect(code).toContain("admin/_layout");
+  });
+
+  it("absolute-looking componentPath falls back via fullPath / routes marker", () => {
+    const code = generateClientDepContent(
+      "preact",
+      [{
+        componentPath: "/abs/routes/index.tsx",
+        fullPath: "/tmp/project/src/routes/index.tsx",
+        importName: "Route_index",
+      }],
+      "/tmp/project/src/routes",
+      false,
+      [],
+      "csr",
+    );
+    expect(code).toContain("ROUTE_LOADERS");
+    expect(code.includes('"index"') || code.includes("./routes/index")).toBe(
+      true,
+    );
+  });
+
+  it("Windows drive-letter componentPath uses fullPath marker", () => {
+    const code = generateClientDepContent(
+      "preact",
+      [{
+        componentPath: "D:/proj/src/routes/about.tsx",
+        fullPath: "D:/proj/src/routes/about.tsx",
+        importName: "Route_about",
+      }],
+      "D:/proj/src/routes",
+      false,
+      [],
+      "hybrid",
+    );
+    expect(code).toContain("ROUTE_LOADERS");
+  });
+});
+

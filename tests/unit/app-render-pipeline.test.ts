@@ -2,7 +2,18 @@
  * planRenderPipeline / registerAppRenderPipeline / ensureClientBuildForRender 轻量单测
  */
 import "../setup.ts";
-import { deleteEnv, getEnv, setEnv } from "@dreamer/runtime-adapter";
+import {
+  chdir,
+  cwd,
+  deleteEnv,
+  ensureDir,
+  getEnv,
+  join,
+  makeTempDir,
+  remove,
+  setEnv,
+  writeTextFile,
+} from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import type { HttpContext } from "@dreamer/server";
 import type { Router } from "@dreamer/router";
@@ -346,3 +357,84 @@ describe("registerAppRenderPipeline — timing + debug log branches", () => {
     expect(out).toBeNull();
   });
 });
+
+
+describe("ensureClientBuildForRender — RUNTIME_ENV=dev", () => {
+  it("dev + isBuildMode 应调用 ensureClientEntry 短路（不跑 buildClientScript）", async () => {
+    const testDir = await makeTempDir({ prefix: "dweb-pipe-dev-" });
+    const originalCwd = cwd();
+    chdir(testDir);
+    try {
+      await ensureDir(join(testDir, "src", "routes"));
+      await writeTextFile(
+        join(testDir, "src", "routes", "_app.tsx"),
+        "export default function App(props: { children?: unknown }) { return props.children as never; }",
+      );
+      await writeTextFile(
+        join(testDir, "src", "routes", "index.tsx"),
+        "export default function P() { return null; }",
+      );
+      const container = initializeServiceContainer();
+      const config: AppConfig = {
+        render: { mode: "ssr", engine: "preact" },
+        router: { routesDir: "./src/routes" },
+      };
+      mockApp(container, config);
+      const prev = getEnv("RUNTIME_ENV");
+      setEnv("RUNTIME_ENV", "dev");
+      try {
+        // isBuildMode true → line 79 ensureClientEntryFile, skip 81 buildClientScript
+        await ensureClientBuildForRender(container, config, false, () => true);
+      } finally {
+        if (prev === undefined) deleteEnv("RUNTIME_ENV");
+        else setEnv("RUNTIME_ENV", prev);
+      }
+    } finally {
+      chdir(originalCwd);
+      await remove(testDir, { recursive: true });
+    }
+  });
+});
+
+describe("registerAppRenderPipeline — hybrid debug log", () => {
+  it("hybrid + !isBuildMode 应走 renderModeHybrid debug 文案分支", async () => {
+    const uses: Array<{ name?: string }> = [];
+    const server = {
+      setSSRRender: (_fn: unknown) => {},
+      use: (
+        _mw: (ctx: HttpContext, next: () => Promise<void>) => Promise<void>,
+        _condition?: unknown,
+        name?: string,
+      ) => {
+        uses.push({ name });
+      },
+    };
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      render: { mode: "hybrid", engine: "preact" },
+      router: { routesDir: "./src/routes" },
+    };
+    mockApp(container, config);
+    const router = {
+      getSpecialFile: () => undefined,
+      getLayoutPathsForPath: () => [],
+      getRoutes: () => [],
+    } as unknown as Router;
+    const prev = getEnv("RUNTIME_ENV");
+    setEnv("RUNTIME_ENV", "start");
+    try {
+      await registerAppRenderPipeline(server, {
+        container,
+        router,
+        config,
+        isBuildMode: () => false,
+      });
+    } finally {
+      if (prev === undefined) deleteEnv("RUNTIME_ENV");
+      else setEnv("RUNTIME_ENV", prev);
+    }
+    expect(uses.some((u) => u.name === "not-found")).toBe(true);
+    expect(uses.some((u) => u.name === "load-data")).toBe(true);
+  });
+});
+
