@@ -433,7 +433,6 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
   });
 });
 
-
 describe("generateClientDepContent — engine / path / nested branches", () => {
   it("react engine should import react client adapter", () => {
     const code = generateClientDepContent(
@@ -542,4 +541,3 @@ describe("generateClientDepContent — engine / path / nested branches", () => {
     expect(code).toContain("ROUTE_LOADERS");
   });
 });
-

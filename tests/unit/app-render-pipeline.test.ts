@@ -358,7 +358,6 @@ describe("registerAppRenderPipeline — timing + debug log branches", () => {
   });
 });
 
-
 describe("ensureClientBuildForRender — RUNTIME_ENV=dev", () => {
   it("dev + isBuildMode 应调用 ensureClientEntry 短路（不跑 buildClientScript）", async () => {
     const testDir = await makeTempDir({ prefix: "dweb-pipe-dev-" });
@@ -437,4 +436,3 @@ describe("registerAppRenderPipeline — hybrid debug log", () => {
     expect(uses.some((u) => u.name === "load-data")).toBe(true);
   });
 });
-

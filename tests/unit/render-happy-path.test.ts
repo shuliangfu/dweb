@@ -226,7 +226,9 @@ describe("render happy-path — SSR", () => {
     expect(html).toContain("LAYOUT_MARK:L1");
     expect(html).toContain(":id=42");
     expect(html).toContain("__DATA__");
-    expect(html.includes("/_client.js") || html.includes("_client.js")).toBe(true);
+    expect(html.includes("/_client.js") || html.includes("_client.js")).toBe(
+      true,
+    );
     expect(res!.headers.get("Cache-Control") || "").toContain("no-cache");
   });
 
@@ -287,9 +289,11 @@ describe("render happy-path — SSR", () => {
   });
 
   it("loadCache reuses page load within ttl", async () => {
-    const { container, config } = setup({
-      loadCache: { ttlMs: 5000 },
-    } as AppConfig["render"]);
+    const { container, config } = setup(
+      {
+        loadCache: { ttlMs: 5000 },
+      } as AppConfig["render"],
+    );
     const router = {
       getSpecialFile: (name: string) => (name === "_app" ? appPath : undefined),
       getLayoutPathsForPath: () => [],
@@ -386,7 +390,6 @@ describe("render happy-path — Hybrid", () => {
     ).toBe(true);
   });
 });
-
 
 describe("render happy-path — Hybrid edge branches", () => {
   let testDir: string;
@@ -505,4 +508,3 @@ export default function App(props: { children?: unknown }) {
     expect(res!.status).toBe(500);
   });
 });
-
