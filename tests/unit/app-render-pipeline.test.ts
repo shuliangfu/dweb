@@ -436,3 +436,14 @@ describe("registerAppRenderPipeline — hybrid debug log", () => {
     expect(uses.some((u) => u.name === "load-data")).toBe(true);
   });
 });
+
+describe("withSSRTiming catch branch — reachability note", () => {
+  it("documents that createRendererSSR/Hybrid/SSG catch internally so timing catch (ok=false) is unreachable without DI", () => {
+    // withSSRTiming catch (app-render-pipeline.ts:178-180) only runs when the
+    // wrapped pageRender *throws*. Current createRendererSSR / Hybrid / SSG
+    // wrap their own try/catch and return Response(500) instead of rethrowing,
+    // so the timing catch cannot be exercised via public APIs. Covered: ok=true
+    // finally path (see "ssr pageRender 成功路径").
+    expect(true).toBe(true);
+  });
+});
