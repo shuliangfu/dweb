@@ -10,6 +10,28 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-11-09
+
+### Added
+
+- **Init `apiMode`**: scaffold API apps with `action` or `restful` sample routes;
+  rename the hello sample to `index` / `create` routes.
+- **Init config templates**: emit commented optional config keys so generated
+  projects document digests / knobs without enabling them by default.
+
+### Changed
+
+- **Production inline bootstrap**: compact hydration / route bootstrap script via
+  `wrapInlineClientBootstrapScript`; keep the readable form in development.
+- **Dependencies**: `@dreamer/esbuild` `^1.4.2` → `^1.5.0` (package + examples).
+
+### Fixed
+
+- **Init / integration tests**: Bun/Node init-api-mode uses `@dreamer/runtime-adapter`;
+  api-kind-runtime expects `index` / `create` routes after the hello rename.
+
+---
+
 ## [3.8.4] - 2026-11-07
 
 ### Added

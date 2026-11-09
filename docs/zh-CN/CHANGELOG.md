@@ -9,6 +9,28 @@
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-11-09
+
+### 新增
+
+- **Init `apiMode`**：脚手架 API 应用可选 `action`／`restful` 示例路由；hello
+  示例改名为 `index`／`create`。
+- **Init 配置模板**：生成注释掉的可选配置项，便于文档化 digests／开关且默认不启用。
+
+### 变更
+
+- **生产内联 bootstrap**：经 `wrapInlineClientBootstrapScript` 压缩 hydration／
+  路由 bootstrap 脚本；开发态保持可读形式。
+- **依赖**：`@dreamer/esbuild` `^1.4.2` → `^1.5.0`（本体＋示例同步）。
+
+### 修复
+
+- **Init／integration 测试**：Bun／Node init-api-mode 使用
+  `@dreamer/runtime-adapter`；api-kind-runtime 在 hello 改名后对齐校验
+  `index`／`create` 路由。
+
+---
+
 ## [3.8.4] - 2026-11-07
 
 ### 新增
