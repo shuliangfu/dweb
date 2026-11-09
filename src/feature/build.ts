@@ -12,6 +12,7 @@
 import {
   Builder,
   type BuilderConfig,
+  type BuildOptions,
   type ClientConfig,
   type ServerConfig,
 } from "@dreamer/esbuild";
@@ -22,10 +23,13 @@ import {
   exists,
   getEnv,
   join,
+  mkdir,
   relative,
+  remove,
 } from "../core/runtime-adapter.ts";
 import { type AppConfig, isApiKind } from "../types/app.ts";
 import {
+  getClientOutputDir,
   getInferredBuildOutputDirs,
   getMainModulePath,
 } from "../utils/build-dirs.ts";
@@ -38,6 +42,110 @@ import {
   createDwebClientBundlePlugins,
   prepareClientBuildEntry,
 } from "./csr-client-builder.ts";
+
+
+/**
+ * 从 AppConfig 解析 esbuild BuildOptions。
+ *
+ * 规范路径为嵌套 `app.build.build.*`（BuildAppConfig 继承 BuilderConfig.build）。
+ * 兼容旧扁平写法 `app.build.clean` 等：嵌套有值优先，否则回落扁平。
+ */
+export function resolveAppBuildOptions(config: AppConfig): BuildOptions {
+  const buildConfig = (config.build || {}) as Record<string, unknown>;
+  const nested = (buildConfig.build && typeof buildConfig.build === "object")
+    ? buildConfig.build as Record<string, unknown>
+    : {};
+
+  const pick = <T>(key: string): T | undefined => {
+    if (Object.prototype.hasOwnProperty.call(nested, key) &&
+      nested[key] !== undefined) {
+      return nested[key] as T;
+    }
+    if (Object.prototype.hasOwnProperty.call(buildConfig, key) &&
+      buildConfig[key] !== undefined &&
+      // 避免把嵌套的 build 对象本身当成 BuildOptions 字段
+      key !== "build" &&
+      key !== "server" &&
+      key !== "client" &&
+      key !== "assets" &&
+      key !== "devCache") {
+      return buildConfig[key] as T;
+    }
+    return undefined;
+  };
+
+  return {
+    mode: pick<"dev" | "prod">("mode"),
+    clean: pick<boolean>("clean"),
+    cache: pick<boolean | string>("cache"),
+    incremental: pick<boolean>("incremental"),
+    watch: pick<BuildOptions["watch"]>("watch"),
+    onProgress: pick<BuildOptions["onProgress"]>("onProgress"),
+    silent: pick<boolean>("silent"),
+    slowBuildThreshold: pick<number>("slowBuildThreshold"),
+    validateConfig: pick<boolean>("validateConfig"),
+    logLevel: pick<BuildOptions["logLevel"]>("logLevel"),
+    reportHTML: pick<boolean | string>("reportHTML"),
+  };
+}
+
+/**
+ * 在插件 onBuild 之前清理服务端／客户端输出目录。
+ *
+ * 必须先于 Tailwind 等写入 `dist/client/assets` 的钩子，否则 Builder 内置 clean
+ * 会在 onBuild 之后删掉刚生成的 CSS。
+ */
+export async function cleanBuildOutputDirs(
+  config: AppConfig,
+  log?: { info: (msg: string) => void },
+): Promise<string[]> {
+  const cwdPath = cwd();
+  const serverRel = (config.build as { server?: { output?: string } } | undefined)
+    ?.server?.output ?? getInferredBuildOutputDirs().server;
+  const clientRel = getClientOutputDir(config);
+
+  const toAbs = (p: string) =>
+    (p.startsWith("/") || /^[A-Za-z]:[\\/]/.test(p)) ? p : join(cwdPath, p);
+
+  const serverAbs = toAbs(serverRel).replace(/\\/g, "/");
+  const clientAbs = toAbs(clientRel).replace(/\\/g, "/");
+
+  const removed: string[] = [];
+
+  const wipeAndEnsure = async (abs: string, label: string) => {
+    try {
+      if (await exists(abs)) {
+        await remove(abs, { recursive: true });
+        removed.push(label);
+        log?.info($tr("clean.removed", { dir: label }));
+      }
+    } catch {
+      // 目录可能不存在或并发删除，忽略
+    }
+    try {
+      await mkdir(abs, { recursive: true });
+    } catch {
+      // 忽略
+    }
+  };
+
+  // 客户端在服务端目录下时，只清父目录再重建两者，避免竞态
+  const clientUnderServer = clientAbs === serverAbs ||
+    clientAbs.startsWith(serverAbs.replace(/\/$/, "") + "/");
+  if (clientUnderServer) {
+    await wipeAndEnsure(serverAbs, serverRel);
+    try {
+      await mkdir(clientAbs, { recursive: true });
+    } catch {
+      // 忽略
+    }
+  } else {
+    await wipeAndEnsure(serverAbs, serverRel);
+    await wipeAndEnsure(clientAbs, clientRel);
+  }
+
+  return removed;
+}
 
 /**
  * 初始化构建工具
@@ -58,8 +166,9 @@ export function initializeBuild(
   container: ServiceContainer,
   config: AppConfig,
 ): Builder {
-  // 从配置中获取构建选项
+  // 从配置中获取构建选项（嵌套 build.build.*，兼容扁平）
   const buildConfig = (config.build || {}) as Record<string, unknown>;
+  const resolvedBuildOpts = resolveAppBuildOptions(config);
   const renderConfig = (config.render || {}) as {
     engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg";
@@ -121,31 +230,21 @@ export function initializeBuild(
     assets: buildConfig.assets as BuilderConfig["assets"],
     // 构建选项
     build: {
-      mode: (buildConfig.mode as "dev" | "prod") ||
-        (getEnv("RUNTIME_ENV") === "dev" ? "dev" : "prod") as
-          | "dev"
-          | "prod",
-
-      clean: buildConfig.clean as boolean | undefined,
-      cache: buildConfig.cache as boolean | string | undefined,
-      incremental: buildConfig.incremental as boolean | undefined,
-      watch: buildConfig.watch as BuilderConfig["build"] extends
-        { watch?: infer T } ? T
-        : never,
-      onProgress: buildConfig.onProgress as BuilderConfig["build"] extends {
-        onProgress?: infer T;
-      } ? T
-        : never,
-      silent: buildConfig.silent as boolean | undefined,
-      slowBuildThreshold: buildConfig.slowBuildThreshold as number | undefined,
-      validateConfig: buildConfig.validateConfig as boolean | undefined,
-      logLevel: buildConfig.logLevel as BuilderConfig["build"] extends {
-        logLevel?: infer T;
-      } ? T
-        : never,
-      reportHTML: buildConfig.reportHTML as boolean | string | undefined,
+      mode: resolvedBuildOpts.mode ||
+        (getEnv("RUNTIME_ENV") === "dev" ? "dev" : "prod"),
+      clean: resolvedBuildOpts.clean,
+      cache: resolvedBuildOpts.cache,
+      incremental: resolvedBuildOpts.incremental,
+      watch: resolvedBuildOpts.watch,
+      onProgress: resolvedBuildOpts.onProgress,
+      silent: resolvedBuildOpts.silent,
+      slowBuildThreshold: resolvedBuildOpts.slowBuildThreshold,
+      validateConfig: resolvedBuildOpts.validateConfig,
+      logLevel: resolvedBuildOpts.logLevel,
+      reportHTML: resolvedBuildOpts.reportHTML,
     } as BuilderConfig["build"],
-    validateConfig: buildConfig.validateConfig as boolean | undefined,
+    validateConfig: resolvedBuildOpts.validateConfig ??
+      (buildConfig.validateConfig as boolean | undefined),
     // 与 esbuild 支持的语种对齐：仅 en-US / zh-CN 透传，其余由 esbuild 自动检测
     lang: config.language === "en-US" || config.language === "zh-CN"
       ? config.language
@@ -195,7 +294,7 @@ export function getBuild(container: ServiceContainer): Builder {
 export async function runBuildWithBuilder(
   container: ServiceContainer,
   config: AppConfig,
-  options?: { skipClient?: boolean },
+  options?: { skipClient?: boolean; /** 显式覆盖；用于 App 已在 onBuild 前清理时传 false */ clean?: boolean },
 ): Promise<void> {
   const logger = getLogger(container);
   const buildConfig = (config.build || {}) as {
@@ -292,14 +391,18 @@ export async function runBuildWithBuilder(
     };
   }
 
+  const resolvedBuildOpts = resolveAppBuildOptions(config);
   const builderConfig: BuilderConfig = {
     server: esbuildServerConfig,
     client: clientConfig,
     assets: buildConfig.assets,
     build: {
       mode: "prod",
-      clean: (config.build as { clean?: boolean })?.clean,
-      cache: (config.build as { cache?: boolean | string })?.cache,
+      // App.build 若已在 onBuild 前清理，会传 clean:false，避免删掉插件刚写的 CSS
+      clean: options?.clean !== undefined
+        ? options.clean
+        : resolvedBuildOpts.clean,
+      cache: resolvedBuildOpts.cache,
     },
     lang: config.language === "en-US" || config.language === "zh-CN"
       ? config.language

@@ -65,6 +65,14 @@ const config: AppConfig = {
         hash: true,
       },
     },
+    build: {
+      mode: "prod",
+      clean: true,
+      cache: true,
+      incremental: true,
+      silent: false,
+      logLevel: "info",
+    },
   },
 
   // 实时通信：type 为 websocket 时挂载到当前 HTTP 服务器同一端口（开发环境测试）

@@ -10,6 +10,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.2] - 2026-11-09
+
+### Fixed
+
+- **Build clean**: resolve nested `app.build.build.clean` (with flat-field fallback);
+  run output-dir clean before plugin `onBuild` so Tailwind CSS is not wiped, and
+  hashed client JS/CSS leftovers are removed on each production build.
+
+---
+
 ## [3.9.1] - 2026-11-09
 
 ### Changed

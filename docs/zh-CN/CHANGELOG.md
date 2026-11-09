@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+## [3.9.2] - 2026-11-09
+
+### 修复
+
+- **Build clean**：解析嵌套 `app.build.build.clean`（兼容扁平字段）；在插件
+  `onBuild` 之前清理输出目录，避免 Tailwind CSS 被二次清空，并在每次生产构建
+  时清除旧的 hashed 客户端 JS／CSS。
+
+---
+
 ## [3.9.1] - 2026-11-09
 
 ### 变更

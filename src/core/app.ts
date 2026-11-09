@@ -37,7 +37,12 @@ import {
 
 import { AssetsProcessor } from "@dreamer/esbuild";
 import { expandDynamicRoute, filePathToRoute } from "@dreamer/render";
-import { initializeBuild, runBuildWithBuilder } from "../feature/build.ts";
+import {
+  cleanBuildOutputDirs,
+  initializeBuild,
+  resolveAppBuildOptions,
+  runBuildWithBuilder,
+} from "../feature/build.ts";
 import { clearClientScriptCache } from "../feature/csr-client-builder.ts";
 import { createNestedRoutesMiddleware } from "../feature/routes-middleware.ts";
 import { loadRouteModule } from "../feature/load-route-module.ts";
@@ -933,6 +938,17 @@ export class App extends EventEmitter implements IApp {
 
     try {
       const apiApp = isApiKind(config);
+      const resolvedBuildOpts = resolveAppBuildOptions(config);
+
+      // 先清理输出目录，再跑 onBuild：避免 Tailwind 写入 CSS 后被 Builder.clean 删掉
+      if (resolvedBuildOpts.clean) {
+        logger.info($tr("clean.running"));
+        const removed = await cleanBuildOutputDirs(config, logger);
+        if (removed.length === 0) {
+          logger.info($tr("clean.nothingToClean"));
+        }
+      }
+
       // 触发插件的 onBuild 钩子（Tailwind/UnoCSS 等会直接写入各自的 output 目录）
       await pluginEvents.emitOnBuild(this.container, {
         mode: "prod",
@@ -944,8 +960,10 @@ export class App extends EventEmitter implements IApp {
       // 使用 @dreamer/esbuild 的 Builder 统一构建（服务端 + 客户端 + 资源）
       // SSR/SSG 也构建客户端，以便静态 HTML 可做客户端激活（事件响应）
       // 纯 API：只构建服务端，跳过客户端包
+      // clean:false — 已在 onBuild 前清理，避免再次清空插件产物
       await runBuildWithBuilder(this.container, config, {
         skipClient: apiApp,
+        clean: false,
       });
 
       // SSG 模式：预渲染静态 HTML 到 client 目录（与其它前端产物一致），start 时从该目录读取（在服务端构建之后执行，确保不被覆盖）

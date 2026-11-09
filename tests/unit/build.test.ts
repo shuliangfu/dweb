@@ -30,7 +30,12 @@ function fromFileUrl(url: string): string {
   return p;
 }
 import { initializeServiceContainer } from "../../src/core/service.ts";
-import { getBuild, initializeBuild } from "../../src/feature/build.ts";
+import {
+  cleanBuildOutputDirs,
+  getBuild,
+  initializeBuild,
+  resolveAppBuildOptions,
+} from "../../src/feature/build.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
 
@@ -316,6 +321,78 @@ describe("构建集成 (build.ts)", () => {
       const builder = initializeBuild(container, config);
 
       expect(builder).toBeDefined();
+    });
+
+    it("嵌套 build.build.clean 应解析为 true", () => {
+      const opts = resolveAppBuildOptions({
+        build: {
+          build: { clean: true, mode: "prod" },
+        },
+      });
+      expect(opts.clean).toBe(true);
+      expect(opts.mode).toBe("prod");
+    });
+
+    it("扁平 build.clean 在无嵌套时应回落生效", () => {
+      const opts = resolveAppBuildOptions({
+        build: {
+          clean: true,
+          cache: false,
+        } as AppConfig["build"],
+      });
+      expect(opts.clean).toBe(true);
+      expect(opts.cache).toBe(false);
+    });
+
+    it("嵌套优先于扁平（nested ?? flat）", () => {
+      const opts = resolveAppBuildOptions({
+        build: {
+          clean: false,
+          build: { clean: true, cache: "custom-cache" },
+        } as AppConfig["build"],
+      });
+      expect(opts.clean).toBe(true);
+      expect(opts.cache).toBe("custom-cache");
+    });
+  });
+
+  describe("cleanBuildOutputDirs()", () => {
+    it("应删除旧产物并保留目录，供 onBuild 后再写 CSS", async () => {
+      const root = dirname(dirname(dirname(fromFileUrl(import.meta.url))));
+      const serverOut = join(root, "tests/data/clean-output-dirs/dist");
+      const clientOut = join(root, "tests/data/clean-output-dirs/dist/client");
+      const assetsOut = join(clientOut, "assets");
+      const fakeCss = join(assetsOut, "tailwind.deadbeef.css");
+      const marker = join(serverOut, "MARKER_OLD");
+
+      const { mkdir, writeTextFile, exists: existsFn } = await import(
+        "@dreamer/runtime-adapter"
+      );
+      await mkdir(assetsOut, { recursive: true });
+      await writeTextFile(fakeCss, "/* dead */");
+      await writeTextFile(marker, "old");
+      expect(await existsFn(fakeCss)).toBe(true);
+
+      const removed = await cleanBuildOutputDirs({
+        build: {
+          server: { output: serverOut },
+          client: { engine: "preact", output: clientOut },
+          build: { clean: true },
+        },
+      });
+
+      expect(removed.length).toBeGreaterThan(0);
+      expect(await existsFn(fakeCss)).toBe(false);
+      expect(await existsFn(marker)).toBe(false);
+
+      await mkdir(assetsOut, { recursive: true });
+      const freshCss = join(assetsOut, "tailwind.freshhash.css");
+      await writeTextFile(freshCss, "/* fresh */");
+      expect(await existsFn(freshCss)).toBe(true);
+
+      await remove(join(root, "tests/data/clean-output-dirs"), {
+        recursive: true,
+      });
     });
   });
 
