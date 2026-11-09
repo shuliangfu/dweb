@@ -12,6 +12,7 @@ import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   exists,
+  fromFileUrl,
   join,
   makeTempDir,
   readTextFile,
@@ -51,13 +52,13 @@ describe("init apiMode (new)", () => {
 
   it("选项文案含括号说明，Restful 无 HTTP 动词字样", async () => {
     const zh = JSON.parse(
-      await Deno.readTextFile(
-        new URL("../../src/locales/zh-CN.json", import.meta.url),
+      await readTextFile(
+        fromFileUrl(new URL("../../src/locales/zh-CN.json", import.meta.url)),
       ),
     );
     const en = JSON.parse(
-      await Deno.readTextFile(
-        new URL("../../src/locales/en-US.json", import.meta.url),
+      await readTextFile(
+        fromFileUrl(new URL("../../src/locales/en-US.json", import.meta.url)),
       ),
     );
     expect(zh.init.apiModeAction).toBe(
