@@ -10,6 +10,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.1] - 2026-11-09
+
+### Changed
+
+- **Init prompt order**: ask `apiMode` (Action / Restful) after the project name
+  and before the UI engine (View / Preact / React) when scaffolding web or API apps.
+
+---
+
 ## [3.9.0] - 2026-11-09
 
 ### Added

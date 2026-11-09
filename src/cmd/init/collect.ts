@@ -185,6 +185,18 @@ export async function collectOptions(
   }
 
   const hasWeb = apps.some((a) => a.kind === "web");
+  const hasApi = apps.some((a) => a.kind === "api");
+
+  // apiMode 在「项目名称」之后、「UI 引擎」之前；仅 web／api 需要
+  let apiMode: ApiMode = "action";
+  if (hasWeb || hasApi) {
+    const apiModeIdx = await interactiveMenu(
+      $tr("init.apiMode"),
+      [$tr("init.apiModeAction"), $tr("init.apiModeRestful")],
+      0,
+    );
+    apiMode = API_MODES[apiModeIdx] ?? "action";
+  }
 
   let engine = ENGINES[0];
   let renderMode: RenderMode = "hybrid";
@@ -220,17 +232,6 @@ export async function collectOptions(
       0,
     );
     style = STYLES[styleIdx] ?? "tailwind";
-  }
-
-  const hasApi = apps.some((a) => a.kind === "api");
-  let apiMode: ApiMode = "action";
-  if (hasWeb || hasApi) {
-    const apiModeIdx = await interactiveMenu(
-      $tr("init.apiMode"),
-      [$tr("init.apiModeAction"), $tr("init.apiModeRestful")],
-      0,
-    );
-    apiMode = API_MODES[apiModeIdx] ?? "action";
   }
 
   const useSrc = await confirm($tr("init.useSrc"), true);

@@ -9,6 +9,15 @@
 
 ## [Unreleased]
 
+## [3.9.1] - 2026-11-09
+
+### 变更
+
+- **Init 题序**：有 web／api 时，在「项目名称」之后、「UI 引擎」（View／Preact／React）
+  之前询问 `apiMode`（Action／Restful）。
+
+---
+
 ## [3.9.0] - 2026-11-09
 
 ### 新增
