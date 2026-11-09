@@ -43,7 +43,6 @@ import {
   prepareClientBuildEntry,
 } from "./csr-client-builder.ts";
 
-
 /**
  * 从 AppConfig 解析 esbuild BuildOptions。
  *
@@ -57,18 +56,22 @@ export function resolveAppBuildOptions(config: AppConfig): BuildOptions {
     : {};
 
   const pick = <T>(key: string): T | undefined => {
-    if (Object.prototype.hasOwnProperty.call(nested, key) &&
-      nested[key] !== undefined) {
+    if (
+      Object.prototype.hasOwnProperty.call(nested, key) &&
+      nested[key] !== undefined
+    ) {
       return nested[key] as T;
     }
-    if (Object.prototype.hasOwnProperty.call(buildConfig, key) &&
+    if (
+      Object.prototype.hasOwnProperty.call(buildConfig, key) &&
       buildConfig[key] !== undefined &&
       // 避免把嵌套的 build 对象本身当成 BuildOptions 字段
       key !== "build" &&
       key !== "server" &&
       key !== "client" &&
       key !== "assets" &&
-      key !== "devCache") {
+      key !== "devCache"
+    ) {
       return buildConfig[key] as T;
     }
     return undefined;
@@ -100,8 +103,9 @@ export async function cleanBuildOutputDirs(
   log?: { info: (msg: string) => void },
 ): Promise<string[]> {
   const cwdPath = cwd();
-  const serverRel = (config.build as { server?: { output?: string } } | undefined)
-    ?.server?.output ?? getInferredBuildOutputDirs().server;
+  const serverRel =
+    (config.build as { server?: { output?: string } } | undefined)
+      ?.server?.output ?? getInferredBuildOutputDirs().server;
   const clientRel = getClientOutputDir(config);
 
   const toAbs = (p: string) =>
@@ -294,7 +298,11 @@ export function getBuild(container: ServiceContainer): Builder {
 export async function runBuildWithBuilder(
   container: ServiceContainer,
   config: AppConfig,
-  options?: { skipClient?: boolean; /** 显式覆盖；用于 App 已在 onBuild 前清理时传 false */ clean?: boolean },
+  options?: {
+    skipClient?:
+      boolean; /** 显式覆盖；用于 App 已在 onBuild 前清理时传 false */
+    clean?: boolean;
+  },
 ): Promise<void> {
   const logger = getLogger(container);
   const buildConfig = (config.build || {}) as {

@@ -23,8 +23,8 @@
 
 ### 变更
 
-- **Init 题序**：有 web／api 时，在「项目名称」之后、「UI 引擎」（View／Preact／React）
-  之前询问 `apiMode`（Action／Restful）。
+- **Init 题序**：有 web／api 时，在「项目名称」之后、「UI
+  引擎」（View／Preact／React） 之前询问 `apiMode`（Action／Restful）。
 
 ---
 
@@ -34,7 +34,8 @@
 
 - **Init `apiMode`**：脚手架 API 应用可选 `action`／`restful` 示例路由；hello
   示例改名为 `index`／`create`。
-- **Init 配置模板**：生成注释掉的可选配置项，便于文档化 digests／开关且默认不启用。
+- **Init 配置模板**：生成注释掉的可选配置项，便于文档化
+  digests／开关且默认不启用。
 
 ### 变更
 

@@ -14,9 +14,10 @@ and this project adheres to
 
 ### Fixed
 
-- **Build clean**: resolve nested `app.build.build.clean` (with flat-field fallback);
-  run output-dir clean before plugin `onBuild` so Tailwind CSS is not wiped, and
-  hashed client JS/CSS leftovers are removed on each production build.
+- **Build clean**: resolve nested `app.build.build.clean` (with flat-field
+  fallback); run output-dir clean before plugin `onBuild` so Tailwind CSS is not
+  wiped, and hashed client JS/CSS leftovers are removed on each production
+  build.
 
 ---
 
@@ -25,7 +26,8 @@ and this project adheres to
 ### Changed
 
 - **Init prompt order**: ask `apiMode` (Action / Restful) after the project name
-  and before the UI engine (View / Preact / React) when scaffolding web or API apps.
+  and before the UI engine (View / Preact / React) when scaffolding web or API
+  apps.
 
 ---
 
@@ -33,21 +35,22 @@ and this project adheres to
 
 ### Added
 
-- **Init `apiMode`**: scaffold API apps with `action` or `restful` sample routes;
-  rename the hello sample to `index` / `create` routes.
+- **Init `apiMode`**: scaffold API apps with `action` or `restful` sample
+  routes; rename the hello sample to `index` / `create` routes.
 - **Init config templates**: emit commented optional config keys so generated
   projects document digests / knobs without enabling them by default.
 
 ### Changed
 
-- **Production inline bootstrap**: compact hydration / route bootstrap script via
-  `wrapInlineClientBootstrapScript`; keep the readable form in development.
+- **Production inline bootstrap**: compact hydration / route bootstrap script
+  via `wrapInlineClientBootstrapScript`; keep the readable form in development.
 - **Dependencies**: `@dreamer/esbuild` `^1.4.2` → `^1.5.0` (package + examples).
 
 ### Fixed
 
-- **Init / integration tests**: Bun/Node init-api-mode uses `@dreamer/runtime-adapter`;
-  api-kind-runtime expects `index` / `create` routes after the hello rename.
+- **Init / integration tests**: Bun/Node init-api-mode uses
+  `@dreamer/runtime-adapter`; api-kind-runtime expects `index` / `create` routes
+  after the hello rename.
 
 ---
 

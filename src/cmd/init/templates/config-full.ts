@@ -1,6 +1,9 @@
 /**
  * 完整 AppConfig 模板：所有配置项均列出，未启用的以注释形式保留，便于用户查阅
  * 参考 docs/en-US/APP_CONFIG.md 与 AppConfig 类型
+ *
+ * 约定：build.server / client / assets / build.build / logger 等块一律多行展开，
+ * 每个字段（含注释掉的示例）都带说明注释，避免一行堆字段。
  */
 
 import { DEFAULT_PORT_BASE } from "../constants.ts";
@@ -11,6 +14,173 @@ import {
   getDefaultLanguage,
 } from "../helpers.ts";
 import type { AppKind, InitOptions } from "../types.ts";
+
+/** 服务端 external 多行列表（Bun 引擎时注入） */
+function buildServerExternalBlock(opts: InitOptions): string {
+  const ext = getBuildServerExternal(opts);
+  if (!ext?.length) return "";
+  const lines = ext.map((e) => `        "${e}"`).join(",\n");
+  return `
+      // ${$tr("init.comments.buildServerExternalBun")}
+      /** ${$tr("init.comments.buildServerExternalDesc")} */
+      external: [
+${lines}
+      ],`;
+}
+
+/**
+ * build.server 内注释掉的可选字段（多行＋逐字段注释）
+ * @param withStandalone 是否含 standalone（web/common 有，api 精简版也可有）
+ */
+function commentedBuildServerOptionalFields(): string {
+  return `      /** ${$tr("init.comments.buildServerEntryDesc")} */
+      // entry: "src/main.ts",
+      /** ${$tr("init.comments.buildServerOutputDesc")} */
+      // output: "dist",
+      /** ${$tr("init.comments.buildServerTargetDesc")} */
+      // target: "deno",
+      /** ${$tr("init.comments.buildServerCompileDesc")} */
+      // compile: {
+      //   /** ${$tr("init.comments.buildServerCompileMinifyDesc")} */
+      //   minify: true,
+      //   /** ${$tr("init.comments.buildServerCompileLegalCommentsDesc")} */
+      //   legalComments: "none",
+      //   /** ${$tr("init.comments.buildServerCompileSourcemapDesc")} */
+      //   sourcemap: true,
+      //   /** ${$tr("init.comments.buildServerCompilePlatformDesc")} */
+      //   platform: ["linux", "darwin", "windows"],
+      //   /** ${$tr("init.comments.buildServerCompileStandaloneDesc")} */
+      //   standalone: false,
+      // },
+      /** ${$tr("init.comments.buildServerExternalDesc")} */
+      // external: ["tailwindcss", "lightningcss"],
+      /** ${$tr("init.comments.buildServerExternalNpmDesc")} */
+      // externalNpm: true,
+      /** ${$tr("init.comments.buildServerExcludePathsDesc")} */
+      // excludePaths: ["node_modules", ".bun/install"],
+      /** ${$tr("init.comments.buildServerDebugDesc")} */
+      // debug: false,`;
+}
+
+/** 注释掉的 build.client 整块（多行＋逐字段注释） */
+function commentedBuildClientBlock(engine: string): string {
+  return `    /** ${$tr("init.comments.buildClientDesc")} */
+    // client: {
+    //   /** ${$tr("init.comments.buildClientEntryDesc")} */
+    //   entry: "...",
+    //   /** ${$tr("init.comments.buildClientOutputDesc")} */
+    //   output: "dist/client",
+    //   /** ${$tr("init.comments.buildClientEngineDesc")} */
+    //   engine: "${engine}",
+    //   /** ${$tr("init.comments.buildClientBundleDesc")} */
+    //   bundle: {
+    //     /** ${$tr("init.comments.buildClientBundleMinifyDesc")} */
+    //     minify: true,
+    //     /** ${$tr("init.comments.buildClientBundleLegalCommentsDesc")} */
+    //     legalComments: "none",
+    //     /** ${$tr("init.comments.buildClientBundleSourcemapDesc")} */
+    //     sourcemap: false,
+    //     /** ${$tr("init.comments.buildClientBundleSplittingDesc")} */
+    //     splitting: true,
+    //     /** ${$tr("init.comments.buildClientBundleFormatDesc")} */
+    //     format: "esm",
+    //     /** ${$tr("init.comments.buildClientBundleExternalDesc")} */
+    //     // external: [],
+    //     /** ${$tr("init.comments.buildClientBundleAliasDesc")} */
+    //     // alias: {
+    //     //   "@dreamer/ui-view": "../src/mod.ts",
+    //     // },
+    //     /** ${$tr("init.comments.buildClientBundleChunkNamesDesc")} */
+    //     // chunkNames: "[name]-[hash]",
+    //   },
+    //   /** ${$tr("init.comments.buildClientHtmlDesc")} */
+    //   html: {
+    //     /** ${$tr("init.comments.buildClientHtmlTemplateDesc")} */
+    //     template: "src/index.html",
+    //     /** ${$tr("init.comments.buildClientHtmlTitleDesc")} */
+    //     title: "My App",
+    //   },
+    //   /** ${$tr("init.comments.buildClientSourcemapDesc")} */
+    //   sourcemap: true,
+    //   /** ${$tr("init.comments.buildClientDebugDesc")} */
+    //   debug: false,
+    // },`;
+}
+
+/** 注释掉的 build.assets 整块 */
+function commentedBuildAssetsBlock(): string {
+  return `    /** ${$tr("init.comments.buildAssetsDesc")} */
+    // assets: {
+    //   /** ${$tr("init.comments.buildAssetsCssDesc")} */
+    //   css: {
+    //     /** ${$tr("init.comments.buildAssetsCssExtractDesc")} */
+    //     extract: true,
+    //     /** ${$tr("init.comments.buildAssetsCssMinifyDesc")} */
+    //     minify: true,
+    //     /** ${$tr("init.comments.buildAssetsCssAutoprefixDesc")} */
+    //     autoprefix: true,
+    //   },
+    //   /** ${$tr("init.comments.buildAssetsImagesDesc")} */
+    //   images: {
+    //     /** ${$tr("init.comments.buildAssetsImagesCompressDesc")} */
+    //     compress: true,
+    //     /** ${$tr("init.comments.buildAssetsImagesFormatDesc")} */
+    //     format: "webp",
+    //   },
+    //   /** ${$tr("init.comments.buildAssetsPublicDirDesc")} */
+    //   publicDir: "public",
+    //   /** ${$tr("init.comments.buildAssetsAssetsDirDesc")} */
+    //   assetsDir: "assets",
+    //   /** ${$tr("init.comments.buildAssetsExcludeDesc")} */
+    //   // exclude: ["tailwind.css"],
+    // },`;
+}
+
+/** 注释掉的 build.build（esbuild BuildOptions，路径为 app.build.build.*） */
+function commentedBuildBuildBlock(): string {
+  return `    /** ${$tr("init.comments.buildBuildDesc")} */
+    // build: {
+    //   /** ${$tr("init.comments.buildModeDesc")} */
+    //   mode: "prod",
+    //   /** ${$tr("init.comments.buildCleanDesc")} */
+    //   clean: true,
+    //   /** ${$tr("init.comments.buildCacheDesc")} */
+    //   cache: true,
+    //   /** ${$tr("init.comments.buildIncrementalDesc")} */
+    //   incremental: true,
+    //   /** ${$tr("init.comments.buildSilentDesc")} */
+    //   silent: false,
+    //   /** ${$tr("init.comments.buildLogLevelDesc")} */
+    //   logLevel: "info",
+    // },`;
+}
+
+/** 注释掉的 build.devCache */
+function commentedBuildDevCacheBlock(): string {
+  return `    /** ${$tr("init.comments.buildDevCacheDesc")} */
+    // devCache: {
+    //   /** ${$tr("init.comments.buildDevCacheMaxCssRouteCacheSizeDesc")} */
+    //   maxCssRouteCacheSize: 500,
+    //   /** ${$tr("init.comments.buildDevCacheMaxVersionMapSizeDesc")} */
+    //   maxVersionMapSize: 2000,
+    //   /** ${$tr("init.comments.buildDevCacheEvictionBatchIntervalDesc")} */
+    //   evictionBatchInterval: 50,
+    // },`;
+}
+
+/** logger.output.file 多行字段（启用态） */
+function loggerFileBlock(path: string, indent = "        "): string {
+  return `${indent}/** ${$tr("init.comments.loggerFilePathDesc")} */
+${indent}path: "${path}",
+${indent}/** ${$tr("init.comments.loggerFileRotateDesc")} */
+${indent}rotate: true,
+${indent}/** ${$tr("init.comments.loggerFileStrategyDesc")} */
+${indent}strategy: "size",
+${indent}/** ${$tr("init.comments.loggerFileMaxSizeDesc")} */
+${indent}maxSize: 10 * 1024 * 1024,
+${indent}/** ${$tr("init.comments.loggerFileMaxFilesDesc")} */
+${indent}maxFiles: 5,`;
+}
 
 /**
  * 单应用完整 config/main.ts：所有配置节均存在，不用的整块注释
@@ -37,28 +207,39 @@ export function getFullSingleAppConfigMainTs(
 import type { AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
+  /** ${$tr("init.comments.nameDesc")} */
   name: "${configName}",
+  /** ${$tr("init.comments.kindDesc")} */
   kind: "console",
+  /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
+  /** ${$tr("init.comments.frameworkLanguage")} ${
+      $tr("init.comments.frameworkLanguageSuffix")
+    } */
   language: "${language}",
+  /** ${$tr("init.comments.routerDesc")} */
   router: {
+    /** ${$tr("init.comments.routesDirDesc")} */
     routesDir: "${routesDir}",
   },
+  /** ${$tr("init.comments.loggerDesc")} */
   logger: {
+    /** ${$tr("init.comments.loggerLevelDesc")} */
     level: "info",
+    /** ${$tr("init.comments.loggerFormatDesc")} */
     format: "text",
+    /** ${$tr("init.comments.loggerOutputDesc")} */
     output: {
+      /** ${$tr("init.comments.loggerOutputConsoleDesc")} */
       console: "auto",
+      /** ${$tr("init.comments.loggerOutputFileDesc")} */
       file: {
-        path: "runtime/logs/app.log",
-        rotate: true,
-        strategy: "size",
-        maxSize: 10 * 1024 * 1024,
-        maxFiles: 5,
+${loggerFileBlock("runtime/logs/app.log")}
       },
     },
   },
-  // console: { slim: true }, // faster dweb-cli run cold start; or DWEB_CONSOLE_SLIM=1
+  /** ${$tr("init.comments.consoleSlimDesc")} */
+  // console: { slim: true },
 };
 
 export default config;
@@ -66,81 +247,109 @@ export default config;
   }
 
   if (kind === "api") {
-    const apiMode = opts.apiMode ?? "action";
     return `/**
  * ${$tr("init.comments.appConfigShort")}
  * ${$tr("init.comments.frameworkAutoLoads")}
  * ${$tr("init.comments.apiConfigHint")}
- * Production: enable securityHeaders / cors allowlist / rateLimit — see docs PRODUCTION_CHECKLIST
+ * ${$tr("init.comments.apiProductionSecurityHint")}
  */
 import type { AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
+  /** ${$tr("init.comments.nameDesc")} */
   name: "${configName}",
+  /** ${$tr("init.comments.kindDesc")} */
   kind: "api",
+  /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
+  /** ${$tr("init.comments.frameworkLanguage")} ${
+      $tr("init.comments.frameworkLanguageSuffix")
+    } */
   language: "${language}",
+  /** ${$tr("init.comments.hotReloadDesc")} */
   hotReload: true,
   // ${
       $tr("init.comments.configHostPortInDevProd", {
         serverPort: String(serverPort),
       })
     }
+  /** ${$tr("init.comments.serverDesc")} */
   server: {
+    /** ${$tr("init.comments.serverDevHmrDesc")} */
     dev: {
       hmr: {
+        /** ${$tr("init.comments.serverDevHmrEnabledDesc")} */
         enabled: true,
+        /** ${$tr("init.comments.serverDevHmrPathDesc")} */
         path: "/__hmr",
       },
+      /** ${$tr("init.comments.serverDevWatchDesc")} */
       watch: {
+        /** ${$tr("init.comments.serverDevWatchPathsDesc")} */
         paths: ${JSON.stringify(watchPaths)},
+        /** ${$tr("init.comments.serverDevWatchIgnoreDesc")} */
         ignore: ["node_modules", ".git", "dist"],
       },
     },
   },
+  /** ${$tr("init.comments.routerDesc")} */
   router: {
+    /** ${$tr("init.comments.routesDirDesc")} */
     routesDir: "${routesDir}",
     /** ${$tr("init.comments.apiModeDesc")} */
     apiMode: "${apiMode}",
   },
+  /** ${$tr("init.comments.loggerDesc")} */
   logger: {
+    /** ${$tr("init.comments.loggerLevelDesc")} */
     level: "info",
+    /** ${$tr("init.comments.loggerFormatDesc")} */
     format: "text",
+    /** ${$tr("init.comments.loggerOutputDesc")} */
     output: {
+      /** ${$tr("init.comments.loggerOutputConsoleDesc")} */
       console: "auto",
+      /** ${$tr("init.comments.loggerOutputFileDesc")} */
       file: {
-        path: "runtime/logs/app.log",
-        rotate: true,
-        strategy: "size",
-        maxSize: 10 * 1024 * 1024,
-        maxFiles: 5,
+${loggerFileBlock("runtime/logs/app.log")}
       },
     },
   },
+  /** ${$tr("init.comments.buildDesc")} */
   build: {
+    /** ${$tr("init.comments.buildServerDesc")} */
     server: {
-      useNativeCompile: false,
-      // entry: "src/main.ts",
-      // output: "dist",
-      // compile: {
-      //   minify: true,
-      //   legalComments: "none",
-      //   sourcemap: true,
-      // },
-      // external: [],
-      // externalNpm: true,
-      // debug: false,
+      /** ${$tr("init.comments.useNativeCompileDesc")} */
+      useNativeCompile: false,${buildServerExternalBlock(opts)}
+${commentedBuildServerOptionalFields()}
     },
+${commentedBuildBuildBlock()}
   },
-  // Opt-in security (recommended in production):
-  // Production defaults (non-dev): securityHeaders + rateLimit + compression ON.
-  // Escape: securityHeaders: false, rateLimit: false, compression: false
-  // Opt-in: cors allowlist (never cors: true in prod), csrf: true, upload
-  // cors: { origin: ["https://app.example.com"], credentials: true }, // not cors: true (*)
+  // ${$tr("init.comments.optInSecurityHint")}
+  /** ${$tr("init.comments.corsDesc")} */
+  // cors: {
+  //   /** ${$tr("init.comments.corsOriginDesc")} */
+  //   origin: ["https://app.example.com"],
+  //   /** ${$tr("init.comments.corsCredentialsDesc")} */
+  //   credentials: true,
+  // },
+  /** ${$tr("init.comments.csrfDesc")} */
   // csrf: true,
-  // upload: { localDir: "./uploads", requireAuth: false }, // demo only; prod: authenticate
-  // rateLimit: { windowMs: 60_000, max: 120 },
-  // compression is on by default outside RUNTIME_ENV=dev
+  /** ${$tr("init.comments.uploadDesc")} */
+  // upload: {
+  //   /** ${$tr("init.comments.uploadLocalDirDesc")} */
+  //   localDir: "./uploads",
+  //   /** ${$tr("init.comments.uploadRequireAuthDesc")} */
+  //   requireAuth: false, // ${$tr("init.comments.uploadDemoOnlyHint")}
+  // },
+  /** ${$tr("init.comments.rateLimitDesc")} */
+  // rateLimit: {
+  //   /** ${$tr("init.comments.rateLimitWindowMsDesc")} */
+  //   windowMs: 60_000,
+  //   /** ${$tr("init.comments.rateLimitMaxDesc")} */
+  //   max: 120,
+  // },
+  // ${$tr("init.comments.compressionDefaultHint")}
 };
 
 export default config;
@@ -155,7 +364,7 @@ export default config;
 import type { AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
-  // ========== Basic ==========
+  // ========== ${$tr("init.comments.sectionBasic")} ==========
   /** ${$tr("init.comments.nameDesc")} */
   name: "${configName}",
   /** ${$tr("init.comments.kindDesc")} */
@@ -171,16 +380,20 @@ const config: AppConfig = {
   /** ${$tr("init.comments.hotReloadDesc")} */
   hotReload: true,
 
-  // ========== Plugin manager (optional) ==========
+  // ========== ${$tr("init.comments.sectionPluginManager")} ==========
   /** ${$tr("init.comments.pluginManagerOptionsDesc")} */
   // pluginManagerOptions: {
+  //   /** ${$tr("init.comments.pluginAutoActivateDesc")} */
   //   autoActivate: false,
+  //   /** ${$tr("init.comments.pluginContinueOnErrorDesc")} */
   //   continueOnError: true,
+  //   /** ${$tr("init.comments.pluginEnableHotReloadDesc")} */
   //   enableHotReload: false,
+  //   /** ${$tr("init.comments.pluginHotReloadIntervalDesc")} */
   //   hotReloadInterval: 1000,
   // },
 
-  // ========== Server ==========
+  // ========== ${$tr("init.comments.sectionServer")} ==========
   /** ${$tr("init.comments.serverDesc")} */
   // ${
     $tr("init.comments.configHostPortInDevProd", {
@@ -188,15 +401,19 @@ const config: AppConfig = {
     })
   }
   server: {
+    /** ${$tr("init.comments.serverDevHmrDesc")} */
     dev: {
-      /** ${$tr("init.comments.serverDevHmrDesc")} */
       hmr: {
+        /** ${$tr("init.comments.serverDevHmrEnabledDesc")} */
         enabled: true,
+        /** ${$tr("init.comments.serverDevHmrPathDesc")} */
         path: "/__hmr",
       },
       /** ${$tr("init.comments.serverDevWatchDesc")} */
       watch: {
+        /** ${$tr("init.comments.serverDevWatchPathsDesc")} */
         paths: ${JSON.stringify(watchPaths)},
+        /** ${$tr("init.comments.serverDevWatchIgnoreDesc")} */
         ignore: ["node_modules", ".git", "dist"],
       },
     },
@@ -212,7 +429,7 @@ const config: AppConfig = {
     // shutdownTimeout: 10000,
   },
 
-  // ========== Router ==========
+  // ========== ${$tr("init.comments.sectionRouter")} ==========
   /** ${$tr("init.comments.routerDesc")} */
   router: {
     /** ${$tr("init.comments.routesDirDesc")} */
@@ -222,8 +439,11 @@ const config: AppConfig = {
     /** ${$tr("init.comments.redirectsDesc")} */
     // redirects: [
     //   {
+    //     /** ${$tr("init.comments.redirectSourceDesc")} */
     //     source: "/old",
+    //     /** ${$tr("init.comments.redirectDestinationDesc")} */
     //     destination: "/new",
+    //     /** ${$tr("init.comments.redirectPermanentDesc")} */
     //     permanent: true,
     //   },
     // ],
@@ -231,7 +451,7 @@ const config: AppConfig = {
     // skipAppValidation: false,
   },
 
-  // ========== Render ==========
+  // ========== ${$tr("init.comments.sectionRender")} ==========
   /** ${$tr("init.comments.renderDesc")} */
   // ${$tr("init.comments.renderFullDocFull")}
   render: {
@@ -241,12 +461,14 @@ const config: AppConfig = {
     mode: "${renderMode}",
     /** ${$tr("init.comments.renderDebugDesc")} */
     // debug: false,
-    // loadCache: false, // default off; true | { ttlMs } — anonymous read-only pages only
+    /** ${$tr("init.comments.loadCacheDesc")} */
+    // loadCache: false,
     // /** ${$tr("init.comments.ssrHydrate")} */
     // ssr: {
     //   /** ${$tr("init.comments.ssrHydrateOption")} */
     //   hydrate: true,
-    //   // stream: false, // view-only streaming SSR; prod asset-manifest may fall back
+    //   /** ${$tr("init.comments.ssrStreamDesc")} */
+    //   // stream: false,
     // },
     // /** ${$tr("init.comments.ssgHydrate")} */
     // ssg: {
@@ -260,105 +482,29 @@ const config: AppConfig = {
     //   }, // ${$tr("init.comments.dynamicRoutesExample")}
     //   /** ${$tr("init.comments.ssgHydrateOption")} */
     //   hydrate: true,
-    //   // preloadHtml: true, // or { maxPages: 200, maxSizeMb: 10 }
+    //   /** ${$tr("init.comments.ssgPreloadHtmlDesc")} */
+    //   // preloadHtml: true,
     // },
-    // hydration: { mismatchMode: "continue" }, // view-only: continue | assert | remount
+    /** ${$tr("init.comments.hydrationMismatchDesc")} */
+    // hydration: { mismatchMode: "continue" },
   },
 
-  // ========== Build ==========
+  // ========== ${$tr("init.comments.sectionBuild")} ==========
   /** ${$tr("init.comments.buildDesc")} */
   build: {
     /** ${$tr("init.comments.buildServerDesc")} */
     server: {
       /** ${$tr("init.comments.useNativeCompileDesc")} */
-      useNativeCompile: false,${
-    (() => {
-      const ext = getBuildServerExternal(opts);
-      if (!ext?.length) return "";
-      const lines = ext.map((e) => `        "${e}"`).join(",\n");
-      return `
-      // ${$tr("init.comments.buildServerExternalBun")}
-      external: [
-${lines}
-      ],`;
-    })()
-  }
-      /** ${$tr("init.comments.buildServerEntryDesc")} */
-      // entry: "src/main.ts",
-      /** ${$tr("init.comments.buildServerOutputDesc")} */
-      // output: "dist",
-      /** ${$tr("init.comments.buildServerTargetDesc")} */
-      // target: "deno",
-      /** ${$tr("init.comments.buildServerCompileDesc")} */
-      // compile: {
-      //   minify: true,
-      //   legalComments: "none", // none | inline | eof | linked | external (prod default none)
-      //   sourcemap: true,
-      //   platform: ["linux", "darwin", "windows"],
-      //   standalone: false,
-      // },
-      /** ${$tr("init.comments.buildServerExternalDesc")} */
-      // external: ["tailwindcss", "lightningcss"],
-      /** ${$tr("init.comments.buildServerExternalNpmDesc")} */
-      // externalNpm: true,
-      /** ${$tr("init.comments.buildServerExcludePathsDesc")} */
-      // excludePaths: ["node_modules", ".bun/install"],
-      /** ${$tr("init.comments.buildServerDebugDesc")} */
-      // debug: false,
+      useNativeCompile: false,${buildServerExternalBlock(opts)}
+${commentedBuildServerOptionalFields()}
     },
-    /** ${$tr("init.comments.buildClientDesc")} */
-    // client: {
-    //   entry: "...",
-    //   output: "dist/client",
-    //   engine: "${opts.engine}",
-    //   bundle: {
-    //     minify: true, // prod default true
-    //     legalComments: "none", // none | inline | eof | linked | external
-    //     sourcemap: false,
-    //     splitting: true, // or { enabled, byRoute, byComponent, bySize, include, exclude }
-    //     format: "esm",
-    //     // external: [], // do not externalize react/preact/@dreamer/view (hydration)
-    //     // alias: { /* e.g. resolve duplicates */ },
-    //     // chunkNames: "[name]-[hash]",
-    //   },
-    //   html: {
-    //     template: "src/index.html",
-    //     title: "My App",
-    //   },
-    //   sourcemap: true,
-    //   debug: false,
-    // },
-    /** ${$tr("init.comments.buildAssetsDesc")} */
-    // assets: {
-    //   css: {
-    //     extract: true,
-    //     minify: true,
-    //     autoprefix: true,
-    //   },
-    //   images: {
-    //     compress: true,
-    //     format: "webp", // webp | avif | original
-    //   },
-    //   publicDir: "public",
-    //   assetsDir: "assets",
-    // },
-    /** ${$tr("init.comments.buildBuildDesc")} */
-    // build: {
-    //   mode: "prod",
-    //   clean: true,
-    //   cache: true,
-    //   incremental: true,
-    //   silent: false,
-    //   logLevel: "info",
-    // },
-    // devCache: {
-    //   maxCssRouteCacheSize: 500,
-    //   maxVersionMapSize: 2000,
-    //   evictionBatchInterval: 50,
-    // },
+${commentedBuildClientBlock(opts.engine)}
+${commentedBuildAssetsBlock()}
+${commentedBuildBuildBlock()}
+${commentedBuildDevCacheBlock()}
   },
 
-  // ========== Logger ==========
+  // ========== ${$tr("init.comments.sectionLogger")} ==========
   /** ${$tr("init.comments.loggerDesc")} */
   logger: {
     /** ${$tr("init.comments.loggerLevelDesc")} */
@@ -371,11 +517,7 @@ ${lines}
       console: "auto",
       /** ${$tr("init.comments.loggerOutputFileDesc")} */
       file: {
-        path: "runtime/logs/app.log",
-        rotate: true,
-        strategy: "size",
-        maxSize: 10 * 1024 * 1024,
-        maxFiles: 5,
+${loggerFileBlock("runtime/logs/app.log")}
       },
     },
     /** ${$tr("init.comments.loggerColorDesc")} */
@@ -395,75 +537,119 @@ ${lines}
     // maxMessageLength: 32 * 1024,
   },
 
-  // ========== Production security / transport (opt-in; see docs PRODUCTION_CHECKLIST) ==========
-  /** Security response headers (default off). true or { contentSecurityPolicy, frameOptions, ... } */
-  // securityHeaders: false, // escape prod default
-  // securityHeaders: { contentSecurityPolicy: "default-src 'self'" }, // CSP still explicit
-  /**
-   * CORS via @dreamer/middlewares (default off).
-   * Prefer an origin allowlist in production — \`cors: true\` means origin "*".
-   * When socket (socketio) has no cors, this origin is bridged to Socket.IO.
-   */
-  // cors: { origin: ["https://app.example.com"], credentials: true },
-  // cors: true, // open "*"; ok for quick demos, not for credentialed prod APIs
-  /** Response compression gzip/br (on by default outside RUNTIME_ENV=dev; false to disable) */
+  // ========== ${$tr("init.comments.productionSecuritySection")} ==========
+  /** ${$tr("init.comments.securityHeadersDesc")} */
+  // securityHeaders: false, // ${
+    $tr("init.comments.securityHeadersEscapeHint")
+  }
+  // securityHeaders: { contentSecurityPolicy: "default-src 'self'" }, // ${
+    $tr("init.comments.securityHeadersCspExample")
+  }
+  /** ${$tr("init.comments.corsDesc")} */
+  // cors: {
+  //   /** ${$tr("init.comments.corsOriginDesc")} */
+  //   origin: ["https://app.example.com"],
+  //   /** ${$tr("init.comments.corsCredentialsDesc")} */
+  //   credentials: true,
+  // },
+  // cors: true, // ${$tr("init.comments.corsOpenWarn")}
+  /** ${$tr("init.comments.compressionDesc")} */
   // compression: false,
-  // compression: { threshold: 1024, enableBrotli: true },
-  /** Simple in-memory rate limit (default off). Do not trust X-Forwarded-For unless the proxy strips client spoofing. */
-  // rateLimit: false, // escape prod default
-  // rateLimit: { windowMs: 60_000, max: 120 },
+  // compression: {
+  //   /** ${$tr("init.comments.compressionThresholdDesc")} */
+  //   threshold: 1024,
+  //   /** ${$tr("init.comments.compressionBrotliDesc")} */
+  //   enableBrotli: true,
+  // },
+  /** ${$tr("init.comments.rateLimitDesc")} */
+  // rateLimit: false, // ${$tr("init.comments.rateLimitEscapeHint")}
+  // rateLimit: {
+  //   /** ${$tr("init.comments.rateLimitWindowMsDesc")} */
+  //   windowMs: 60_000,
+  //   /** ${$tr("init.comments.rateLimitMaxDesc")} */
+  //   max: 120,
+  // },
+  /** ${$tr("init.comments.csrfDesc")} */
   // csrf: true,
-  // upload: { requireAuth: true, authenticate: async (req) => ({ userId: "..." }) },
-  // metrics: true, // or { path: "/metrics" } — Prometheus scrape; off by default
+  /** ${$tr("init.comments.uploadDesc")} */
+  // upload: {
+  //   /** ${$tr("init.comments.uploadRequireAuthDesc")} */
+  //   requireAuth: true,
+  //   /** ${$tr("init.comments.uploadAuthenticateDesc")} */
+  //   authenticate: async (req) => ({ userId: "..." }),
+  // },
+  /** ${$tr("init.comments.metricsDesc")} */
+  // metrics: true,
+  /** ${$tr("init.comments.onRequestEndDesc")} */
   // onRequestEnd: ({ path, method, status, durationMs }) => {},
+  /** ${$tr("init.comments.onSSREndDesc")} */
   // onSSREnd: ({ path, mode, engine, durationMs, ok }) => {},
 
-  // ========== Database (optional; uncomment and configure to use) ==========
   /** ${$tr("init.comments.databaseDesc")} */
   // database: {
   //   /** ${$tr("init.comments.databaseDefaultDesc")} */
   //   default: {
+  //     /** ${$tr("init.comments.databaseAdapterDesc")} */
   //     adapter: "sqlite",
+  //     /** ${$tr("init.comments.databaseConnectionDesc")} */
   //     connection: {
+  //       /** ${$tr("init.comments.databaseFilenameDesc")} */
   //       filename: "./data.db",
   //     },
   //   },
   //   /** ${$tr("init.comments.databaseConnectionsDesc")} */
-  //   // or postgresql: connection: { host, port, database, username, password }
+  //   // ${$tr("init.comments.databasePostgresHint")}
   //   // connections: { read: { ... }, mongodb: { ... } },
   //   /** ${$tr("init.comments.databaseManagerOptionsDesc")} */
   //   // managerOptions: {},
   // },
 
-  // ========== Socket / WebSocket (optional) ==========
+  // ========== ${$tr("init.comments.sectionSocket")} ==========
   /** ${$tr("init.comments.socketDesc")} */
   // socket: {
   //   /** ${$tr("init.comments.socketAdapterDesc")} */
   //   adapter: "socketio",
   //   /** ${$tr("init.comments.socketConfigDesc")} */
   //   config: {
+  //     /** ${$tr("init.comments.socketPathDesc")} */
   //     path: "/socket.io/",
+  //     /** ${$tr("init.comments.socketAllowCorsDesc")} */
   //     allowCORS: true,
-  //     // Prefer an allowlist for cross-origin sockets (or set AppConfig.cors.origin to bridge)
-  //     cors: { origin: ["https://app.example.com"] },
+  //     // ${$tr("init.comments.socketCorsAllowlistHint")}
+  //     /** ${$tr("init.comments.socketCorsDesc")} */
+  //     cors: {
+  //       /** ${$tr("init.comments.corsOriginDesc")} */
+  //       origin: ["https://app.example.com"],
+  //     },
+  //     /** ${$tr("init.comments.socketPingTimeoutDesc")} */
   //     pingTimeout: 20000,
+  //     /** ${$tr("init.comments.socketPingIntervalDesc")} */
   //     pingInterval: 25000,
+  //     /** ${$tr("init.comments.socketTransportsDesc")} */
   //     transports: ["websocket", "polling"],
+  //     /** ${$tr("init.comments.socketAllowPollingDesc")} */
   //     allowPolling: true,
+  //     /** ${$tr("init.comments.socketDebugDesc")} */
   //     debug: false,
   //   },
   // },
   // socket: {
+  //   /** ${$tr("init.comments.socketAdapterDesc")} */
   //   adapter: "websocket",
+  //   /** ${$tr("init.comments.socketConfigDesc")} */
   //   config: {
+  //     /** ${$tr("init.comments.socketPathDesc")} */
   //     path: "/ws",
+  //     /** ${$tr("init.comments.socketPingTimeoutDesc")} */
   //     pingTimeout: 60000,
+  //     /** ${$tr("init.comments.socketPingIntervalDesc")} */
   //     pingInterval: 30000,
+  //     /** ${$tr("init.comments.socketDebugDesc")} */
   //     debug: false,
   //   },
   // },
 
-  // ========== Session (optional; @dreamer/session; requires store, e.g. createFileStore) ==========
+  // ========== ${$tr("init.comments.sectionSession")} ==========
   /** ${$tr("init.comments.sessionDesc")} */
   // session: {
   //   /** ${$tr("init.comments.sessionStoreDesc")} */
@@ -474,16 +660,20 @@ ${lines}
   //   maxAge: 86400,
   //   /** ${$tr("init.comments.sessionCookieDesc")} */
   //   cookie: {
+  //     /** ${$tr("init.comments.sessionCookiePathDesc")} */
   //     path: "/",
+  //     /** ${$tr("init.comments.sessionCookieHttpOnlyDesc")} */
   //     httpOnly: true,
+  //     /** ${$tr("init.comments.sessionCookieSecureDesc")} */
   //     secure: false,
+  //     /** ${$tr("init.comments.sessionCookieSameSiteDesc")} */
   //     sameSite: "lax",
   //   },
   //   /** ${$tr("init.comments.sessionAutoSaveDesc")} */
   //   autoSave: true,
   // },
 
-  // ========== Plugins (optional) ==========
+  // ========== ${$tr("init.comments.sectionPlugins")} ==========
   /** ${$tr("init.comments.pluginsDesc")} */
   // plugins: [
   //   "./plugins/auth-plugin.ts",
@@ -497,7 +687,7 @@ ${lines}
   //   },
   // ],
 
-  // ========== Middlewares (optional) ==========
+  // ========== ${$tr("init.comments.sectionMiddlewares")} ==========
   /** ${$tr("init.comments.middlewaresDesc")} */
   // middlewares: [
   //   {
@@ -546,28 +736,59 @@ export default {
   hotReload: true,
   /** ${$tr("init.comments.pluginManagerOptionsDesc")} */
   // pluginManagerOptions: {
+  //   /** ${$tr("init.comments.pluginAutoActivateDesc")} */
   //   autoActivate: false,
+  //   /** ${$tr("init.comments.pluginContinueOnErrorDesc")} */
   //   continueOnError: true,
+  //   /** ${$tr("init.comments.pluginEnableHotReloadDesc")} */
   //   enableHotReload: false,
+  //   /** ${$tr("init.comments.pluginHotReloadIntervalDesc")} */
   //   hotReloadInterval: 1000,
   // },
 
   /** ${$tr("init.comments.serverDesc")} */
   server: {
+    /** ${$tr("init.comments.serverHostDesc")} */
     host: "127.0.0.1",
     /** ${$tr("init.comments.commonConfigPortOverride")} */
+    // /** ${$tr("init.comments.serverPortDesc")} */
+    // port: 8000,
+    /** ${$tr("init.comments.serverDevHmrDesc")} */
     // dev: {
-    //   hmr: { enabled: true, path: "/__hmr" },
-    //   watch: { paths: ["./src"], ignore: ["node_modules", ".git", "dist"] },
+    //   hmr: {
+    //     /** ${$tr("init.comments.serverDevHmrEnabledDesc")} */
+    //     enabled: true,
+    //     /** ${$tr("init.comments.serverDevHmrPathDesc")} */
+    //     path: "/__hmr",
+    //   },
+    //   /** ${$tr("init.comments.serverDevWatchDesc")} */
+    //   watch: {
+    //     /** ${$tr("init.comments.serverDevWatchPathsDesc")} */
+    //     paths: ["./src"],
+    //     /** ${$tr("init.comments.serverDevWatchIgnoreDesc")} */
+    //     ignore: ["node_modules", ".git", "dist"],
+    //   },
     // },
-    // mode: "dev", onListen, onError, debug, shutdownTimeout
+    /** ${$tr("init.comments.serverModeDesc")} */
+    // mode: "dev",
+    /** ${$tr("init.comments.serverOnListenDesc")} */
+    // onListen: ({ host, port }) => { console.log(\`http://\${host}:\${port}\`); },
+    /** ${$tr("init.comments.serverOnErrorDesc")} */
+    // onError: (error) => { console.error(error); return new Response("Error", { status: 500 }); },
+    /** ${$tr("init.comments.serverDebugDesc")} */
+    // debug: false,
+    /** ${$tr("init.comments.serverShutdownTimeoutDesc")} */
+    // shutdownTimeout: 10000,
   },
 
   /** ${$tr("init.comments.routerDesc")} */
   router: {
     /** ${$tr("init.comments.commonConfigRoutesDirOverride")} */
-    // apiMode set per-app (web/api); default action
+    // /** ${$tr("init.comments.apiModeDesc")} */
+    // apiMode: "action", // set per-app (web/api); default action
+    /** ${$tr("init.comments.redirectsDesc")} */
     // redirects: [],
+    /** ${$tr("init.comments.skipAppValidationDesc")} */
     // skipAppValidation: false,
   },
 
@@ -577,94 +798,175 @@ export default {
     engine: "${opts.engine}",
     /** ${$tr("init.comments.renderModeDesc")} */
     mode: "${opts.renderMode ?? "hybrid"}",
+    /** ${$tr("init.comments.renderDebugDesc")} */
     // debug: false,
-    // loadCache: false, // true | { ttlMs }
-    // ssr: { hydrate: true /*, stream: false */ },
-    // ssg: { outputDir: "dist/static", routes: ["/", "/about"], dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, hydrate: true /*, preloadHtml: true */ },
-    // hydration: { mismatchMode: "continue" }, // view-only
+    /** ${$tr("init.comments.loadCacheDesc")} */
+    // loadCache: false,
+    // /** ${$tr("init.comments.ssrHydrate")} */
+    // ssr: {
+    //   /** ${$tr("init.comments.ssrHydrateOption")} */
+    //   hydrate: true,
+    //   /** ${$tr("init.comments.ssrStreamDesc")} */
+    //   // stream: false,
+    // },
+    // /** ${$tr("init.comments.ssgHydrate")} */
+    // ssg: {
+    //   /** ${$tr("init.comments.ssgOutputDirDesc")} */
+    //   outputDir: "dist/static",
+    //   /** ${$tr("init.comments.ssgRoutesDesc")} */
+    //   routes: ["/", "/about"],
+    //   /** ${$tr("init.comments.dynamicRoutesSupport")} */
+    //   dynamicRoutes: {
+    //     "/user/[id]": ["1", "2", "3"],
+    //   },
+    //   /** ${$tr("init.comments.ssgHydrateOption")} */
+    //   hydrate: true,
+    //   /** ${$tr("init.comments.ssgPreloadHtmlDesc")} */
+    //   // preloadHtml: true,
+    // },
+    /** ${$tr("init.comments.hydrationMismatchDesc")} */
+    // hydration: { mismatchMode: "continue" },
   },
 
   /** ${$tr("init.comments.buildDesc")} */
   build: {
+    /** ${$tr("init.comments.buildServerDesc")} */
     server: {
-      useNativeCompile: false,${
-    (() => {
-      const ext = getBuildServerExternal(opts);
-      if (!ext?.length) return "";
-      const lines = ext.map((e) => `        "${e}"`).join(",\n");
-      return `
-      // ${$tr("init.comments.buildServerExternalBun")}
-      external: [
-${lines}
-      ],`;
-    })()
-  }
-      // entry: "src/main.ts",
-      // output: "dist",
-      // compile: {
-      //   minify: true,
-      //   legalComments: "none",
-      //   sourcemap: true,
-      //   platform: ["linux", "darwin", "windows"],
-      //   standalone: false,
-      // },
-      // externalNpm: true,
-      // debug: false,
+      /** ${$tr("init.comments.useNativeCompileDesc")} */
+      useNativeCompile: false,${buildServerExternalBlock(opts)}
+${commentedBuildServerOptionalFields()}
     },
-    // client: {
-    //   output: "dist/client",
-    //   engine: "${opts.engine}",
-    //   bundle: {
-    //     minify: true,
-    //     legalComments: "none",
-    //     sourcemap: false,
-    //     splitting: true,
-    //     format: "esm",
-    //     // external: [],
-    //     // alias: {},
-    //   },
-    //   debug: false,
-    // },
-    // assets: { css: { extract: true, minify: true, autoprefix: true }, images: { compress: true, format: "webp" }, publicDir: "public", assetsDir: "assets" },
-    // build: { mode: "prod", clean: true, cache: true, incremental: true, silent: false, logLevel: "info" },
-    // devCache: { maxCssRouteCacheSize: 500, maxVersionMapSize: 2000, evictionBatchInterval: 50 },
+${commentedBuildClientBlock(opts.engine)}
+${commentedBuildAssetsBlock()}
+${commentedBuildBuildBlock()}
+${commentedBuildDevCacheBlock()}
   },
 
   /** ${$tr("init.comments.loggerDesc")} */
   logger: {
+    /** ${$tr("init.comments.loggerLevelDesc")} */
     level: "info",
+    /** ${$tr("init.comments.loggerFormatDesc")} */
     format: "text",
+    /** ${$tr("init.comments.loggerOutputDesc")} */
     output: {
+      /** ${$tr("init.comments.loggerOutputConsoleDesc")} */
       console: "auto",
+      /** ${$tr("init.comments.loggerOutputFileDesc")} */
       file: {
-        path: "runtime/logs/app.log",
-        rotate: true,
-        strategy: "size",
-        maxSize: 10 * 1024 * 1024,
-        maxFiles: 5,
+${loggerFileBlock("runtime/logs/app.log")}
       },
     },
-    // color, showTime, showLevel, tags, filter, maxMessageLength
+    /** ${$tr("init.comments.loggerColorDesc")} */
+    // color: true,
+    /** ${$tr("init.comments.loggerShowTimeDesc")} */
+    // showTime: true,
+    /** ${$tr("init.comments.loggerShowLevelDesc")} */
+    // showLevel: true,
+    /** ${$tr("init.comments.loggerTagsDesc")} */
+    // tags: ["app"],
+    /** ${$tr("init.comments.loggerFilterDesc")} */
+    // filter: {
+    //   includeTags: ["app", "http"],
+    //   excludeTags: ["debug"],
+    // },
+    /** ${$tr("init.comments.loggerMaxMessageLengthDesc")} */
+    // maxMessageLength: 32 * 1024,
   },
 
-  // Production: securityHeaders/cors/rateLimit — see PRODUCTION_CHECKLIST.
-  // Prefer cors allowlist (cors: true ⇒ origin "*").
+  // ${$tr("init.comments.commonProductionSecurityHint")}
+  /** ${$tr("init.comments.securityHeadersDesc")} */
   // securityHeaders: true,
-  // cors: { origin: ["https://app.example.com"], credentials: true },
-  // compression: false, // or { threshold: 1024, enableBrotli: true }
+  /** ${$tr("init.comments.corsDesc")} */
+  // cors: {
+  //   /** ${$tr("init.comments.corsOriginDesc")} */
+  //   origin: ["https://app.example.com"],
+  //   /** ${$tr("init.comments.corsCredentialsDesc")} */
+  //   credentials: true,
+  // },
+  /** ${$tr("init.comments.compressionDesc")} */
+  // compression: false,
+  // compression: {
+  //   /** ${$tr("init.comments.compressionThresholdDesc")} */
+  //   threshold: 1024,
+  //   /** ${$tr("init.comments.compressionBrotliDesc")} */
+  //   enableBrotli: true,
+  // },
+  /** ${$tr("init.comments.rateLimitDesc")} */
   // rateLimit: true,
+  /** ${$tr("init.comments.csrfDesc")} */
   // csrf: true,
-  // upload: { requireAuth: true },
+  /** ${$tr("init.comments.uploadDesc")} */
+  // upload: {
+  //   /** ${$tr("init.comments.uploadRequireAuthDesc")} */
+  //   requireAuth: true,
+  // },
+  /** ${$tr("init.comments.metricsDesc")} */
   // metrics: true,
+  /** ${$tr("init.comments.onRequestEndDesc")} */
   // onRequestEnd: ({ path, method, status, durationMs }) => {},
+  /** ${$tr("init.comments.onSSREndDesc")} */
   // onSSREnd: ({ path, mode, durationMs, ok }) => {},
 
   /** ${$tr("init.comments.databaseDesc")} */
-  // database: { default: { adapter: "sqlite", connection: { filename: "./data.db" } }, connections: {}, managerOptions: {} },
+  // database: {
+  //   /** ${$tr("init.comments.databaseDefaultDesc")} */
+  //   default: {
+  //     /** ${$tr("init.comments.databaseAdapterDesc")} */
+  //     adapter: "sqlite",
+  //     /** ${$tr("init.comments.databaseConnectionDesc")} */
+  //     connection: {
+  //       /** ${$tr("init.comments.databaseFilenameDesc")} */
+  //       filename: "./data.db",
+  //     },
+  //   },
+  //   /** ${$tr("init.comments.databaseConnectionsDesc")} */
+  //   // connections: {},
+  //   /** ${$tr("init.comments.databaseManagerOptionsDesc")} */
+  //   // managerOptions: {},
+  // },
   /** ${$tr("init.comments.socketDesc")} */
-  // socket: { adapter: "socketio" | "websocket", config: {} },
+  // socket: {
+  //   /** ${$tr("init.comments.socketAdapterDesc")} */
+  //   adapter: "socketio",
+  //   /** ${$tr("init.comments.socketConfigDesc")} */
+  //   config: {
+  //     /** ${$tr("init.comments.socketPathDesc")} */
+  //     path: "/socket.io/",
+  //     /** ${$tr("init.comments.socketAllowCorsDesc")} */
+  //     allowCORS: true,
+  //     /** ${$tr("init.comments.socketPingTimeoutDesc")} */
+  //     pingTimeout: 20000,
+  //     /** ${$tr("init.comments.socketPingIntervalDesc")} */
+  //     pingInterval: 25000,
+  //     /** ${$tr("init.comments.socketTransportsDesc")} */
+  //     transports: ["websocket", "polling"],
+  //     /** ${$tr("init.comments.socketDebugDesc")} */
+  //     debug: false,
+  //   },
+  // },
   /** ${$tr("init.comments.sessionDesc")} */
-  // session: { store, name, maxAge, cookie, autoSave, genId },
+  // session: {
+  //   /** ${$tr("init.comments.sessionStoreDesc")} */
+  //   store: createFileStore(await getDreamerDwebCacheDir(), "sessions"),
+  //   /** ${$tr("init.comments.sessionNameDesc")} */
+  //   name: "sid",
+  //   /** ${$tr("init.comments.sessionMaxAgeDesc")} */
+  //   maxAge: 86400,
+  //   /** ${$tr("init.comments.sessionCookieDesc")} */
+  //   cookie: {
+  //     /** ${$tr("init.comments.sessionCookiePathDesc")} */
+  //     path: "/",
+  //     /** ${$tr("init.comments.sessionCookieHttpOnlyDesc")} */
+  //     httpOnly: true,
+  //     /** ${$tr("init.comments.sessionCookieSecureDesc")} */
+  //     secure: false,
+  //     /** ${$tr("init.comments.sessionCookieSameSiteDesc")} */
+  //     sameSite: "lax",
+  //   },
+  //   /** ${$tr("init.comments.sessionAutoSaveDesc")} */
+  //   autoSave: true,
+  // },
   /** ${$tr("init.comments.pluginsDesc")} */
   // plugins: [],
   /** ${$tr("init.comments.middlewaresDesc")} */

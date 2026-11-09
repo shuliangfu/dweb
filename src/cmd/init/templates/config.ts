@@ -59,15 +59,25 @@ export default {
   },
   /** ${$tr("init.comments.loggerDesc")} */
   logger: {
+    /** ${$tr("init.comments.loggerLevelDesc")} */
     level: "info",
+    /** ${$tr("init.comments.loggerFormatDesc")} */
     format: "text",
+    /** ${$tr("init.comments.loggerOutputDesc")} */
     output: {
+      /** ${$tr("init.comments.loggerOutputConsoleDesc")} */
       console: "auto",
+      /** ${$tr("init.comments.loggerOutputFileDesc")} */
       file: {
+        /** ${$tr("init.comments.loggerFilePathDesc")} */
         path: "runtime/logs/${appName}.log",
+        /** ${$tr("init.comments.loggerFileRotateDesc")} */
         rotate: true,
+        /** ${$tr("init.comments.loggerFileStrategyDesc")} */
         strategy: "size",
+        /** ${$tr("init.comments.loggerFileMaxSizeDesc")} */
         maxSize: 10 * 1024 * 1024,
+        /** ${$tr("init.comments.loggerFileMaxFilesDesc")} */
         maxFiles: 5,
       },
     },
@@ -101,35 +111,83 @@ export default {
   },
   /** ${$tr("init.comments.loggerDesc")} */
   logger: {
+    /** ${$tr("init.comments.loggerLevelDesc")} */
     level: "info",
+    /** ${$tr("init.comments.loggerFormatDesc")} */
     format: "text",
+    /** ${$tr("init.comments.loggerOutputDesc")} */
     output: {
+      /** ${$tr("init.comments.loggerOutputConsoleDesc")} */
       console: "auto",
+      /** ${$tr("init.comments.loggerOutputFileDesc")} */
       file: {
+        /** ${$tr("init.comments.loggerFilePathDesc")} */
         path: "runtime/logs/${appName}.log",
+        /** ${$tr("init.comments.loggerFileRotateDesc")} */
         rotate: true,
+        /** ${$tr("init.comments.loggerFileStrategyDesc")} */
         strategy: "size",
+        /** ${$tr("init.comments.loggerFileMaxSizeDesc")} */
         maxSize: 10 * 1024 * 1024,
+        /** ${$tr("init.comments.loggerFileMaxFilesDesc")} */
         maxFiles: 5,
       },
     },
   },
   /** ${$tr("init.comments.buildDesc")} */
   build: {
+    /** ${$tr("init.comments.buildServerDesc")} */
     server: {
       /** ${$tr("init.comments.useNativeCompileDesc")} */
       useNativeCompile: false,
-      // compile: { minify: true, legalComments: "none", sourcemap: true },
-      // external: [], externalNpm: true, debug: false,
+      /** ${$tr("init.comments.buildServerCompileDesc")} */
+      // compile: {
+      //   /** ${$tr("init.comments.buildServerCompileMinifyDesc")} */
+      //   minify: true,
+      //   /** ${$tr("init.comments.buildServerCompileLegalCommentsDesc")} */
+      //   legalComments: "none",
+      //   /** ${$tr("init.comments.buildServerCompileSourcemapDesc")} */
+      //   sourcemap: true,
+      // },
+      /** ${$tr("init.comments.buildServerExternalDesc")} */
+      // external: [],
+      /** ${$tr("init.comments.buildServerExternalNpmDesc")} */
+      // externalNpm: true,
+      /** ${$tr("init.comments.buildServerDebugDesc")} */
+      // debug: false,
     },
+    /** ${$tr("init.comments.buildBuildDesc")} */
+    // build: {
+    //   /** ${$tr("init.comments.buildModeDesc")} */
+    //   mode: "prod",
+    //   /** ${$tr("init.comments.buildCleanDesc")} */
+    //   clean: true,
+    //   /** ${$tr("init.comments.buildCacheDesc")} */
+    //   cache: true,
+    //   /** ${$tr("init.comments.buildIncrementalDesc")} */
+    //   incremental: true,
+    //   /** ${$tr("init.comments.buildSilentDesc")} */
+    //   silent: false,
+    //   /** ${$tr("init.comments.buildLogLevelDesc")} */
+    //   logLevel: "info",
+    // },
   },
   // Production defaults (non-dev): securityHeaders + rateLimit + compression ON.
   // Escape: securityHeaders: false, rateLimit: false, compression: false
   // Opt-in: cors allowlist (never cors: true in prod), csrf: true, upload: { requireAuth: true }
-  // cors: { origin: ["https://app.example.com"], credentials: true },
+  // cors: {
+  //   origin: ["https://app.example.com"],
+  //   credentials: true,
+  // },
   // csrf: true,
-  // upload: { localDir: "./uploads", requireAuth: false }, // demo only; prod: authenticate
-  // rateLimit: { windowMs: 60_000, max: 120 }, // override defaults
+  // upload: {
+  //   localDir: "./uploads",
+  //   requireAuth: false, // demo only; prod: authenticate
+  // },
+  // rateLimit: {
+  //   windowMs: 60_000,
+  //   max: 120,
+  // },
 } satisfies AppConfig;
 `;
     }
@@ -162,14 +220,18 @@ export default {
     engine: "${opts.engine}",
     /** ${$tr("init.comments.renderModeDesc")} */
     mode: "${renderMode}",
+    /** ${$tr("init.comments.renderDebugDesc")} */
     // debug: false,
     // /** ${$tr("init.comments.ssrHydrate")} */
     // ssr: {
     //   /** ${$tr("init.comments.ssrHydrateOption")} */
     //   hydrate: true,
     // },
+    // /** ${$tr("init.comments.ssgHydrate")} */
     // ssg: {
+    //   /** ${$tr("init.comments.ssgOutputDirDesc")} */
     //   outputDir: "dist/static",
+    //   /** ${$tr("init.comments.ssgRoutesDesc")} */
     //   routes: ["/", "/about"],
     //   /** ${$tr("init.comments.dynamicRoutesSupport")} */
     //   dynamicRoutes: {
@@ -187,32 +249,96 @@ export default {
     format: "text",
     /** ${$tr("init.comments.loggerOutputDesc")} */
     output: {
+      /** ${$tr("init.comments.loggerOutputConsoleDesc")} */
       console: "auto",
+      /** ${$tr("init.comments.loggerOutputFileDesc")} */
       file: {
+        /** ${$tr("init.comments.loggerFilePathDesc")} */
         path: "runtime/logs/${appName}.log",
+        /** ${$tr("init.comments.loggerFileRotateDesc")} */
         rotate: true,
+        /** ${$tr("init.comments.loggerFileStrategyDesc")} */
         strategy: "size",
+        /** ${$tr("init.comments.loggerFileMaxSizeDesc")} */
         maxSize: 10 * 1024 * 1024,
+        /** ${$tr("init.comments.loggerFileMaxFilesDesc")} */
         maxFiles: 5,
       },
     },
   },
   /** ${$tr("init.comments.buildDesc")} */
   build: {
+    /** ${$tr("init.comments.buildServerDesc")} */
     server: {
       /** ${$tr("init.comments.useNativeCompileDesc")} */
       useNativeCompile: false,
-      // compile: { minify: true, legalComments: "none", sourcemap: true },
+      /** ${$tr("init.comments.buildServerCompileDesc")} */
+      // compile: {
+      //   /** ${$tr("init.comments.buildServerCompileMinifyDesc")} */
+      //   minify: true,
+      //   /** ${$tr("init.comments.buildServerCompileLegalCommentsDesc")} */
+      //   legalComments: "none",
+      //   /** ${$tr("init.comments.buildServerCompileSourcemapDesc")} */
+      //   sourcemap: true,
+      // },
     },
+    /** ${$tr("init.comments.buildClientDesc")} */
     // client: {
+    //   /** ${$tr("init.comments.buildClientOutputDesc")} */
     //   output: "dist/client",
+    //   /** ${$tr("init.comments.buildClientEngineDesc")} */
+    //   engine: "${opts.engine}",
+    //   /** ${$tr("init.comments.buildClientBundleDesc")} */
     //   bundle: {
+    //     /** ${$tr("init.comments.buildClientBundleMinifyDesc")} */
     //     minify: true,
+    //     /** ${$tr("init.comments.buildClientBundleLegalCommentsDesc")} */
     //     legalComments: "none",
+    //     /** ${$tr("init.comments.buildClientBundleSourcemapDesc")} */
     //     sourcemap: false,
+    //     /** ${$tr("init.comments.buildClientBundleSplittingDesc")} */
     //     splitting: true,
+    //     /** ${$tr("init.comments.buildClientBundleFormatDesc")} */
     //     format: "esm",
     //   },
+    // },
+    /** ${$tr("init.comments.buildAssetsDesc")} */
+    // assets: {
+    //   /** ${$tr("init.comments.buildAssetsCssDesc")} */
+    //   css: {
+    //     /** ${$tr("init.comments.buildAssetsCssExtractDesc")} */
+    //     extract: true,
+    //     /** ${$tr("init.comments.buildAssetsCssMinifyDesc")} */
+    //     minify: true,
+    //     /** ${$tr("init.comments.buildAssetsCssAutoprefixDesc")} */
+    //     autoprefix: true,
+    //   },
+    //   /** ${$tr("init.comments.buildAssetsImagesDesc")} */
+    //   images: {
+    //     /** ${$tr("init.comments.buildAssetsImagesCompressDesc")} */
+    //     compress: true,
+    //     /** ${$tr("init.comments.buildAssetsImagesFormatDesc")} */
+    //     format: "webp",
+    //   },
+    //   /** ${$tr("init.comments.buildAssetsPublicDirDesc")} */
+    //   publicDir: "public",
+    //   /** ${$tr("init.comments.buildAssetsAssetsDirDesc")} */
+    //   assetsDir: "assets",
+    // },
+    /** ${$tr("init.comments.buildBuildDesc")} */
+    // build: {
+    //   /** ${$tr("init.comments.buildModeDesc")} */
+    //   mode: "prod",
+    //   /** ${$tr("init.comments.buildCleanDesc")} */
+    //   clean: true,
+    //   /** ${$tr("init.comments.buildCacheDesc")} */
+    //   cache: true,
+    //   /** ${$tr("init.comments.buildIncrementalDesc")} */
+    //   incremental: true,
+    //   /** ${$tr("init.comments.buildSilentDesc")} */
+    //   silent: false,
+    //   /** ${$tr("init.comments.buildLogLevelDesc")} */
+    //   logLevel: "info",
     // },
   },
 } satisfies AppConfig;
@@ -229,24 +355,37 @@ export function getConfigMainDevTs(port: number = DEFAULT_PORT_BASE): string {
  * ${$tr("init.comments.devConfigOverride")}
  */
 export default {
+  /** ${$tr("init.comments.serverDesc")} */
   server: {
+    /** ${$tr("init.comments.serverHostDesc")} */
     host: "127.0.0.1",
+    /** ${$tr("init.comments.serverPortDesc")} */
     port: ${port},
+    /** ${$tr("init.comments.serverDevHmrDesc")} */
     dev: {
       hmr: {
+        /** ${$tr("init.comments.serverDevHmrEnabledDesc")} */
         enabled: true,
+        /** ${$tr("init.comments.serverDevHmrPathDesc")} */
         path: "/__hmr",
       },
+      /** ${$tr("init.comments.serverDevWatchDesc")} */
       watch: {
+        /** ${$tr("init.comments.serverDevWatchPathsDesc")} */
         paths: ["./src"],
+        /** ${$tr("init.comments.serverDevWatchIgnoreDesc")} */
         ignore: ["node_modules", ".git", "dist"],
       },
     },
   },
+  /** ${$tr("init.comments.loggerDesc")} */
   logger: {
+    /** ${$tr("init.comments.loggerLevelDesc")} */
     level: "debug",
+    /** ${$tr("init.comments.loggerFormatDesc")} */
     format: "text",
   },
+  /** ${$tr("init.comments.hotReloadDesc")} */
   hotReload: true,
 };
 `;
@@ -259,8 +398,11 @@ export function getConfigMainProdTs(port: number = DEFAULT_PORT_BASE): string {
  * ${$tr("init.comments.devConfigOverride")}
  */
 export default {
+  /** ${$tr("init.comments.serverDesc")} */
   server: {
+    /** ${$tr("init.comments.serverHostDesc")} */
     host: "0.0.0.0",
+    /** ${$tr("init.comments.serverPortDesc")} */
     port: ${port},
   },
 };
