@@ -287,6 +287,7 @@ export async function prepareClientBuildEntry(
   engine: "react" | "preact" | "view";
   bundle: {
     minify?: boolean;
+    legalComments?: "none" | "inline" | "eof" | "linked" | "external";
     sourcemap?: boolean;
     splitting?: boolean;
     format?: "esm";
@@ -369,6 +370,7 @@ export async function prepareClientBuildEntry(
       bundle?: {
         splitting?: boolean;
         minify?: boolean;
+        legalComments?: "none" | "inline" | "eof" | "linked" | "external";
         sourcemap?: boolean;
         external?: string[];
         alias?: Record<string, string>;
@@ -404,6 +406,7 @@ export async function prepareClientBuildEntry(
     engine,
     bundle: {
       minify: userBundleConfig.minify ?? true,
+      legalComments: userBundleConfig.legalComments,
       sourcemap: userBundleConfig.sourcemap ?? false,
       splitting: userBundleConfig.splitting ?? true,
       format: "esm",

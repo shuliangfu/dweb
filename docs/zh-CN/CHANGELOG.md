@@ -13,8 +13,9 @@
 
 ### 新增
 
-- **框架 `_500`**：渲染／load 失败优先项目 `routes/_500`（可 `inheritLayout = false`），
-  再回落 `_error`／默认页；依赖 `@dreamer/router@^1.2.2` 的 `_500` 特殊文件发现。
+- **框架 `_500`**：渲染／load 失败优先项目 `routes/_500`（可
+  `inheritLayout = false`）， 再回落 `_error`／默认页；依赖
+  `@dreamer/router@^1.2.2` 的 `_500` 特殊文件发现。
 
 ### 修复
 

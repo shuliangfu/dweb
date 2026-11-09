@@ -42,6 +42,7 @@ import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import {
   collectClientRoutes,
   hasContainerElementInHtml,
+  wrapInlineClientBootstrapScript,
 } from "./render-utils.ts";
 import { getRender } from "./render.ts";
 
@@ -400,37 +401,53 @@ export function createRendererCSR(
         `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
       const isDevCsr = getEnv("RUNTIME_ENV") === "dev";
       const debugRender = renderConfig.debug === true;
-      const dataScript = hydrationData
-        ? `  globalThis.__DATA__ = ${
-          serializeJsonForInlineScript(hydrationData)
-        };\n`
-        : "";
-      const clientConfigScript = `
-${overlayHtml}
-<script>
-  ${
-        debugRender
-          ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
-          : ""
+      const bootstrapStatements: string[] = [];
+      if (debugRender) {
+        bootstrapStatements.push(
+          "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;",
+        );
       }
-  ${
-        routerDebug
-          ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
-          : ""
+      if (routerDebug) {
+        bootstrapStatements.push(
+          "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;",
+        );
       }
-${dataScript}  globalThis.__DWEB_DEV__ = ${isDevCsr};
-${
-        isDevCsr && engine === "view"
-          ? "  globalThis.VIEW_DEV = true;\n"
-          : ""
-      }  globalThis.__DWEB_MODE__ = "csr";
-  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
-  globalThis.__DWEB_ENGINE__ = "${engine}";
-  globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";
-  globalThis.__DWEB_ON_READY__ = function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};
-</script>
+      if (hydrationData) {
+        bootstrapStatements.push(
+          `globalThis.__DATA__ = ${
+            serializeJsonForInlineScript(hydrationData)
+          };`,
+        );
+      }
+      bootstrapStatements.push(`globalThis.__DWEB_DEV__ = ${isDevCsr};`);
+      if (isDevCsr && engine === "view") {
+        bootstrapStatements.push("globalThis.VIEW_DEV = true;");
+      }
+      bootstrapStatements.push(`globalThis.__DWEB_MODE__ = "csr";`);
+      bootstrapStatements.push(
+        `globalThis.__DWEB_ROUTES__ = ${
+          serializeJsonForInlineScript(clientRoutes)
+        };`,
+      );
+      bootstrapStatements.push(`globalThis.__DWEB_ENGINE__ = "${engine}";`);
+      bootstrapStatements.push(
+        `globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";`,
+      );
+      bootstrapStatements.push(
+        'globalThis.__DWEB_ON_READY__ = function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};',
+      );
+      const bootstrapScript = wrapInlineClientBootstrapScript(
+        bootstrapStatements,
+        { isDev: isDevCsr },
+      );
+      const clientConfigScript = isDevCsr
+        ? `${overlayHtml}
+${bootstrapScript}
 <script type="module" src="${csrOptions.clientScript}"></script>
-${csrOptions.bodyTags || ""}`;
+${csrOptions.bodyTags || ""}`
+        : `${overlayHtml}${bootstrapScript}<script type="module" src="${csrOptions.clientScript}"></script>${
+          csrOptions.bodyTags || ""
+        }`;
 
       if (html.includes("<head>")) {
         html = html.replace("<head>", `<head>${loadingStyles}${csrMetaTags}`);
@@ -504,8 +521,35 @@ function generateFallbackCSRHtml(
 </style>`;
   const overlayHtml =
     `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
-  const onReadyScript =
-    `globalThis.__DWEB_ON_READY__=function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};`;
+  const isDev = getEnv("RUNTIME_ENV") === "dev";
+  const bootstrapStatements: string[] = [];
+  if (routerDebug) {
+    bootstrapStatements.push(
+      "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;",
+    );
+  }
+  bootstrapStatements.push(`globalThis.__DWEB_MODE__ = "csr";`);
+  bootstrapStatements.push(
+    `globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(routes)};`,
+  );
+  bootstrapStatements.push(`globalThis.__DWEB_ENGINE__ = "${engine}";`);
+  bootstrapStatements.push(
+    `globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";`,
+  );
+  bootstrapStatements.push(
+    `globalThis.__DWEB_ON_READY__=function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};`,
+  );
+  const bootstrapScript = wrapInlineClientBootstrapScript(bootstrapStatements, {
+    isDev,
+  });
+  const bodyTail = isDev
+    ? `${overlayHtml}
+  ${bootstrapScript}
+  <script type="module" src="${clientScript}"></script>
+  ${bodyTags || ""}`
+    : `${overlayHtml}${bootstrapScript}<script type="module" src="${clientScript}"></script>${
+      bodyTags || ""
+    }`;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -517,21 +561,7 @@ function generateFallbackCSRHtml(
 </head>
 <body>
   <div id="${containerId}"></div>
-  ${overlayHtml}
-  <script>
-    ${
-    routerDebug
-      ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
-      : ""
-  }
-    globalThis.__DWEB_MODE__ = "csr";
-    globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(routes)};
-    globalThis.__DWEB_ENGINE__ = "${engine}";
-    globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
-    ${onReadyScript}
-  </script>
-  <script type="module" src="${clientScript}"></script>
-  ${bodyTags || ""}
+  ${bodyTail}
 </body>
 </html>`;
 }

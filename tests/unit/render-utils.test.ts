@@ -9,6 +9,7 @@ import {
   hasContainerElementInHtml,
   MountContainerMissingError,
   streamAfterMountContainer,
+  wrapInlineClientBootstrapScript,
 } from "../../src/feature/render-utils.ts";
 
 describe("render-utils", () => {
@@ -121,6 +122,50 @@ describe("render-utils", () => {
 
     it("无 getRoutes 时应返回空数组", () => {
       expect(collectClientRoutes({} as never, "/routes")).toEqual([]);
+    });
+  });
+
+  describe("wrapInlineClientBootstrapScript()", () => {
+    const statements = [
+      'globalThis.__DATA__ = {"page":1};',
+      "globalThis.__DWEB_DEV__ = false;",
+      'globalThis.__DWEB_MODE__ = "hybrid";',
+    ];
+
+    it("生产应去注释并紧凑单行，且不改语句内 JSON", () => {
+      const out = wrapInlineClientBootstrapScript(statements, {
+        isDev: false,
+        leadingComments: { 0: "Hydration 数据", 1: "客户端路由配置" },
+      });
+      expect(out.startsWith("<script>")).toBe(true);
+      expect(out.endsWith("</script>")).toBe(true);
+      expect(out.includes("//")).toBe(false);
+      expect(out.includes("\n")).toBe(false);
+      expect(out).toContain('globalThis.__DATA__ = {"page":1};');
+      expect(out).toContain("globalThis.__DWEB_DEV__ = false;");
+      expect(out).toBe(
+        '<script>globalThis.__DATA__ = {"page":1};globalThis.__DWEB_DEV__ = false;globalThis.__DWEB_MODE__ = "hybrid";</script>',
+      );
+    });
+
+    it("开发应保留换行与 leadingComments", () => {
+      const out = wrapInlineClientBootstrapScript(statements, {
+        isDev: true,
+        leadingComments: { 0: "Hydration 数据", 1: "客户端路由配置" },
+      });
+      expect(out).toContain("// Hydration 数据");
+      expect(out).toContain("// 客户端路由配置");
+      expect(out).toContain("\n");
+      expect(out).toContain('  globalThis.__DATA__ = {"page":1};');
+    });
+
+    it("应跳过空语句且 leadingComments 按下标对齐", () => {
+      const out = wrapInlineClientBootstrapScript(
+        ["", 'globalThis.__DATA__ = {"a":1};', ""],
+        { isDev: true, leadingComments: { 1: "Hydration 数据" } },
+      );
+      expect(out).toContain("// Hydration 数据");
+      expect(out).toContain('globalThis.__DATA__ = {"a":1};');
     });
   });
 });

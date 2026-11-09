@@ -46,6 +46,7 @@ import {
   collectClientRoutes,
   escapeHtmlInStyle,
   hasContainerElementInHtml,
+  wrapInlineClientBootstrapScript,
 } from "./render-utils.ts";
 
 /**
@@ -342,42 +343,56 @@ export function createRendererHybrid(
       };
 
       // 构建客户端配置脚本（开发模式启用 HMR 调试：在控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志）
-      const clientConfigScript = `
-<script>
-  ${
-        debugRender
-          ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
-          : ""
+      // 生产：去注释／紧凑；开发：保留「Hydration 数据」「客户端路由配置」注释与换行
+      const bootstrapStatements: string[] = [];
+      const bootstrapComments: Record<number, string> = {};
+      if (debugRender) {
+        bootstrapStatements.push(
+          "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;",
+        );
       }
-  ${
-        routerDebug
-          ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
-          : ""
+      if (routerDebug) {
+        bootstrapStatements.push(
+          "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;",
+        );
       }
-  // Hydration 数据
-  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
-  // 客户端路由配置
-  globalThis.__DWEB_DEV__ = ${isDev};
-${
-        isDev && engine === "view"
-          ? "  globalThis.VIEW_DEV = true;\n"
-          : ""
-      }  globalThis.__DWEB_ROUTES__ = ${
-        serializeJsonForInlineScript(clientRoutes)
-      };
-  globalThis.__DWEB_ENGINE__ = "${engine}";
-  globalThis.__DWEB_CONTAINER_ID__ = "${hybridOptions.containerId}";
-  globalThis.__DWEB_MODE__ = "hybrid";
-  ${
-        mismatchMode
-          ? `globalThis.__DWEB_MISMATCH_MODE__ = ${
+      bootstrapComments[bootstrapStatements.length] = "Hydration 数据";
+      bootstrapStatements.push(
+        `globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};`,
+      );
+      bootstrapComments[bootstrapStatements.length] = "客户端路由配置";
+      bootstrapStatements.push(`globalThis.__DWEB_DEV__ = ${isDev};`);
+      if (isDev && engine === "view") {
+        bootstrapStatements.push("globalThis.VIEW_DEV = true;");
+      }
+      bootstrapStatements.push(
+        `globalThis.__DWEB_ROUTES__ = ${
+          serializeJsonForInlineScript(clientRoutes)
+        };`,
+      );
+      bootstrapStatements.push(`globalThis.__DWEB_ENGINE__ = "${engine}";`);
+      bootstrapStatements.push(
+        `globalThis.__DWEB_CONTAINER_ID__ = "${hybridOptions.containerId}";`,
+      );
+      bootstrapStatements.push(`globalThis.__DWEB_MODE__ = "hybrid";`);
+      if (mismatchMode) {
+        bootstrapStatements.push(
+          `globalThis.__DWEB_MISMATCH_MODE__ = ${
             JSON.stringify(mismatchMode)
-          };`
-          : ""
+          };`,
+        );
       }
-</script>
+      const bootstrapScript = wrapInlineClientBootstrapScript(
+        bootstrapStatements,
+        { isDev, leadingComments: bootstrapComments },
+      );
+      const clientConfigScript = isDev
+        ? `${bootstrapScript}
 <script type="module" src="${hybridOptions.clientScript}"></script>
-${hybridOptions.bodyTags || ""}`;
+${hybridOptions.bodyTags || ""}`
+        : `${bootstrapScript}<script type="module" src="${hybridOptions.clientScript}"></script>${
+          hybridOptions.bodyTags || ""
+        }`;
 
       // 在 </body> 前注入脚本
       if (html.includes("</body>")) {

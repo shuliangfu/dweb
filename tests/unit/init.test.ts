@@ -172,7 +172,7 @@ describe("init (cmd/init.ts)", () => {
   );
 
   it(
-    "generate() 应能生成单应用 API 项目（无 _app，routes/hello.ts）",
+    "generate() 应能生成单应用 API 项目（无 _app，routes/index.ts）",
     async () => {
       const parentDir = await makeTempDir({ prefix: "dweb-init-api-" });
       testDir = join(parentDir, "api-app");
@@ -193,7 +193,7 @@ describe("init (cmd/init.ts)", () => {
 
       await generate(opts);
 
-      expect(await exists(join(testDir, "src", "routes", "hello.ts"))).toBe(
+      expect(await exists(join(testDir, "src", "routes", "index.ts"))).toBe(
         true,
       );
       expect(await exists(join(testDir, "src", "routes", "users", "index.ts")))
@@ -299,7 +299,7 @@ describe("init (cmd/init.ts)", () => {
 
       expect(await exists(join(testDir, "src", "web", "routes", "_app.tsx")))
         .toBe(true);
-      expect(await exists(join(testDir, "src", "api", "routes", "hello.ts")))
+      expect(await exists(join(testDir, "src", "api", "routes", "index.ts")))
         .toBe(true);
       expect(await exists(join(testDir, "src", "api", "routes", "_app.tsx")))
         .toBe(false);

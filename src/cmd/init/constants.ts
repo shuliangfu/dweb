@@ -3,6 +3,7 @@
  */
 
 import type {
+  ApiMode,
   AppKind,
   Engine,
   ExampleLevel,
@@ -33,6 +34,9 @@ export const STYLES: Style[] = ["tailwind", "unocss", "none"];
 
 /** 示例粒度菜单顺序 */
 export const EXAMPLE_LEVELS: ExampleLevel[] = ["with-about", "minimal"];
+
+/** API 模式菜单顺序（下标 0 为默认 action） */
+export const API_MODES: ApiMode[] = ["action", "restful"];
 
 /** 多应用端口起始值，单应用固定 3000 */
 export const DEFAULT_PORT_BASE = 3000;

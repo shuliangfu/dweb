@@ -351,6 +351,7 @@ export async function buildClientScript(
           bundle?: {
             splitting?: boolean;
             minify?: boolean;
+            legalComments?: "none" | "inline" | "eof" | "linked" | "external";
             sourcemap?: boolean;
             external?: string[];
             alias?: Record<string, string>;
@@ -397,14 +398,16 @@ export async function buildClientScript(
         engine,
         debug: buildDebug,
         logger: buildLogger,
+        // legalComments 透传；JSR 已发类型尚未含该字段，故断言放宽
         bundle: {
           minify: shouldMinify,
+          legalComments: userBundleConfig.legalComments,
           sourcemap: shouldSourcemap,
           splitting: shouldSplit,
           format: "esm",
           external: externalList.length > 0 ? externalList : undefined,
           alias: prodBundleAlias,
-        },
+        } as ConstructorParameters<typeof BuilderClient>[0]["bundle"],
         lang: config.language === "zh-CN" || config.language === "en-US"
           ? config.language
           : undefined,

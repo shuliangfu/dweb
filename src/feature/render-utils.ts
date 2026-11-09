@@ -140,3 +140,44 @@ export async function streamAfterMountContainer(
     },
   });
 }
+
+/**
+ * 将已序列化的 JS 语句包装为 HTML 内联 `<script>…</script>`。
+ *
+ * - 开发（`isDev`）：保留缩进换行，并可按语句下标插入 `//` 注释，便于阅读
+ * - 生产：去掉注释与多余空白，紧凑拼接（不改动各 statement 内部的 JSON／语义）
+ *
+ * 调用方须先用 `serializeJsonForInlineScript` 等完成序列化；本函数不做 AST minify，
+ * 也不解析／改写语句内容，避免破坏字符串内的 `//` 或空白。
+ *
+ * @param statements 完整 JS 语句（通常以分号结尾）；空串会被跳过
+ * @param opts.isDev 是否开发环境（跟 `RUNTIME_ENV=dev`）
+ * @param opts.leadingComments 仅 `isDev` 生效：原语句下标 → 注释正文（不含 `//`）
+ */
+export function wrapInlineClientBootstrapScript(
+  statements: readonly string[],
+  opts: {
+    isDev: boolean;
+    leadingComments?: Readonly<Record<number, string>>;
+  },
+): string {
+  const parts: string[] = [];
+  /** parts 下标 → 原 statements 下标（跳过空串后仍能对上 leadingComments） */
+  const indexMap: number[] = [];
+  for (let i = 0; i < statements.length; i++) {
+    const s = statements[i]!;
+    if (!s) continue;
+    indexMap.push(i);
+    parts.push(s);
+  }
+  if (opts.isDev) {
+    const lines: string[] = [];
+    for (let pi = 0; pi < parts.length; pi++) {
+      const comment = opts.leadingComments?.[indexMap[pi]!];
+      if (comment) lines.push(`  // ${comment}`);
+      lines.push(`  ${parts[pi]}`);
+    }
+    return `<script>\n${lines.join("\n")}\n</script>`;
+  }
+  return `<script>${parts.join("")}</script>`;
+}

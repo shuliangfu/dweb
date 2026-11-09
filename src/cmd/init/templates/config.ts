@@ -77,6 +77,7 @@ export default {
     }
 
     if (kind === "api") {
+      const apiMode = opts.apiMode ?? "action";
       return `/**
  * ${$tr("init.comments.appConfig", { appName })}
  * ${$tr("init.comments.commonFieldsMerged")}
@@ -95,6 +96,8 @@ export default {
   router: {
     /** ${$tr("init.comments.routesDirDesc")} */
     routesDir: "${routesDir}",
+    /** ${$tr("init.comments.apiModeDesc")} */
+    apiMode: "${apiMode}",
   },
   /** ${$tr("init.comments.loggerDesc")} */
   logger: {
@@ -116,6 +119,8 @@ export default {
     server: {
       /** ${$tr("init.comments.useNativeCompileDesc")} */
       useNativeCompile: false,
+      // compile: { minify: true, legalComments: "none", sourcemap: true },
+      // external: [], externalNpm: true, debug: false,
     },
   },
   // Production defaults (non-dev): securityHeaders + rateLimit + compression ON.
@@ -129,6 +134,7 @@ export default {
 `;
     }
 
+    const apiMode = opts.apiMode ?? "action";
     return `/**
  * ${$tr("init.comments.appConfig", { appName })}
  * ${$tr("init.comments.commonFieldsMerged")}
@@ -146,6 +152,8 @@ export default {
   router: {
     /** ${$tr("init.comments.routesDirDesc")} */
     routesDir: "${routesDir}",
+    /** ${$tr("init.comments.apiModeDesc")} */
+    apiMode: "${apiMode}",
   },
   /** ${$tr("init.comments.renderDesc")} */
   // ${$tr("init.comments.renderFullDoc")}
@@ -194,7 +202,18 @@ export default {
     server: {
       /** ${$tr("init.comments.useNativeCompileDesc")} */
       useNativeCompile: false,
+      // compile: { minify: true, legalComments: "none", sourcemap: true },
     },
+    // client: {
+    //   output: "dist/client",
+    //   bundle: {
+    //     minify: true,
+    //     legalComments: "none",
+    //     sourcemap: false,
+    //     splitting: true,
+    //     format: "esm",
+    //   },
+    // },
   },
 } satisfies AppConfig;
 `;

@@ -53,7 +53,10 @@ import {
   getLayoutTsx,
   getUserByIdTsx,
 } from "./templates/components.ts";
-import { listApiRouteFiles } from "./templates/api-routes.ts";
+import {
+  listApiRouteFiles,
+  listWebInAppApiRouteFiles,
+} from "./templates/api-routes.ts";
 import { listConsoleRouteFiles } from "./templates/console-routes.ts";
 import { getDockerComposeYml, getDockerfile } from "./templates/docker.ts";
 import {
@@ -145,6 +148,12 @@ async function generateWebAppFiles(
       getUserByIdTsx(webOpts),
     );
   }
+  // 应用路由内 api（routes/api/*），风格随 apiMode
+  await writeRouteFiles(
+    join(appBase, "routes"),
+    listWebInAppApiRouteFiles(exampleLevel, opts.apiMode ?? "action"),
+  );
+
   if (style === "tailwind") {
     await writeTextFile(
       join(appBase, "assets", "tailwind.css"),
@@ -187,7 +196,7 @@ async function generateApiAppFiles(
   );
   await writeRouteFiles(
     join(appBase, "routes"),
-    listApiRouteFiles(opts.exampleLevel),
+    listApiRouteFiles(opts.exampleLevel, opts.apiMode ?? "action"),
   );
 }
 

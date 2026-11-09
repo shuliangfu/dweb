@@ -49,6 +49,7 @@ import {
   hasContainerElementInHtml,
   MountContainerMissingError,
   streamAfterMountContainer,
+  wrapInlineClientBootstrapScript,
 } from "./render-utils.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { tryRenderErrorSpecialPage } from "./error-special.ts";
@@ -353,35 +354,50 @@ export function createRendererSSR(
         const routerDebug =
           (resolvedConfig.router as { debug?: boolean } | undefined)
             ?.debug === true;
-        return `
-<script>
-  ${debugRender ? "globalThis.__DWEB_DEBUG__ = true;" : ""}
-  ${
-          routerDebug
-            ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
-            : ""
+
+        const bootstrapStatements: string[] = [];
+        if (debugRender) {
+          bootstrapStatements.push("globalThis.__DWEB_DEBUG__ = true;");
         }
-  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
-  globalThis.__DWEB_DEV__ = ${isDev};
-${
-          isDev && engine === "view"
-            ? "  globalThis.VIEW_DEV = true;\n"
-            : ""
-        }  globalThis.__DWEB_ROUTES__ = ${
-          serializeJsonForInlineScript(clientRoutes)
-        };
-  globalThis.__DWEB_ENGINE__ = "${engine}";
-  globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
-  globalThis.__DWEB_MODE__ = "ssr";
-  ${
-          mismatchMode
-            ? `globalThis.__DWEB_MISMATCH_MODE__ = ${
+        if (routerDebug) {
+          bootstrapStatements.push(
+            "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;",
+          );
+        }
+        bootstrapStatements.push(
+          `globalThis.__DATA__ = ${
+            serializeJsonForInlineScript(hydrationData)
+          };`,
+        );
+        bootstrapStatements.push(`globalThis.__DWEB_DEV__ = ${isDev};`);
+        if (isDev && engine === "view") {
+          bootstrapStatements.push("globalThis.VIEW_DEV = true;");
+        }
+        bootstrapStatements.push(
+          `globalThis.__DWEB_ROUTES__ = ${
+            serializeJsonForInlineScript(clientRoutes)
+          };`,
+        );
+        bootstrapStatements.push(`globalThis.__DWEB_ENGINE__ = "${engine}";`);
+        bootstrapStatements.push(
+          `globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";`,
+        );
+        bootstrapStatements.push(`globalThis.__DWEB_MODE__ = "ssr";`);
+        if (mismatchMode) {
+          bootstrapStatements.push(
+            `globalThis.__DWEB_MISMATCH_MODE__ = ${
               JSON.stringify(mismatchMode)
-            };`
-            : ""
+            };`,
+          );
         }
-</script>
-<script type="module" src="${clientScript}"></script>`;
+        const bootstrapScript = wrapInlineClientBootstrapScript(
+          bootstrapStatements,
+          { isDev },
+        );
+        return isDev
+          ? `${bootstrapScript}
+<script type="module" src="${clientScript}"></script>`
+          : `${bootstrapScript}<script type="module" src="${clientScript}"></script>`;
       };
 
       const responseHeaders: HeadersInit = {

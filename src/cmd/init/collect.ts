@@ -15,6 +15,7 @@ import {
 import { args, cwd, resolve } from "@dreamer/runtime-adapter";
 import { $tr } from "../../utils/i18n.ts";
 import {
+  API_MODES,
   ENGINES,
   EXAMPLE_LEVELS,
   RENDER_MODES,
@@ -30,6 +31,7 @@ import {
   type TypedAppNameReject,
 } from "./helpers.ts";
 import type {
+  ApiMode,
   AppKind,
   AppMode,
   ExampleLevel,
@@ -220,6 +222,17 @@ export async function collectOptions(
     style = STYLES[styleIdx] ?? "tailwind";
   }
 
+  const hasApi = apps.some((a) => a.kind === "api");
+  let apiMode: ApiMode = "action";
+  if (hasWeb || hasApi) {
+    const apiModeIdx = await interactiveMenu(
+      $tr("init.apiMode"),
+      [$tr("init.apiModeAction"), $tr("init.apiModeRestful")],
+      0,
+    );
+    apiMode = API_MODES[apiModeIdx] ?? "action";
+  }
+
   const useSrc = await confirm($tr("init.useSrc"), true);
 
   const onlyConsole = apps.length === 1 && apps[0].kind === "console";
@@ -267,6 +280,7 @@ export async function collectOptions(
     style,
     useSrc,
     exampleLevel,
+    apiMode,
     useBeta: useBeta ?? false,
   };
 }

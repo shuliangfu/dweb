@@ -26,6 +26,7 @@ export function getFullSingleAppConfigMainTs(
   const renderMode = opts.renderMode ?? "hybrid";
   const language = getDefaultLanguage();
   const kind = kindOverride ?? getAppKind(opts);
+  const apiMode = opts.apiMode ?? "action";
 
   if (kind === "console") {
     return `/**
@@ -57,6 +58,7 @@ const config: AppConfig = {
       },
     },
   },
+  // console: { slim: true }, // faster dweb-cli run cold start; or DWEB_CONSOLE_SLIM=1
 };
 
 export default config;
@@ -64,6 +66,7 @@ export default config;
   }
 
   if (kind === "api") {
+    const apiMode = opts.apiMode ?? "action";
     return `/**
  * ${$tr("init.comments.appConfigShort")}
  * ${$tr("init.comments.frameworkAutoLoads")}
@@ -97,6 +100,8 @@ const config: AppConfig = {
   },
   router: {
     routesDir: "${routesDir}",
+    /** ${$tr("init.comments.apiModeDesc")} */
+    apiMode: "${apiMode}",
   },
   logger: {
     level: "info",
@@ -115,6 +120,16 @@ const config: AppConfig = {
   build: {
     server: {
       useNativeCompile: false,
+      // entry: "src/main.ts",
+      // output: "dist",
+      // compile: {
+      //   minify: true,
+      //   legalComments: "none",
+      //   sourcemap: true,
+      // },
+      // external: [],
+      // externalNpm: true,
+      // debug: false,
     },
   },
   // Opt-in security (recommended in production):
@@ -203,7 +218,7 @@ const config: AppConfig = {
     /** ${$tr("init.comments.routesDirDesc")} */
     routesDir: "${routesDir}",
     /** ${$tr("init.comments.apiModeDesc")} */
-    // apiMode: "restful",
+    apiMode: "${apiMode}",
     /** ${$tr("init.comments.redirectsDesc")} */
     // redirects: [
     //   {
@@ -226,10 +241,12 @@ const config: AppConfig = {
     mode: "${renderMode}",
     /** ${$tr("init.comments.renderDebugDesc")} */
     // debug: false,
+    // loadCache: false, // default off; true | { ttlMs } — anonymous read-only pages only
     // /** ${$tr("init.comments.ssrHydrate")} */
     // ssr: {
     //   /** ${$tr("init.comments.ssrHydrateOption")} */
     //   hydrate: true,
+    //   // stream: false, // view-only streaming SSR; prod asset-manifest may fall back
     // },
     // /** ${$tr("init.comments.ssgHydrate")} */
     // ssg: {
@@ -243,7 +260,9 @@ const config: AppConfig = {
     //   }, // ${$tr("init.comments.dynamicRoutesExample")}
     //   /** ${$tr("init.comments.ssgHydrateOption")} */
     //   hydrate: true,
+    //   // preloadHtml: true, // or { maxPages: 200, maxSizeMb: 10 }
     // },
+    // hydration: { mismatchMode: "continue" }, // view-only: continue | assert | remount
   },
 
   // ========== Build ==========
@@ -273,8 +292,10 @@ ${lines}
       /** ${$tr("init.comments.buildServerCompileDesc")} */
       // compile: {
       //   minify: true,
+      //   legalComments: "none", // none | inline | eof | linked | external (prod default none)
       //   sourcemap: true,
       //   platform: ["linux", "darwin", "windows"],
+      //   standalone: false,
       // },
       /** ${$tr("init.comments.buildServerExternalDesc")} */
       // external: ["tailwindcss", "lightningcss"],
@@ -290,8 +311,20 @@ ${lines}
     //   entry: "...",
     //   output: "dist/client",
     //   engine: "${opts.engine}",
-    //   bundle: {},
-    //   html: {},
+    //   bundle: {
+    //     minify: true, // prod default true
+    //     legalComments: "none", // none | inline | eof | linked | external
+    //     sourcemap: false,
+    //     splitting: true, // or { enabled, byRoute, byComponent, bySize, include, exclude }
+    //     format: "esm",
+    //     // external: [], // do not externalize react/preact/@dreamer/view (hydration)
+    //     // alias: { /* e.g. resolve duplicates */ },
+    //     // chunkNames: "[name]-[hash]",
+    //   },
+    //   html: {
+    //     template: "src/index.html",
+    //     title: "My App",
+    //   },
     //   sourcemap: true,
     //   debug: false,
     // },
@@ -302,7 +335,10 @@ ${lines}
     //     minify: true,
     //     autoprefix: true,
     //   },
-    //   images: {},
+    //   images: {
+    //     compress: true,
+    //     format: "webp", // webp | avif | original
+    //   },
     //   publicDir: "public",
     //   assetsDir: "assets",
     // },
@@ -314,6 +350,11 @@ ${lines}
     //   incremental: true,
     //   silent: false,
     //   logLevel: "info",
+    // },
+    // devCache: {
+    //   maxCssRouteCacheSize: 500,
+    //   maxVersionMapSize: 2000,
+    //   evictionBatchInterval: 50,
     // },
   },
 
@@ -373,6 +414,9 @@ ${lines}
   // rateLimit: { windowMs: 60_000, max: 120 },
   // csrf: true,
   // upload: { requireAuth: true, authenticate: async (req) => ({ userId: "..." }) },
+  // metrics: true, // or { path: "/metrics" } — Prometheus scrape; off by default
+  // onRequestEnd: ({ path, method, status, durationMs }) => {},
+  // onSSREnd: ({ path, mode, engine, durationMs, ok }) => {},
 
   // ========== Database (optional; uncomment and configure to use) ==========
   /** ${$tr("init.comments.databaseDesc")} */
@@ -522,7 +566,7 @@ export default {
   /** ${$tr("init.comments.routerDesc")} */
   router: {
     /** ${$tr("init.comments.commonConfigRoutesDirOverride")} */
-    // apiMode: "restful",
+    // apiMode set per-app (web/api); default action
     // redirects: [],
     // skipAppValidation: false,
   },
@@ -534,25 +578,56 @@ export default {
     /** ${$tr("init.comments.renderModeDesc")} */
     mode: "${opts.renderMode ?? "hybrid"}",
     // debug: false,
-    // ssr: { hydrate: true },
-    // ssg: { outputDir: "dist/static", routes: ["/", "/about"], dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, hydrate: true },
+    // loadCache: false, // true | { ttlMs }
+    // ssr: { hydrate: true /*, stream: false */ },
+    // ssg: { outputDir: "dist/static", routes: ["/", "/about"], dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, hydrate: true /*, preloadHtml: true */ },
+    // hydration: { mismatchMode: "continue" }, // view-only
   },
 
   /** ${$tr("init.comments.buildDesc")} */
   build: {
-    server: { useNativeCompile: false${
+    server: {
+      useNativeCompile: false,${
     (() => {
       const ext = getBuildServerExternal(opts);
       if (!ext?.length) return "";
-      const lines = ext.map((e) => `      "${e}"`).join(",\n");
-      return `,
-    // ${$tr("init.comments.buildServerExternalBun")}
-    external: [
+      const lines = ext.map((e) => `        "${e}"`).join(",\n");
+      return `
+      // ${$tr("init.comments.buildServerExternalBun")}
+      external: [
 ${lines}
-    ]`;
+      ],`;
     })()
-  } },
-    // client: {}, assets: {}, build: {}
+  }
+      // entry: "src/main.ts",
+      // output: "dist",
+      // compile: {
+      //   minify: true,
+      //   legalComments: "none",
+      //   sourcemap: true,
+      //   platform: ["linux", "darwin", "windows"],
+      //   standalone: false,
+      // },
+      // externalNpm: true,
+      // debug: false,
+    },
+    // client: {
+    //   output: "dist/client",
+    //   engine: "${opts.engine}",
+    //   bundle: {
+    //     minify: true,
+    //     legalComments: "none",
+    //     sourcemap: false,
+    //     splitting: true,
+    //     format: "esm",
+    //     // external: [],
+    //     // alias: {},
+    //   },
+    //   debug: false,
+    // },
+    // assets: { css: { extract: true, minify: true, autoprefix: true }, images: { compress: true, format: "webp" }, publicDir: "public", assetsDir: "assets" },
+    // build: { mode: "prod", clean: true, cache: true, incremental: true, silent: false, logLevel: "info" },
+    // devCache: { maxCssRouteCacheSize: 500, maxVersionMapSize: 2000, evictionBatchInterval: 50 },
   },
 
   /** ${$tr("init.comments.loggerDesc")} */
@@ -572,12 +647,17 @@ ${lines}
     // color, showTime, showLevel, tags, filter, maxMessageLength
   },
 
-  // Production: securityHeaders/cors/rateLimit still opt-in; compression defaults on outside dev
-  // Prefer cors allowlist (cors: true ⇒ origin "*"). See PRODUCTION_CHECKLIST.
+  // Production: securityHeaders/cors/rateLimit — see PRODUCTION_CHECKLIST.
+  // Prefer cors allowlist (cors: true ⇒ origin "*").
   // securityHeaders: true,
   // cors: { origin: ["https://app.example.com"], credentials: true },
   // compression: false, // or { threshold: 1024, enableBrotli: true }
   // rateLimit: true,
+  // csrf: true,
+  // upload: { requireAuth: true },
+  // metrics: true,
+  // onRequestEnd: ({ path, method, status, durationMs }) => {},
+  // onSSREnd: ({ path, mode, durationMs, ok }) => {},
 
   /** ${$tr("init.comments.databaseDesc")} */
   // database: { default: { adapter: "sqlite", connection: { filename: "./data.db" } }, connections: {}, managerOptions: {} },

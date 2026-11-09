@@ -44,6 +44,7 @@ import { loadRouteModule } from "../feature/load-route-module.ts";
 import {
   collectClientRoutes,
   hasContainerElementInHtml,
+  wrapInlineClientBootstrapScript,
 } from "../feature/render-utils.ts";
 import { getRender, initializeRender } from "../feature/render.ts";
 import { getRouter, initializeRouter } from "../feature/router.ts";
@@ -1173,21 +1174,36 @@ export class App extends EventEmitter implements IApp {
               const ssgRouterDebug =
                 (config.router as { debug?: boolean } | undefined)?.debug ===
                   true;
-              const clientConfigScript = `
-<script>
-  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
-  ${
-                ssgRouterDebug
-                  ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
-                  : ""
+              const bootstrapStatements: string[] = [
+                `globalThis.__DATA__ = ${
+                  serializeJsonForInlineScript(hydrationData)
+                };`,
+              ];
+              if (ssgRouterDebug) {
+                bootstrapStatements.push(
+                  "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;",
+                );
               }
-  globalThis.__DWEB_DEV__ = false;
-  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
-  globalThis.__DWEB_ENGINE__ = "${engine}";
-  globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
-  globalThis.__DWEB_MODE__ = "ssg";
-</script>
-<script type="module" src="${clientScript}"></script>`;
+              bootstrapStatements.push("globalThis.__DWEB_DEV__ = false;");
+              bootstrapStatements.push(
+                `globalThis.__DWEB_ROUTES__ = ${
+                  serializeJsonForInlineScript(clientRoutes)
+                };`,
+              );
+              bootstrapStatements.push(
+                `globalThis.__DWEB_ENGINE__ = "${engine}";`,
+              );
+              bootstrapStatements.push(
+                `globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";`,
+              );
+              bootstrapStatements.push(`globalThis.__DWEB_MODE__ = "ssg";`);
+              // SSG 产物始终按生产紧凑输出（无开发注释／换行）
+              const bootstrapScript = wrapInlineClientBootstrapScript(
+                bootstrapStatements,
+                { isDev: false },
+              );
+              const clientConfigScript =
+                `${bootstrapScript}<script type="module" src="${clientScript}"></script>`;
               let html = await readTextFile(filePath);
               if (!hasContainerElementInHtml(html, containerId)) {
                 logger.warn(

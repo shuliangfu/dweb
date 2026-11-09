@@ -24,6 +24,9 @@ export type ExampleLevel = "minimal" | "with-about";
 /** 运行时（Deno 写 deno.json + Docker 用 deno；Bun 写 package.json + .npmrc + Docker 用 bun） */
 export type Runtime = "deno" | "bun";
 
+/** API 路由风格：action＝方法名（index／create／login…）；restful＝HTTP 动词导出 */
+export type ApiMode = "action" | "restful";
+
 /** 单个应用规格（多应用列表项；单应用也可用） */
 export interface InitAppSpec {
   /** 应用目录名（多应用）或逻辑名（单应用可用 projectName） */
@@ -66,6 +69,8 @@ export interface InitOptions {
   useSrc: boolean;
   /** 示例代码粒度 */
   exampleLevel: ExampleLevel;
+  /** API 路由风格（有 api／web 应用时）；默认 action */
+  apiMode?: ApiMode;
   /** 是否使用 beta 最新版（从 JSR meta.json 获取） */
   useBeta?: boolean;
 }

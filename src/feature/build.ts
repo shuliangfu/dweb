@@ -261,6 +261,8 @@ export async function runBuildWithBuilder(
     useNativeCompile,
     external: (serverConfig as { external?: string[] }).external,
     externalNpm: !useNativeCompile,
+    // 透传 compile（含 minify／legalComments）；esbuild 生产默认 legalComments:"none"
+    compile: (serverConfig as { compile?: ServerConfig["compile"] }).compile,
     debug: (serverConfig as { debug?: boolean }).debug,
     logger,
   };
