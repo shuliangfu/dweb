@@ -2,7 +2,7 @@
  * integration: 纯 API（kind=api）运行时
  *
  * 1) 手写 fixture：进程内 App.start，GET/POST /hello → JSON（无 HTML）
- * 2) init generate：脚手架生成后子进程起服，同样验证
+ * 2) init generate：脚手架生成后子进程起服，验证默认 apiMode=action（/ → index，/create → create）
  *
  * 临时目录落在 tests/data/dweb-integration-*（workspace 成员）。
  * 起服后必须用 Server.port（实际监听端口），因占用时会自动 +1。
@@ -281,6 +281,7 @@ describe("integration: api kind — init generate（子进程）", () => {
       style: "none",
       useSrc: true,
       exampleLevel: "minimal",
+      apiMode: "action",
     };
     await generate(opts);
     await writeLocalDenoJson(testDir);
@@ -296,8 +297,11 @@ describe("integration: api kind — init generate（子进程）", () => {
       }
     }
 
-    expect(await exists(join(testDir, "src", "routes", "hello.ts"))).toBe(
+    expect(await exists(join(testDir, "src", "routes", "index.ts"))).toBe(
       true,
+    );
+    expect(await exists(join(testDir, "src", "routes", "hello.ts"))).toBe(
+      false,
     );
     expect(await exists(join(testDir, "src", "routes", "_app.tsx"))).toBe(
       false,
@@ -318,7 +322,7 @@ describe("integration: api kind — init generate（子进程）", () => {
 
   it.skipIf(
     SKIP_WINDOWS_BUN_CHILD_PROCESS,
-    "init 生成的 API 项目 GET/POST /hello 应返回 JSON",
+    "init 生成的 API 项目 GET / 与 POST /create 应返回 JSON",
     async () => {
       chdir(testDir);
       const env = {
@@ -336,13 +340,14 @@ describe("integration: api kind — init generate（子进程）", () => {
       });
       child = cmd.spawn();
 
-      const getRes = await waitForOkJson(`http://127.0.0.1:${INIT_PORT}/hello`);
+      // 默认 apiMode=action：index.ts 的 index → /，create → /create
+      const getRes = await waitForOkJson(`http://127.0.0.1:${INIT_PORT}/`);
       expect(getRes.status).toBe(200);
       expect(typeof getRes.json.message).toBe("string");
       expect(getRes.raw).not.toMatch(/<!DOCTYPE|<html/i);
 
       const postRes = await waitForOkJson(
-        `http://127.0.0.1:${INIT_PORT}/hello`,
+        `http://127.0.0.1:${INIT_PORT}/create`,
         {
           method: "POST",
           body: JSON.stringify({ from: "init" }),
