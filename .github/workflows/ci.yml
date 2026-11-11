@@ -20,6 +20,7 @@ env:
 
 jobs:
   test-linux:
+    name: test-deno (ubuntu-24.04)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -47,6 +48,7 @@ jobs:
         run: deno test -A --no-check tests/
 
   test-macos:
+    name: test-deno (macos-latest)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -74,6 +76,7 @@ jobs:
         run: deno test -A --no-check tests/
 
   test-windows:
+    name: test-deno (windows-latest)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -105,6 +108,7 @@ jobs:
         run: deno test -A --no-check tests/
 
   test-linux-bun:
+    name: test-bun (ubuntu-24.04)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -138,6 +142,7 @@ jobs:
           exit $failed
 
   test-macos-bun:
+    name: test-bun (macos-latest)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -169,6 +174,7 @@ jobs:
           exit $failed
 
   test-windows-bun:
+    name: test-bun (windows-latest)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -189,6 +195,7 @@ jobs:
 
   # ─── Node.js jobs（unit + integration + e2e 全量）───
   test-linux-node:
+    name: test-node (ubuntu-24.04)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -216,6 +223,7 @@ jobs:
         run: npm run test:node:e2e
 
   test-macos-node:
+    name: test-node (macos-latest)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -243,6 +251,7 @@ jobs:
         run: npm run test:node:e2e
 
   test-windows-node:
+    name: test-node (windows-latest)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
