@@ -10,6 +10,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.4] - 2026-11-11
+
+### Fixed
+
+- **Client 404/500 blank screen**: unmatched routes unmounted the View root and
+  only called `setViewState`, so `#app` went blank after the SSR 404 flashed.
+  Remount the root via `_viewEnsureReactiveRoot`, same as the existing HMR path.
+
+---
+
 ## [3.9.3] - 2026-11-11
 
 ### Changed

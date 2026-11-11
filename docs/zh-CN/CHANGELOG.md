@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+## [3.9.4] - 2026-11-11
+
+### 修复
+
+- **客户端 404／500 白屏**：未匹配路由在客户端会卸掉 View 根节点，只调用
+  `setViewState`，SSR 的 404 闪过后 `#app` 变白。现在与 HMR 路径一样，在
+  `setViewState` 之后通过 `_viewEnsureReactiveRoot` 重新挂上根节点。
+
+---
+
 ## [3.9.3] - 2026-11-11
 
 ### 变更
