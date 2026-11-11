@@ -751,7 +751,7 @@ export async function renderNotFound(containerId: string): Promise<void> {
         const pageProps = { params: {}, query: {} };
         ${
     isViewEngine
-      ? 'setViewState({ page: PageComponent as never, routeComponent: "_404", props: pageProps, layouts, skipLayouts });'
+      ? 'setViewState({ page: PageComponent as never, routeComponent: "_404", props: pageProps, layouts, skipLayouts });\n        _viewEnsureReactiveRoot(containerId);'
       : "renderCSR(PageComponent as never, pageProps, { target: container, layouts, skipLayouts });"
   }
         return;
@@ -797,7 +797,7 @@ export async function renderError(containerId: string, error: unknown): Promise<
         const pageProps = { params: {}, query: {}, error: message, stack: error instanceof Error ? error.stack : undefined };
         ${
     isViewEngine
-      ? 'setViewState({ page: PageComponent as never, routeComponent: "_500", props: pageProps, layouts, skipLayouts });'
+      ? 'setViewState({ page: PageComponent as never, routeComponent: "_500", props: pageProps, layouts, skipLayouts });\n        _viewEnsureReactiveRoot(containerId);'
       : "renderCSR(PageComponent as never, pageProps, { target: container, layouts, skipLayouts });"
   }
         return;

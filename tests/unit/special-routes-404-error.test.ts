@@ -657,6 +657,44 @@ describe("special routes — resolveErrorSpecialFile prefers _500", () => {
     // must not hardcode skipLayouts: false on special-page branches
     expect(code.includes("skipLayouts: false });")).toBe(false);
   });
+
+  it("view renderNotFound/renderError remount the reactive root after setViewState", () => {
+    const viewCode = generateClientDepContent(
+      "view",
+      [],
+      "/tmp/routes",
+      false,
+      [],
+      "hybrid",
+      {},
+      false,
+      true,
+      true,
+    );
+    // After unmount on unmatched routes, setViewState alone leaves #app empty.
+    expect(viewCode).toContain(
+      'setViewState({ page: PageComponent as never, routeComponent: "_404", props: pageProps, layouts, skipLayouts });\n        _viewEnsureReactiveRoot(containerId);',
+    );
+    expect(viewCode).toContain(
+      'setViewState({ page: PageComponent as never, routeComponent: "_500", props: pageProps, layouts, skipLayouts });\n        _viewEnsureReactiveRoot(containerId);',
+    );
+    const preactCode = generateClientDepContent(
+      "preact",
+      [],
+      "/tmp/routes",
+      false,
+      [],
+      "hybrid",
+      {},
+      false,
+      true,
+      true,
+    );
+    expect(preactCode).toContain(
+      "renderCSR(PageComponent as never, pageProps, { target: container, layouts, skipLayouts });",
+    );
+    expect(preactCode).not.toContain("_viewEnsureReactiveRoot(containerId)");
+  });
 });
 
 describe("special routes — render throw prefers _500", () => {
