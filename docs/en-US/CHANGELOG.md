@@ -10,6 +10,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.3] - 2026-11-11
+
+### Changed
+
+- **Dependencies**: `@dreamer/esbuild` `^1.5.0` → `^1.5.1` (package `imports`
+  and the `esbuild` alias); `@dreamer/server` `^1.3.0` → `^1.3.1`;
+  `@dreamer/test` `^1.2.3` → `^1.2.4`.
+
+---
+
 ## [3.9.2] - 2026-11-09
 
 ### Fixed
