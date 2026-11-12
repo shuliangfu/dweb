@@ -10,6 +10,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.5] - 2026-11-12
+
+### Changed
+
+- **Dependencies**: `@dreamer/server` `^1.3.1` → `^1.3.2` (HMR WebSocket follows
+  the current page origin and prefers seamless refresh over a full reload);
+  `@dreamer/view` `^3.0.4` → `^3.0.5`. Example projects also bump
+  `@dreamer/esbuild` `^1.5.0` → `^1.5.1` where they were still on `^1.5.0`.
+
+---
+
 ## [3.9.4] - 2026-11-11
 
 ### Fixed
