@@ -9,6 +9,17 @@
 
 ## [Unreleased]
 
+## [3.9.6] - 2026-11-13
+
+### 修复
+
+- **CLI `@common` 别名**：`dweb-cli run` 会合并项目 `deno.json` 的 import
+  map。在 Bun 和 Node 下还会按 `package.json` 的 `imports`（没有则回退到
+  `deno.json`） 安装解析钩子，因此 `@common/` 这类路径别名在 Deno
+  之外也能用。单测不再写死 Unix 文件 URL。
+
+---
+
 ## [3.9.5] - 2026-11-12
 
 ### 变更

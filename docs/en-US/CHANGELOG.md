@@ -10,6 +10,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.6] - 2026-11-13
+
+### Fixed
+
+- **CLI `@common` aliases**: `dweb-cli run` now merges the project's `deno.json`
+  import map. On Bun and Node it also installs a resolve hook from
+  `package.json` `imports` (falling back to `deno.json`), so path aliases like
+  `@common/` work outside Deno. Unit tests no longer hardcode Unix file URLs.
+
+---
+
 ## [3.9.5] - 2026-11-12
 
 ### Changed
