@@ -208,6 +208,29 @@ async function writeCommonAliasRoute(testDir: string): Promise<void> {
   };
   denoJson.imports = { ...denoJson.imports, "@common/": "./common/" };
   await writeTextFile(denoJsonPath, JSON.stringify(denoJson, null, 2));
+
+  const pkgPath = join(testDir, "package.json");
+  let pkg: Record<string, unknown> = { type: "module" };
+  if (await exists(pkgPath)) {
+    try {
+      const parsed = JSON.parse(await readTextFile(pkgPath)) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        pkg = parsed as Record<string, unknown>;
+      }
+    } catch {
+      // keep the fallback
+    }
+  }
+  const existingImports = pkg.imports && typeof pkg.imports === "object" &&
+      !Array.isArray(pkg.imports)
+    ? pkg.imports as Record<string, string>
+    : {};
+  pkg.imports = {
+    ...existingImports,
+    "@common/": "./common/",
+    "@common/*": "./common/*",
+  };
+  await writeTextFile(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
   await ensureDir(join(testDir, "common"));
   await writeTextFile(
     join(testDir, "common", "ping.ts"),
@@ -356,16 +379,24 @@ describe("integration: console kind — init generate + dweb-cli run（子进程
     sanitizeResources: false,
   });
 
-  it("dweb-cli run 应解析项目 deno.json 的 @common 别名", async () => {
-    const { status, stdout, stderr } = await spawnCli(["run", "alias/ping"]);
-    const combined = `${stdout}\n${stderr}`;
-    expect(status.success).toBe(true);
-    expect(status.code ?? 0).toBe(0);
-    expect(combined).toContain("pong-from-common");
-    expect(combined).not.toMatch(/not in import map/);
-  }, {
-    timeout: 90_000,
-    sanitizeOps: false,
-    sanitizeResources: false,
-  });
+  it(
+    "dweb-cli run 应解析项目 deno.json / package.json 的 @common 别名",
+    async () => {
+      const { status, stdout, stderr } = await spawnCli(["run", "alias/ping"]);
+      const combined = `${stdout}\n${stderr}`;
+      if (!status.success) {
+        throw new Error(
+          `dweb-cli run alias/ping failed (code ${status.code}):\n${combined}`,
+        );
+      }
+      expect(status.code ?? 0).toBe(0);
+      expect(combined).toContain("pong-from-common");
+      expect(combined).not.toMatch(/not in import map/);
+    },
+    {
+      timeout: 90_000,
+      sanitizeOps: false,
+      sanitizeResources: false,
+    },
+  );
 });
