@@ -42,6 +42,7 @@ import { isConsoleKind } from "../types/app.ts";
 import { resolveConsoleRoot } from "../utils/console-root.ts";
 import { preloadProjectEnv } from "../utils/env-loader.ts";
 import { findProjectRoot } from "../utils/project.ts";
+import { reexecWithProjectImportMap } from "../utils/project-import-map.ts";
 import { $tr } from "../utils/i18n.ts";
 import {
   parseTrailingCommandArgs,
@@ -116,6 +117,7 @@ export async function main(
   options: ParsedOptions,
 ): Promise<void> {
   const projectRoot = await findProjectRoot(cwd());
+  await reexecWithProjectImportMap(projectRoot);
   const appOpt = options.app;
   const appName = typeof appOpt === "string" && appOpt.length > 0
     ? appOpt

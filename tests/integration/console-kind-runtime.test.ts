@@ -201,6 +201,35 @@ describe("integration: console kind — 手写 fixture（进程内）", () => {
   );
 });
 
+async function writeCommonAliasRoute(testDir: string): Promise<void> {
+  const denoJsonPath = join(testDir, "deno.json");
+  const denoJson = JSON.parse(await readTextFile(denoJsonPath)) as {
+    imports?: Record<string, string>;
+  };
+  denoJson.imports = { ...denoJson.imports, "@common/": "./common/" };
+  await writeTextFile(denoJsonPath, JSON.stringify(denoJson, null, 2));
+  await ensureDir(join(testDir, "common"));
+  await writeTextFile(
+    join(testDir, "common", "ping.ts"),
+    'export const PING = "pong-from-common";\n',
+  );
+  await writeTextFile(
+    join(testDir, "src", "routes", "alias.ts"),
+    `import type { ConsoleContext } from "@dreamer/dweb";
+import { PING } from "@common/ping.ts";
+
+export const meta = {
+  description: "Project alias import",
+  actions: { ping: { description: "Print a value from @common" } },
+};
+
+export function ping(_ctx: ConsoleContext): void {
+  console.log(PING);
+}
+`,
+  );
+}
+
 describe("integration: console kind — init generate + dweb-cli run（子进程）", () => {
   let testDir: string;
   let parentDir: string;
@@ -232,6 +261,7 @@ describe("integration: console kind — init generate + dweb-cli run（子进程
     };
     await generate(opts);
     await writeLocalDenoJson(testDir);
+    await writeCommonAliasRoute(testDir);
 
     expect(await exists(join(testDir, "src", "routes", "hello.ts"))).toBe(
       true,
@@ -320,6 +350,19 @@ describe("integration: console kind — init generate + dweb-cli run（子进程
     expect(status.success).toBe(true);
     expect(status.code ?? 0).toBe(0);
     expect(combined).toMatch(/hello\/world/);
+  }, {
+    timeout: 90_000,
+    sanitizeOps: false,
+    sanitizeResources: false,
+  });
+
+  it("dweb-cli run 应解析项目 deno.json 的 @common 别名", async () => {
+    const { status, stdout, stderr } = await spawnCli(["run", "alias/ping"]);
+    const combined = `${stdout}\n${stderr}`;
+    expect(status.success).toBe(true);
+    expect(status.code ?? 0).toBe(0);
+    expect(combined).toContain("pong-from-common");
+    expect(combined).not.toMatch(/not in import map/);
   }, {
     timeout: 90_000,
     sanitizeOps: false,
