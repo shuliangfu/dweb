@@ -68,6 +68,27 @@ export {
 } from "./csr-client-chunk.ts";
 
 export { generateClientDepContent } from "./csr-client-dep.ts";
+
+/**
+ * 仅在文件不存在或内容变化时写入。
+ * HMR 改路由时若仍重写 `_client.dep.tsx`，会把 esbuild 增量 context 打成整包重编，浏览器要等数秒。
+ *
+ * @returns 是否实际写入
+ */
+export async function writeTextFileIfChanged(
+  path: string,
+  content: string,
+): Promise<boolean> {
+  try {
+    const previous = await readTextFile(path);
+    if (previous === content) return false;
+  } catch {
+    // 文件不存在或无法读取时按新文件写入
+  }
+  await writeTextFile(path, content);
+  return true;
+}
+
 export type { ClientDepRenderMode } from "./csr-client-dep.ts";
 
 /**
@@ -314,10 +335,15 @@ export async function buildClientScript(
       has500,
     );
     if (!skipWritingClientDep) {
-      await writeTextFile(clientDepPath, clientDepCode);
-      logger.debug($tr("log.clientDepRefreshed", {
-        path: pathForLog(clientDepPath),
-      }));
+      const written = await writeTextFileIfChanged(
+        clientDepPath,
+        clientDepCode,
+      );
+      if (written) {
+        logger.debug($tr("log.clientDepRefreshed", {
+          path: pathForLog(clientDepPath),
+        }));
+      }
     } else {
       logger.debug(
         $tr("log.hmrSkipClientDep", { filename: CLIENT_DEP_FILENAME }),

@@ -18,6 +18,7 @@ import {
   getChunkBaseName,
   getChunkFileNameForComponent,
   isClientChunkFile,
+  writeTextFileIfChanged,
 } from "../../src/feature/csr-client-builder.ts";
 import { createClientScriptMiddleware } from "../../src/feature/csr-client-middleware.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -539,5 +540,30 @@ describe("generateClientDepContent — engine / path / nested branches", () => {
       "hybrid",
     );
     expect(code).toContain("ROUTE_LOADERS");
+  });
+});
+
+describe("writeTextFileIfChanged()", () => {
+  it("writes a new file and skips an unchanged rewrite", async () => {
+    const dir = await Deno.makeTempDir({ prefix: "dweb-client-dep-" });
+    const path = `${dir}/_client.dep.tsx`;
+    try {
+      expect(await writeTextFileIfChanged(path, "export const a = 1;\n")).toBe(
+        true,
+      );
+      expect(await Deno.readTextFile(path)).toBe("export const a = 1;\n");
+      const first = await Deno.stat(path);
+      expect(await writeTextFileIfChanged(path, "export const a = 1;\n")).toBe(
+        false,
+      );
+      const second = await Deno.stat(path);
+      expect(second.mtime?.getTime()).toBe(first.mtime?.getTime());
+      expect(await writeTextFileIfChanged(path, "export const a = 2;\n")).toBe(
+        true,
+      );
+      expect(await Deno.readTextFile(path)).toBe("export const a = 2;\n");
+    } finally {
+      await Deno.remove(dir, { recursive: true });
+    }
   });
 });

@@ -12,6 +12,7 @@ import {
   subpathFromRoutesDirMarker,
 } from "../utils/path.ts";
 import type { RouteComponentInfo } from "./csr-client-route-manifest.ts";
+import { RESOLVE_HMR_PAGE_MODULE_SOURCE } from "./hmr-refresh.ts";
 
 /** 渲染引擎对应的 @dreamer/render 客户端适配路径（与 generateStaticClientEntry 一致） */
 const ENGINE_RENDER_ADAPTER: Record<string, string> = {
@@ -1029,6 +1030,8 @@ function _viewEnsureReactiveRoot(containerId: string): void {
       : ""
   }
 
+${RESOLVE_HMR_PAGE_MODULE_SOURCE}
+
 export async function setupHydrationRouterAndHmr(opts: {
   g: DwebGlobal;
   router: ClientRouterLike;
@@ -1100,8 +1103,6 @@ export async function setupHydrationRouterAndHmr(opts: {
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
       console.log(${JSON.stringify($tr("client.hmrDebugEnabled"))});
     }
-    for (const key of Object.keys(MODULE_CACHE)) delete MODULE_CACHE[key];
-    clearLayoutCache();
     const pathname = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname : "/";
     const match = router.match(pathname);
     if (!match) {
@@ -1110,53 +1111,62 @@ export async function setupHydrationRouterAndHmr(opts: {
       }
       unmountPrevious(); await renderNotFound(containerId); return;
     }
-    // 有 chunkUrl 且匹配当前路由时，用 import(chunkUrl + "?t=" + ts) 强制拉取新 chunk（绕过浏览器模块缓存）
-    // 否则 loadPageModule 返回缓存，拿不到新代码。多段路由如 admin/index 的 chunk 可能为 admin-index-XXX.js，需按完整路径匹配
     const comp = match.route.component;
-    const compLastSegment = comp.split("/").pop() || comp;
-    const compBase = compLastSegment.replace(/\\.(tsx?|jsx?)$/, "");
-    const compPathAsBase = comp.replace(/\\//g, "-");
-    const chunkUrlStr = typeof chunkUrl === "string" ? chunkUrl : "";
-    const chunkFileName = chunkUrlStr ? (chunkUrlStr.split("/").pop() || "") : "";
-    const chunkPathNoExt = chunkUrlStr.replace(/\\/[^/]+$/, "");
-    const chunkBaseFromUrl = chunkFileName ? chunkFileName.replace(/-[A-Za-z0-9]{6,10}\\.js(\\\.map)?$/i, "").replace(/\\.js.*$/, "") : null;
-    const chunkFullBase = (chunkPathNoExt && chunkBaseFromUrl) ? (chunkPathNoExt + "/" + chunkBaseFromUrl) : chunkBaseFromUrl;
-    const useChunkUrl = chunkUrl && (chunkBaseFromUrl || chunkFullBase) &&
-      (compBase === chunkBaseFromUrl || compLastSegment === chunkBaseFromUrl ||
-        comp === chunkBaseFromUrl || compPathAsBase === chunkBaseFromUrl ||
-        (chunkBaseFromUrl && comp.startsWith(chunkBaseFromUrl + "/")) ||
-        (chunkFullBase && (chunkFullBase.endsWith("/" + comp) || chunkFullBase === comp || chunkFullBase.endsWith(compPathAsBase))) ||
-        (compBase === "index" && !comp.includes("/") && chunkBaseFromUrl === "routes"));
+    const hmrMod = resolveHmrPageModule(
+      typeof chunkUrl === "string" ? chunkUrl : undefined,
+      routeChunkUrls && typeof routeChunkUrls === "object"
+        ? routeChunkUrls
+        : undefined,
+      comp,
+    );
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
       console.log(${JSON.stringify($tr("client.hmrChunkUrlMatch"))}, {
         chunkUrl,
-        chunkBaseFromUrl,
         comp,
-        compBase,
-        compLastSegment,
-        useChunkUrl,
+        hmrMod,
       });
     }
+    if (hmrMod.action === "preload") {
+      const path = hmrMod.url.startsWith("/") ? hmrMod.url : "/" + hmrMod.url;
+      const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
+      if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+        console.log("[dweb:hmr] preload other route page", { chunkUrl, comp, busted, component: hmrMod.component });
+      }
+      try {
+        const mod = await import(/* @vite-ignore */ busted);
+        const cleanPath = normalizeComponentPathForLookup(hmrMod.component);
+        MODULE_CACHE[cleanPath] = mod;
+        if (Object.prototype.hasOwnProperty.call(ROUTE_LOADERS, hmrMod.component)) {
+          ROUTE_LOADERS[hmrMod.component] = () => Promise.resolve(mod);
+        } else {
+          const loaderKey = Object.keys(ROUTE_LOADERS).find(
+            (k) => k.toLowerCase() === cleanPath.toLowerCase(),
+          );
+          if (loaderKey) {
+            ROUTE_LOADERS[loaderKey] = () => Promise.resolve(mod);
+          }
+        }
+      } catch (err) {
+        console.warn("[dweb:hmr] preload failed", err);
+      }
+      return;
+    }
+    if (hmrMod.action === "skip") {
+      if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+        console.log("[dweb:hmr] skip other route page", { chunkUrl, comp });
+      }
+      return;
+    }
+    for (const key of Object.keys(MODULE_CACHE)) delete MODULE_CACHE[key];
+    clearLayoutCache();
     const loadModule = () => {
-      if (useChunkUrl) {
-        const path = chunkUrl!.startsWith("/") ? chunkUrl! : "/" + chunkUrl!;
+      if (hmrMod.action === "import") {
+        const path = hmrMod.url.startsWith("/") ? hmrMod.url : "/" + hmrMod.url;
         const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
           console.log(${
     JSON.stringify($tr("client.hmrForceFetchWithChunkUrl"))
   }, busted);
-        }
-        return import(/* @vite-ignore */ busted);
-      }
-      // 无精确 chunkUrl 时（如改了 src/components）：用本次构建下发的「路由 → chunk」表拉取当前页 chunk，避免整页刷新
-      const mapped = routeChunkUrls && typeof routeChunkUrls === "object" && comp
-        ? routeChunkUrls[comp]
-        : undefined;
-      if (typeof mapped === "string" && mapped.length > 0) {
-        const path = mapped.startsWith("/") ? mapped : "/" + mapped;
-        const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
-        if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-          console.log("[dweb:hmr] routeChunkUrls", { comp, busted });
         }
         return import(/* @vite-ignore */ busted);
       }
