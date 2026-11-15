@@ -85,5 +85,13 @@ describe("generated client.dep HMR helper", () => {
     expect(src).toContain('action === "skip"');
     expect(src).toContain('action === "preload"');
     expect(src).toContain(RESOLVE_HMR_PAGE_MODULE_SOURCE);
+    expect(src).toContain(
+      "function normalizeHmrChunkUrl(url: string): string {",
+    );
+    expect(src).toContain("chunkUrl: string | undefined");
+    expect(src).toContain("currentComponent: string");
+    expect(src).toContain(
+      '  | { action: "preload"; url: string; component: string }',
+    );
   });
 });

@@ -53,8 +53,11 @@ export function resolveHmrPageModule(
     : "";
 
   if (changedNorm) {
-    if (currentNorm && changedNorm === currentNorm) {
-      return { action: "import", url: currentUrl as string };
+    if (
+      currentNorm && changedNorm === currentNorm &&
+      typeof currentUrl === "string"
+    ) {
+      return { action: "import", url: currentUrl };
     }
     const match = findComponentByChunkUrl(changedNorm, routeChunkUrls);
     if (match) {
@@ -62,8 +65,8 @@ export function resolveHmrPageModule(
     }
     return { action: "skip" };
   }
-  if (currentNorm) {
-    return { action: "import", url: currentUrl as string };
+  if (currentNorm && typeof currentUrl === "string") {
+    return { action: "import", url: currentUrl };
   }
   return { action: "loader" };
 }
@@ -73,11 +76,19 @@ export function resolveHmrPageModule(
  * Keep this source free of template placeholders.
  */
 export const RESOLVE_HMR_PAGE_MODULE_SOURCE = [
-  "function normalizeHmrChunkUrl(url) {",
+  "type HmrPageModuleResolution =",
+  '  | { action: "skip" }',
+  '  | { action: "import"; url: string }',
+  '  | { action: "preload"; url: string; component: string }',
+  '  | { action: "loader" };',
+  "function normalizeHmrChunkUrl(url: string): string {",
   '  const noQuery = url.split("?")[0].split("#")[0];',
   '  return noQuery.startsWith("/") ? noQuery : "/" + noQuery;',
   "}",
-  "function findComponentByChunkUrl(chunkNorm, routeChunkUrls) {",
+  "function findComponentByChunkUrl(",
+  "  chunkNorm: string,",
+  "  routeChunkUrls: Record<string, string> | undefined,",
+  "): { component: string; url: string } | undefined {",
   "  if (!routeChunkUrls) return undefined;",
   "  for (const component of Object.keys(routeChunkUrls)) {",
   "    const url = routeChunkUrls[component];",
@@ -87,7 +98,11 @@ export const RESOLVE_HMR_PAGE_MODULE_SOURCE = [
   "  }",
   "  return undefined;",
   "}",
-  "function resolveHmrPageModule(chunkUrl, routeChunkUrls, currentComponent) {",
+  "function resolveHmrPageModule(",
+  "  chunkUrl: string | undefined,",
+  "  routeChunkUrls: Record<string, string> | undefined,",
+  "  currentComponent: string,",
+  "): HmrPageModuleResolution {",
   "  const currentUrl =",
   "    routeChunkUrls && currentComponent",
   "      ? routeChunkUrls[currentComponent]",
@@ -99,7 +114,7 @@ export const RESOLVE_HMR_PAGE_MODULE_SOURCE = [
   "    ? normalizeHmrChunkUrl(chunkUrl)",
   '    : "";',
   "  if (changedNorm) {",
-  "    if (currentNorm && changedNorm === currentNorm) {",
+  '    if (currentNorm && changedNorm === currentNorm && typeof currentUrl === "string") {',
   '      return { action: "import", url: currentUrl };',
   "    }",
   "    const match = findComponentByChunkUrl(changedNorm, routeChunkUrls);",
@@ -108,7 +123,7 @@ export const RESOLVE_HMR_PAGE_MODULE_SOURCE = [
   "    }",
   '    return { action: "skip" };',
   "  }",
-  "  if (currentNorm) {",
+  '  if (currentNorm && typeof currentUrl === "string") {',
   '    return { action: "import", url: currentUrl };',
   "  }",
   '  return { action: "loader" };',
