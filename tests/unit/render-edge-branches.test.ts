@@ -1226,4 +1226,32 @@ describe("csr-dep path corners", () => {
     );
     expect(code).toContain("widget");
   });
+
+  it("same pathname+search skips remounting the page with empty load props", () => {
+    const code = generateClientDepContent(
+      "view",
+      [{
+        componentPath: "users",
+        fullPath: "/tmp/routes/users.tsx",
+        importName: "Route_users",
+      }],
+      "/tmp/routes",
+      false,
+      [],
+      "hybrid",
+    );
+    expect(code).toContain("_samePageHashOnly");
+    const samePage = code.indexOf("if (_samePageHashOnly)");
+    const reserved = code.indexOf("if (_reservedOrInvalid)");
+    expect(samePage).toBeGreaterThan(-1);
+    expect(reserved).toBeGreaterThan(samePage);
+    const earlyReturn = code.indexOf("return;", samePage);
+    const emptyRemount = code.indexOf(
+      "_renderNavPage(_navProps, false)",
+      samePage,
+    );
+    expect(earlyReturn).toBeGreaterThan(samePage);
+    expect(earlyReturn).toBeLessThan(reserved);
+    expect(emptyRemount).toBeGreaterThan(reserved);
+  });
 });

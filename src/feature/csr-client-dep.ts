@@ -310,8 +310,9 @@ export function clearLayoutCache(): void {
       RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
       isHydratedRef.current = true;`;
 
-  // __data 仅在 onRouteChange 内请求。同页锚点虽不触发 router 的 navigate，但浏览器改 hash 可能触发 popstate，仍会进 onRouteChange，
-  // 故用 pathname+search 判断：与上次相同则视为「同页仅 hash」，不请求 __data。保留 pathname 保留字(/_*、/__data 等)也不请求。
+  // __data 仅在 onRouteChange 内请求。同 pathname+search（再点当前菜单，或 popstate 仅改 hash）
+  // 不请求 __data，也不得用空的 params/query 重挂页面，否则 load 数据丢失。
+  // 保留 pathname 保留字(/_*、/__data 等)也不请求。
   /**
    * 两阶段导航（deferred）：先只 await 路由 chunk，首帧即渲染 shell（params/query），
    * __data 与 chunk 并行发起但不阻塞首帧；到达后 patch document.head 并二次渲染。
@@ -627,7 +628,7 @@ export interface DwebGlobal {
    * 为 true 时 @dreamer/router/client 的 createRouter debug 会输出点击拦截等日志，独立于 __DWEB_DEBUG__
    */
   __DWEB_ROUTER_DEBUG__?: boolean;
-  /** 上次的 pathname+search（不含 hash），同页仅 hash 变化时不请求 __data */
+  /** 上次的 pathname+search（不含 hash），相同时不请求 __data、也不用空 props 重挂 */
   __DWEB_LAST_PATHNAME__?: string;
 }
 
@@ -1297,6 +1298,12 @@ export async function setupHydrationRouterAndHmr(opts: {
         }
       ${onRouteChangeRenderSnippet}
       };
+      if (_samePageHashOnly) {
+        // 同 pathname+search：再点当前菜单或仅 hash 变化。
+        // 不要用空的 params/query 重挂，否则 load 数据丢失，
+        // DataPanel 会把空 data 当成首屏种子且不再请求列表。
+        return;
+      }
       if (_reservedOrInvalid) {
         await _renderNavPage(_navProps, false);
         return;
