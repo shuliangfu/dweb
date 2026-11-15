@@ -10,6 +10,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.7] - 2026-11-15
+
+### Fixed
+
+- **Same-path navigation**: when navigating to the same pathname+search (for
+  example clicking the current menu again), do not remount the page with empty
+  load props. Previously `/__data` was skipped but the page was still remounted
+  empty, so DataPanel seeded an empty first paint and did not request the list.
+
+---
+
 ## [3.9.6] - 2026-11-13
 
 ### Fixed
