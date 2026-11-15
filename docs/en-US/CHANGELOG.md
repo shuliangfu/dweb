@@ -10,6 +10,24 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-11-15
+
+### Added
+
+- **Production upgrade prompt**: new `upgradePrompt` flag, off by default;
+  enabled only in production when `AppConfig.version` is set. Provides
+  `GET /__version` and SSE `GET /__version/stream`. The client stores the
+  confirmed version with `@dreamer/storage/client` under `dweb:app-version`. The
+  first visit silently seeds the current version and does not prompt; later
+  visits show a dialog when the live version is strictly greater, and confirming
+  calls `location.replace` with a `_v` cache-busting query. Development ignores
+  the flag: no version routes, watcher script, or dialog. Web configs generated
+  by `init` include a commented `// upgradePrompt: true,`.
+- **File-route SSE**: export `sse(ctx, start, options)`. Handlers can `return`
+  it directly; it writes event-stream headers, retry, heartbeats, and framed
+  events, and cleans up when the client disconnects. The upgrade prompt
+  `/__version/stream` uses the same helper.
+
 ## [3.9.11] - 2026-11-15
 
 ### Changed

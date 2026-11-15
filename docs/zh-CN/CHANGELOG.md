@@ -9,6 +9,21 @@
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-11-15
+
+### 新增
+
+- **生产升级提示**：新增配置项 `upgradePrompt`，默认关闭；仅生产环境且
+  `AppConfig.version` 非空时生效。提供 `GET /__version` 与 SSE
+  `GET /__version/stream`。客户端用 `@dreamer/storage/client` 把已确认版本存在
+  `dweb:app-version`。首次访问只静默写入当前版本、不弹层；之后线上版本严格大于
+  本地时弹层，确认后 `location.replace` 带 `_v` 刷新。开发环境即使打开该开关也
+  不注册接口、不注入监视脚本、不弹层。`init` 生成的 web 配置写入注释掉的
+  `// upgradePrompt: true,`。
+- **文件路由 SSE**：导出 `sse(ctx, start, options)`，handler 可直接 `return`，
+  自动写 event-stream 头、retry、心跳、事件分帧，并在客户端断开时清理。升级提示
+  的 `/__version/stream` 也改用同一助手。
+
 ## [3.9.11] - 2026-11-15
 
 ### 变更
