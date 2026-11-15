@@ -10,6 +10,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.10] - 2026-11-15
+
+### Fixed
+
+- **Generated `_client.dep.tsx` typings**: HMR helpers inlined into the
+  generated client (`normalizeHmrChunkUrl`, `findComponentByChunkUrl`,
+  `resolveHmrPageModule`) now include parameter and return types, so
+  `deno check` no longer reports implicit `any` (TS7006) or treats
+  `hmrMod.component` as possibly `undefined` (TS2345 / TS2538).
+
 ## [3.9.9] - 2026-11-15
 
 ### Fixed

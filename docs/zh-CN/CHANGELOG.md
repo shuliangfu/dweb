@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+## [3.9.10] - 2026-11-15
+
+### 修复
+
+- **生成的 `_client.dep.tsx` 类型**：写入客户端的 HMR 辅助函数
+  （`normalizeHmrChunkUrl`、`findComponentByChunkUrl`、
+  `resolveHmrPageModule`）补上参数和返回类型，避免 `deno check` 报隐式
+  `any`（TS7006），以及把 `hmrMod.component` 当成可能是 `undefined` （TS2345 /
+  TS2538）。
+
 ## [3.9.9] - 2026-11-15
 
 ### 修复
