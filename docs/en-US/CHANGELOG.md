@@ -10,6 +10,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.10.2] - 2026-11-16
+
 ### Changed
 
 - **Upgrade prompt writes localStorage directly**: it no longer goes through

@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [3.10.2] - 2026-11-16
+
 ### 变更
 
 - **升级提示改用 localStorage 直接读写**：不再经过 `@dreamer/storage/client`。
