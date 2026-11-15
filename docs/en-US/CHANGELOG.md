@@ -10,6 +10,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.11] - 2026-11-15
+
+### Changed
+
+- **Dependencies**: `@dreamer/esbuild` `^1.5.1` → `^1.5.2`; `@dreamer/logger`
+  `^1.1.0` → `^1.1.1`.
+
 ## [3.9.10] - 2026-11-15
 
 ### Fixed

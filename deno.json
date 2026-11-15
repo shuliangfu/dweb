@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.9.10",
+  "version": "3.9.11",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "license": "Apache-2.0",
   "exports": {
@@ -44,12 +44,12 @@
     "@dreamer/config": "jsr:@dreamer/config@^1.1.1",
     "@dreamer/console": "jsr:@dreamer/console@^1.1.1",
     "@dreamer/database": "jsr:@dreamer/database@^1.2.0",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.5.1",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.5.2",
     "@dreamer/upload": "jsr:@dreamer/upload@^2.0.1",
-    "esbuild": "jsr:@dreamer/esbuild@^1.5.1",
+    "esbuild": "jsr:@dreamer/esbuild@^1.5.2",
     "@dreamer/i18n": "jsr:@dreamer/i18n@^1.1.2",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.1.0",
-    "@dreamer/logger": "jsr:@dreamer/logger@^1.1.0",
+    "@dreamer/logger": "jsr:@dreamer/logger@^1.1.1",
     "@dreamer/middleware": "jsr:@dreamer/middleware@^1.1.0",
     "@dreamer/middlewares": "jsr:@dreamer/middlewares@^1.1.0",
     "@dreamer/plugin": "jsr:@dreamer/plugin@^1.1.0",
