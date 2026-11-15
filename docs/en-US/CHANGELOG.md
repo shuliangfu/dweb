@@ -10,6 +10,20 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-11-16
+
+### Fixed
+
+- **Upgrade-prompt client bundling**: when dweb is loaded from JSR, generated
+  `_client.dep.tsx` no longer writes a
+  `https://jsr.io/.../upgrade-prompt-client.ts` source URL (the browser receives
+  HTML and fails the MIME check). The client source is materialized under the
+  app's `_upgrade-prompt/` directory and bundled into `_client.js`; local
+  development still uses a filesystem path. The storage client specifier is
+  taken from this package's `deno.json` imports instead of a hardcoded version.
+  Also dropped `with { type: "text" }`, which esbuild cannot bundle on the
+  server.
+
 ## [3.10.0] - 2026-11-15
 
 ### Added

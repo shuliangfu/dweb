@@ -9,6 +9,17 @@
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-11-16
+
+### 修复
+
+- **升级提示客户端打包**：从 JSR 加载 dweb 时，生成的 `_client.dep.tsx` 不再写入
+  `https://jsr.io/.../upgrade-prompt-client.ts` 源文件地址（浏览器会拿到 HTML，
+  MIME 报错）。改为把客户端源码物化到应用目录 `_upgrade-prompt/` 再打进
+  `_client.js`；本地开发仍用文件系统路径。storage 客户端说明符从本包 `deno.json`
+  的 imports 读取，不写死版本。同时去掉 `with { type: "text" }`， 避免 esbuild
+  打包服务端时失败。
+
 ## [3.10.0] - 2026-11-15
 
 ### 新增
