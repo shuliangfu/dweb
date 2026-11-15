@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 /**
  * 浏览器端升级提示：用 `@dreamer/storage/client` 把已确认的应用版本记在 localStorage。
  *

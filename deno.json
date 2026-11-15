@@ -101,7 +101,8 @@
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "@dreamer/view"
+    "jsxImportSource": "@dreamer/view",
+    "lib": ["deno.window", "dom", "dom.iterable"]
   },
   "lint": {
     "include": [
