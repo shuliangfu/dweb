@@ -11,12 +11,44 @@ import {
   extractComponentPathFromRouteFile,
   subpathFromRoutesDirMarker,
 } from "../utils/path.ts";
-import {
-  toBundledUpgradePromptSpecifier,
-  upgradePromptClientSpecifier,
-} from "./upgrade-prompt-client-spec.ts";
+import { fromFileUrl } from "../utils/version.ts";
 import type { RouteComponentInfo } from "./csr-client-route-manifest.ts";
 import { RESOLVE_HMR_PAGE_MODULE_SOURCE } from "./hmr-refresh.ts";
+
+/** JSR 包作为后备说明符，避免把 https URL 写进浏览器代码 */
+export const UPGRADE_PROMPT_PACKAGE_SPECIFIER =
+  "@dreamer/dweb/upgrade-prompt-client";
+
+/**
+ * 把模块 URL 收成 esbuild 可打包的说明符。
+ * `file://` 转为文件系统路径；`http(s):` 改为包导出。
+ */
+export function upgradePromptClientSpecifierFromUrl(moduleUrl: string): string {
+  const url = new URL(moduleUrl);
+  if (url.protocol === "file:") {
+    return fromFileUrl(url.href).replaceAll("\\", "/");
+  }
+  return UPGRADE_PROMPT_PACKAGE_SPECIFIER;
+}
+
+/** 当前运行中的升级提示客户端模块说明符 */
+export function upgradePromptClientSpecifier(): string {
+  return upgradePromptClientSpecifierFromUrl(
+    new URL("./upgrade-prompt-client.ts", import.meta.url).href,
+  );
+}
+
+/** 防御：生成入口前再次去掉 file:// 与远程 URL */
+export function toBundledUpgradePromptSpecifier(specifier: string): string {
+  const trimmed = specifier.trim();
+  if (trimmed.startsWith("file:")) {
+    return fromFileUrl(trimmed).replaceAll("\\", "/");
+  }
+  if (trimmed.startsWith("http:") || trimmed.startsWith("https:")) {
+    return UPGRADE_PROMPT_PACKAGE_SPECIFIER;
+  }
+  return trimmed;
+}
 
 /** 渲染引擎对应的 @dreamer/render 客户端适配路径（与 generateStaticClientEntry 一致） */
 const ENGINE_RENDER_ADAPTER: Record<string, string> = {
@@ -83,8 +115,6 @@ function routeLoaderKeyForClientDep(
   return "index";
 }
 
-export { upgradePromptClientSpecifier };
-
 /**
  * 生成 client.dep.tsx 内容（路由加载器、缓存、HMR CSS、loadLayouts、loadPageModule、renderNotFound、renderError、setupHydrationRouterAndHmr 等）
  * 此文件每次构建/启动都会重新生成；client.tsx 仅不存在时生成，便于用户修改入口逻辑。
@@ -122,7 +152,7 @@ export function generateClientDepContent(
   has404: boolean = false,
   /** When true, include `_500` in ROUTE_LOADERS and prefer it in renderError */
   has500: boolean = false,
-  /** 为 true 时在生成的入口中启动升级提示（@dreamer/storage/client） */
+  /** 为 true 时在生成的入口中启动升级提示 */
   enableUpgradePrompt: boolean = false,
   /** 升级提示客户端的打包说明符；缺省时按运行中的模块解析，并去掉远程 URL */
   upgradePromptSpecifier?: string,

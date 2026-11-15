@@ -9,6 +9,14 @@
 
 ## [Unreleased]
 
+### 变更
+
+- **升级提示改用 localStorage 直接读写**：不再经过 `@dreamer/storage/client`。
+  从 JSR 加载时生成的 `_client.dep.tsx` 改为导入
+  `@dreamer/dweb/upgrade-prompt-client` 并打进
+  `_client.js`，不再把源码物化到应用目录 `_upgrade-prompt/`。仍兼容读取先前
+  storage 封装的 JSON。要复测可把 `dweb:app-version` 改成更旧的版本。
+
 ## [3.10.1] - 2026-11-16
 
 ### 修复

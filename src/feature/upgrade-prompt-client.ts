@@ -1,11 +1,10 @@
 /**
- * 浏览器端升级提示：用 `@dreamer/storage/client` 把已确认的应用版本记在 localStorage。
+ * 浏览器端升级提示：用 localStorage 直接读写已确认的应用版本。
  *
  * 比较对象是本地记录与服务端当前版本，与路由、点击无关。
  * 首次访问（没有记录）只静默写入当前版本，不比较、不弹层；
  * 之后有缓存了再比较版本。要复测可把该键改成更旧的版本（例如 0.0.0）。
  */
-import { BrowserStorage } from "@dreamer/storage/client";
 import {
   DWEB_APP_VERSION_STORAGE_KEY,
   DWEB_VERSION_PATH,
@@ -25,7 +24,7 @@ interface UpgradePromptGlobals {
   };
 }
 
-/** 把 storage 或控制台里手写的值收成版本字符串。 */
+/** 把 localStorage 或控制台里手写的值收成版本字符串。 */
 export function normalizeStoredAppVersion(value: unknown): string | null {
   if (typeof value === "string") {
     const trimmed = value.trim();
@@ -61,14 +60,11 @@ export function resolveStoredUpgradeAction(
   return isProjectVersionGreater(liveVersion, stored) ? "prompt" : "idle";
 }
 
-/** 读取 localStorage 中的应用版本，兼容包封装格式和控制台手写的纯字符串。 */
-export async function readStoredAppVersion(
-  storage: BrowserStorage,
-): Promise<string | null> {
-  const fromPackage = normalizeStoredAppVersion(
-    await storage.get(DWEB_APP_VERSION_STORAGE_KEY),
-  );
-  if (fromPackage) return fromPackage;
+/**
+ * 读取 localStorage 中的应用版本。
+ * 兼容直接写入的纯字符串，以及先前 `@dreamer/storage` 封装的 JSON。
+ */
+export function readStoredAppVersion(): string | null {
   try {
     const raw = globalThis.localStorage?.getItem(DWEB_APP_VERSION_STORAGE_KEY);
     if (!raw) return null;
@@ -83,13 +79,18 @@ export async function readStoredAppVersion(
   }
 }
 
+/** 把已确认的版本以纯字符串写入 localStorage。 */
+export function writeStoredAppVersion(version: string): void {
+  globalThis.localStorage.setItem(DWEB_APP_VERSION_STORAGE_KEY, version);
+}
+
 function reloadWithVersion(live: string): void {
   const url = new URL(globalThis.location.href);
   url.searchParams.set("_v", live);
   globalThis.location.replace(url.href);
 }
 
-function showUpgradeDialog(live: string, storage: BrowserStorage): void {
+function showUpgradeDialog(live: string): void {
   const messages =
     (globalThis as UpgradePromptGlobals).__DWEB_UPGRADE_PROMPT_MESSAGES__ ||
     {};
@@ -114,9 +115,8 @@ function showUpgradeDialog(live: string, storage: BrowserStorage): void {
     "display:inline-flex;margin-left:auto;padding:.5rem 1rem;border:0;border-radius:.5rem;background:#2563eb;color:#fff;font-size:.875rem;cursor:pointer";
   button.textContent = messages.confirm || "OK";
   button.addEventListener("click", () => {
-    void storage.set(DWEB_APP_VERSION_STORAGE_KEY, live).then(() => {
-      reloadWithVersion(live);
-    });
+    writeStoredAppVersion(live);
+    reloadWithVersion(live);
   });
   const actions = document.createElement("div");
   actions.style.cssText = "display:flex;justify-content:flex-end";
@@ -143,30 +143,22 @@ export function startUpgradePrompt(): void {
     return;
   }
 
-  const storage = new BrowserStorage({ adapter: "localStorage" });
-  let stored: string | null = null;
-  let ready = false;
+  let stored = readStoredAppVersion();
   let shown = false;
-  let pendingLive: string | null = null;
 
   const consider = (live: string): void => {
     const version = live.trim();
     if (!version) return;
-    if (!ready) {
-      pendingLive = version;
-      return;
-    }
     const action = resolveStoredUpgradeAction(stored, version);
     if (action === "idle") return;
     if (action === "seed") {
-      void storage.set(DWEB_APP_VERSION_STORAGE_KEY, version).then(() => {
-        stored = version;
-      });
+      writeStoredAppVersion(version);
+      stored = version;
       return;
     }
     if (shown) return;
     shown = true;
-    showUpgradeDialog(version, storage);
+    showUpgradeDialog(version);
   };
 
   const poll = (): void => {
@@ -178,15 +170,10 @@ export function startUpgradePrompt(): void {
       .catch(() => {});
   };
 
-  void readStoredAppVersion(storage).then((value) => {
-    stored = value;
-    ready = true;
-    const injected = typeof g.__APP_VERSION__ === "string"
-      ? g.__APP_VERSION__
-      : "";
-    if (injected) consider(injected);
-    if (pendingLive) consider(pendingLive);
-  });
+  const injected = typeof g.__APP_VERSION__ === "string"
+    ? g.__APP_VERSION__
+    : "";
+  if (injected) consider(injected);
 
   try {
     const source = new EventSource(DWEB_VERSION_STREAM_PATH);

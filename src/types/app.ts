@@ -313,7 +313,7 @@ export interface AppConfig extends Record<string, unknown> {
    * `true` 时使用 {@link AppConfig.version}，经 `GET /__version/stream`（SSE）
    * 把当前版本推到已打开的页面。首次访问没有本地记录时只写入当前版本、不弹层；
    * 之后若线上版本大于 localStorage 中记录的版本，则提示用户确认后强制刷新。
-   * 记录键为 `dweb:app-version`（`@dreamer/storage`）。
+   * 记录键为 `dweb:app-version`（直接写入 localStorage）。
    * `kind: "api"` / `"console"` 不生效。
    */
   upgradePrompt?: boolean;

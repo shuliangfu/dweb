@@ -27,6 +27,11 @@ import {
   isClientChunkFile,
   writeTextFileIfChanged,
 } from "../../src/feature/csr-client-builder.ts";
+import {
+  toBundledUpgradePromptSpecifier,
+  UPGRADE_PROMPT_PACKAGE_SPECIFIER,
+  upgradePromptClientSpecifierFromUrl,
+} from "../../src/feature/csr-client-dep.ts";
 import { createClientScriptMiddleware } from "../../src/feature/csr-client-middleware.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
@@ -134,6 +139,27 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(code).not.toContain("jsr.io");
       expect(code).not.toContain("file://");
       expect(code).toContain("void startUpgradePrompt()");
+    });
+
+    it("file:// 转为文件系统路径，https 改为包导出", () => {
+      expect(
+        upgradePromptClientSpecifierFromUrl(
+          "file:///Users/demo/dweb/src/feature/upgrade-prompt-client.ts",
+        ),
+      ).toBe("/Users/demo/dweb/src/feature/upgrade-prompt-client.ts");
+      expect(
+        upgradePromptClientSpecifierFromUrl(
+          "https://jsr.io/@dreamer/dweb/3.10.0/src/feature/upgrade-prompt-client.ts",
+        ),
+      ).toBe(UPGRADE_PROMPT_PACKAGE_SPECIFIER);
+      expect(
+        toBundledUpgradePromptSpecifier(
+          "https://jsr.io/@dreamer/dweb/3.10.0/src/feature/upgrade-prompt-client.ts",
+        ),
+      ).toBe(UPGRADE_PROMPT_PACKAGE_SPECIFIER);
+      expect(
+        toBundledUpgradePromptSpecifier("file:///tmp/upgrade-prompt-client.ts"),
+      ).toBe("/tmp/upgrade-prompt-client.ts");
     });
 
     it("生成的 head meta 插入锚点应使用 ChildNode，避免 generated client 类型回归", () => {

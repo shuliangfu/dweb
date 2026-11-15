@@ -4,7 +4,7 @@
  * 版本来自 `AppConfig.version`。未填写或为空时即使开启也不启用。
  * 服务端提供 `GET /__version` 与 SSE `GET /__version/stream`；
  * 页面首屏注入引导标志与当前版本，监视逻辑在客户端入口中用
- * `@dreamer/storage/client` 把已确认的版本记在 localStorage（键 `dweb:app-version`）。
+ * 客户端直接用 localStorage 把已确认的版本记在键 `dweb:app-version`。
  */
 
 import type { AppConfig } from "../types/app.ts";
@@ -105,7 +105,7 @@ export function htmlDocumentCacheControlHeaders(
 
 /**
  * 将升级提示引导语句追加到客户端 bootstrap（原地修改 `statements`）。
- * 监视脚本改由客户端入口导入 `@dreamer/storage/client` 后启动。
+ * 监视脚本改由客户端入口导入后启动，并用 localStorage 记录版本。
  *
  * @param statements 已有内联语句
  * @param config 应用配置

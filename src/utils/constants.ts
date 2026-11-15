@@ -51,7 +51,7 @@ export const DWEB_VERSION_STREAM_PATH = "/__version/stream";
 /** `/__version` 与 SSE 流的缓存策略，禁止中间层与浏览器缓存。 */
 export const VERSION_ENDPOINT_CACHE_CONTROL = "no-store";
 
-/** 客户端用 @dreamer/storage 记在 localStorage 里的应用版本键，清掉或改成旧版本即可复测升级提示。 */
+/** 客户端记在 localStorage 里的应用版本键，清掉或改成旧版本即可复测升级提示。 */
 export const DWEB_APP_VERSION_STORAGE_KEY = "dweb:app-version";
 
 /**

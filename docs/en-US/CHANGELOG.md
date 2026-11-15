@@ -10,6 +10,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- **Upgrade prompt writes localStorage directly**: it no longer goes through
+  `@dreamer/storage/client`. When dweb is loaded from JSR, generated
+  `_client.dep.tsx` imports `@dreamer/dweb/upgrade-prompt-client` and bundles it
+  into `_client.js`; the app directory is no longer given a materialized
+  `_upgrade-prompt/` folder. Reads still accept the previous storage JSON
+  wrapper. To retest, set `dweb:app-version` to an older version.
+
 ## [3.10.1] - 2026-11-16
 
 ### Fixed
