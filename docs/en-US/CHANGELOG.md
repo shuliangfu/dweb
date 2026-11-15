@@ -10,6 +10,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- **`/__data` path header**: client-side navigation now sends the target route
+  in the `x-dweb-pathname` header. The URL keeps only the page’s own query
+  string (for example `/__data` or `/__data?parentKey=users`), without `?path=`.
+  Requests without this header return 404.
+
 ## [3.9.7] - 2026-11-15
 
 ### Fixed

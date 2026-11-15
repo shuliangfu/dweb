@@ -14,6 +14,7 @@ import {
   DEFAULT_PRELOAD_MAX_SIZE_MB,
   DEV_NO_CACHE_CONTROL,
   DWEB_DATA_PATH,
+  DWEB_DATA_PATH_HEADER,
   getCacheOptions,
   HASHED_ASSET_CACHE_CONTROL,
   setCacheOptions,
@@ -22,6 +23,7 @@ import {
 describe("constants", () => {
   it("路径常量应稳定", () => {
     expect(DWEB_DATA_PATH).toBe("/__data");
+    expect(DWEB_DATA_PATH_HEADER).toBe("x-dweb-pathname");
     expect(CLIENT_SCRIPT_PATH).toBe("/_client.js");
     expect(CLIENT_CHUNK_PREFIX).toBe("/_client/");
     expect(CLIENT_OUTPUT_MAIN_FILENAME).toBe("_client.js");

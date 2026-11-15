@@ -1100,8 +1100,8 @@ export default function User({ params }: { params: { id: string } }) {
 
 - **首屏**：服务端执行当前路由的 `load()`，将结果注入页面（或 CSR 下注入
   `globalThis.__DATA__` 供客户端首屏渲染）。
-- **客户端导航**：切换路由时，框架内部自动请求
-  `GET /__data?path=...`，服务端执行对应路由的 `load()` 并返回
+- **客户端导航**：切换路由时，框架内部自动请求 `GET /__data`（目标路径放在
+  `x-dweb-pathname` 请求头），服务端执行对应路由的 `load()` 并返回
   JSON，页面收到的就是 `load` 的返回值，无需自己发请求。
 
 只需**写好 `load` 方法、把数据 return 出去**，页面组件通过 props 直接使用即可。

@@ -1,8 +1,9 @@
 /**
  * Load 数据接口中间件
  *
- * 客户端页面切换时请求 GET /_dweb_data?path=/pathname 获取该路由 load() 的返回数据，
- * 服务端根据 path 匹配路由、执行 load()，返回 JSON，供客户端渲染时注入到页面组件。
+ * 客户端页面切换时请求 GET /__data（目标路由 pathname 放在 x-dweb-pathname 头，
+ * 页面自身的查询串仍跟在 URL 上）获取该路由 load() 的返回数据。
+ * 服务端根据该 pathname 匹配路由、执行 load()，返回 JSON，供客户端渲染时注入到页面组件。
  */
 
 import {
@@ -25,6 +26,7 @@ import {
 import {
   DATA_ENDPOINT_CACHE_CONTROL,
   DWEB_DATA_PATH,
+  DWEB_DATA_PATH_HEADER,
 } from "../utils/constants.ts";
 import { getLogger } from "../utils/logger.ts";
 import { resolveRouterRoutesDirPath } from "../utils/path.ts";
@@ -41,11 +43,30 @@ const DATA_JSON_HEADERS = {
 /** 数据接口路径（与客户端 fetch 一致），统一从 constants 导出便于引用 */
 export { DWEB_DATA_PATH };
 
+/** 从 `x-dweb-pathname` 读取 `/__data` 要加载的页面 pathname；没有则返回空串。 */
+export function resolveDataRequestPathname(ctx: {
+  headers?: Headers;
+  request?: Request;
+}): string {
+  const raw = (
+    ctx.headers?.get(DWEB_DATA_PATH_HEADER) ??
+      ctx.request?.headers?.get(DWEB_DATA_PATH_HEADER) ??
+      ""
+  ).trim();
+  if (!raw) return "";
+  try {
+    const decoded = decodeURIComponent(raw);
+    return decoded.startsWith("/") ? decoded : `/${decoded}`;
+  } catch {
+    return raw.startsWith("/") ? raw : `/${raw}`;
+  }
+}
+
 /**
  * 创建 Load 数据接口中间件
  *
- * 仅处理 GET 请求且 pathname 为 /_dweb_data 的请求：
- * - 从 query 读取 path（要加载的路由 pathname，如 /users/123）
+ * 仅处理 GET 请求且 pathname 为 /__data 的请求：
+ * - 从请求头 x-dweb-pathname 读取目标路由（如 /users/123）；没有该头则 404
  * - 匹配路由，加载页面模块，执行 load()（原生动态 `import`，与 SSR 路由加载一致）
  * - 返回 { params, query, ...loadResult } 的 JSON
  *
@@ -118,11 +139,18 @@ export function createLoadDataMiddleware(
       return;
     }
 
-    const pathname = ctx.url?.searchParams?.get("path") || "/";
+    const pathname = resolveDataRequestPathname(ctx);
+    if (!pathname) {
+      ctx.response = new Response(JSON.stringify({ error: "not_found" }), {
+        status: 404,
+        headers: DATA_JSON_HEADERS,
+      });
+      return;
+    }
     const queryFromUrl: Record<string, string> = {};
     if (ctx.url?.searchParams) {
       for (const [k, v] of ctx.url.searchParams) {
-        if (k !== "path" && v) queryFromUrl[k] = v;
+        if (v) queryFromUrl[k] = v;
       }
     }
 

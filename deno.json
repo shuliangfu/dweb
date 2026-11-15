@@ -63,7 +63,7 @@
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.2.1",
     "@dreamer/test": "jsr:@dreamer/test@^1.2.4",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.1.0",
-    "@dreamer/view": "jsr:@dreamer/view@^3.0.5",
+    "@dreamer/view": "jsr:@dreamer/view@^3.0.6",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.1.0",
     "playwright": "npm:playwright@1.59.1",
     "preact": "npm:preact@^11.2.0",
@@ -71,7 +71,7 @@
     "react": "npm:react@^19.3.1",
     "react-dom": "npm:react-dom@^19.3.1",
     "scheduler": "npm:scheduler@^0.28.0",
-    "postcss": "npm:postcss@^8.5.32",
+    "postcss": "npm:postcss@^8.5.33",
     "autoprefixer": "npm:autoprefixer@^10.6.2",
     "cssnano": "npm:cssnano@^9.9.0"
   },

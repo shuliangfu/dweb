@@ -23,6 +23,7 @@ import {
   createLoadDataMiddleware,
   DWEB_DATA_PATH,
 } from "../../src/feature/load-data-middleware.ts";
+import { DWEB_DATA_PATH_HEADER } from "../../src/utils/constants.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
 
@@ -49,14 +50,20 @@ function registerMockApp(
 }
 
 /** 创建测试用 HttpContext，并记录 next 是否被调用。 */
-function mockContext(pathname: string, method = "GET") {
+function mockContext(
+  pathname: string,
+  method = "GET",
+  headers?: Record<string, string>,
+) {
   let nextCalled = false;
   const url = new URL(`http://localhost${pathname}`);
+  const request = new Request(url, { method, headers });
   const ctx = {
     path: url.pathname,
     method,
-    request: new Request(url, { method }),
+    request,
     url,
+    headers: request.headers,
     response: undefined as Response | undefined,
   };
   return {
@@ -158,7 +165,9 @@ export function load() {
       match: () => null,
     } as unknown as Router;
     const middleware = createMiddleware(router);
-    const req = mockContext(`${DWEB_DATA_PATH}?path=/missing`);
+    const req = mockContext(DWEB_DATA_PATH, "GET", {
+      [DWEB_DATA_PATH_HEADER]: "/missing",
+    });
 
     await middleware(req.ctx as HttpContext, req.next);
 
@@ -179,7 +188,9 @@ export function load() {
       getLayoutPathsForPath: () => [layoutPath],
     } as unknown as Router;
     const middleware = createMiddleware(router);
-    const req = mockContext(`${DWEB_DATA_PATH}?path=/&filter=on`);
+    const req = mockContext(`${DWEB_DATA_PATH}?filter=on`, "GET", {
+      [DWEB_DATA_PATH_HEADER]: "/",
+    });
     (req.ctx as { session?: unknown }).session = { user: "alice" };
 
     await middleware(req.ctx as HttpContext, req.next);
@@ -209,7 +220,9 @@ export function load() {
       getLayoutPathsForPath: () => [],
     } as unknown as Router;
     const middleware = createMiddleware(router);
-    const req = mockContext(`${DWEB_DATA_PATH}?path=/error`);
+    const req = mockContext(DWEB_DATA_PATH, "GET", {
+      [DWEB_DATA_PATH_HEADER]: "/error",
+    });
 
     await middleware(req.ctx as HttpContext, req.next);
 
@@ -217,5 +230,74 @@ export function load() {
     const body = await readJson(req.ctx.response);
     expect(body.error).toBe("load_failed");
     expect(typeof body.message).toBe("string");
+  });
+  it("应从 x-dweb-pathname 头读取目标路由，URL 不必带 path", async () => {
+    const router = {
+      match: (_pathname: string) => {
+        expect(_pathname).toBe("/");
+        return {
+          isApi: false,
+          params: { id: "1" },
+          query: {},
+          route: { path: "/", fullPath: pagePath },
+        };
+      },
+      getLayoutPathsForPath: () => [layoutPath],
+    } as unknown as Router;
+    const middleware = createMiddleware(router);
+    const req = mockContext(`${DWEB_DATA_PATH}?filter=on`, "GET", {
+      [DWEB_DATA_PATH_HEADER]: "/",
+    });
+    (req.ctx as { session?: unknown }).session = { user: "alice" };
+
+    await middleware(req.ctx as HttpContext, req.next);
+
+    expect(req.ctx.response?.status).toBe(200);
+    const body = await readJson(req.ctx.response);
+    expect(body.query).toEqual({ filter: "on" });
+    expect(body.data).toEqual({ greeting: "hello", user: "alice" });
+  });
+
+  it("没有 x-dweb-pathname 时应返回 404", async () => {
+    const router = {
+      match: () => {
+        throw new Error("should not match without a pathname header");
+      },
+    } as unknown as Router;
+    const middleware = createMiddleware(router);
+    const req = mockContext(DWEB_DATA_PATH);
+
+    await middleware(req.ctx as HttpContext, req.next);
+
+    expect(req.ctx.response?.status).toBe(404);
+    const body = await readJson(req.ctx.response);
+    expect(body.error).toBe("not_found");
+  });
+
+  it("URL 上的 path 是页面查询参数，不是目标路由", async () => {
+    const seen: string[] = [];
+    const router = {
+      match: (pathname: string) => {
+        seen.push(pathname);
+        return {
+          isApi: false,
+          params: {},
+          query: {},
+          route: { path: "/", fullPath: pagePath },
+        };
+      },
+      getLayoutPathsForPath: () => [],
+    } as unknown as Router;
+    const middleware = createMiddleware(router);
+    const req = mockContext(`${DWEB_DATA_PATH}?path=/developer/menus`, "GET", {
+      [DWEB_DATA_PATH_HEADER]: "/",
+    });
+
+    await middleware(req.ctx as HttpContext, req.next);
+
+    expect(seen).toEqual(["/"]);
+    expect(req.ctx.response?.status).toBe(200);
+    const body = await readJson(req.ctx.response);
+    expect(body.query).toEqual({ path: "/developer/menus" });
   });
 });

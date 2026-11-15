@@ -87,6 +87,12 @@ export function setCacheOptions(options: Partial<DevCacheOptions>): void {
 /** Load 数据接口 pathname，客户端 fetch 与服务端中间件匹配用。 */
 export const DWEB_DATA_PATH = "/__data";
 
+/**
+ * `/__data` 请求用来声明目标路由 pathname 的头。
+ * 客户端只通过该头告诉服务端要加载哪条路由，URL 只保留页面自身的查询串。
+ */
+export const DWEB_DATA_PATH_HEADER = "x-dweb-pathname";
+
 /** 客户端主入口 URL 路径（/_client.js），与 CLIENT_OUTPUT_MAIN_FILENAME 对应。 */
 export const CLIENT_SCRIPT_PATH = "/_client.js";
 

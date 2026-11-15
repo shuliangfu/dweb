@@ -5,7 +5,7 @@
  * generateClientDepContent 保持与拆分前逻辑一致，不改生成内容。
  */
 
-import { DWEB_DATA_PATH } from "../utils/constants.ts";
+import { DWEB_DATA_PATH, DWEB_DATA_PATH_HEADER } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import {
   extractComponentPathFromRouteFile,
@@ -328,8 +328,8 @@ export function clearLayoutCache(): void {
       /** 与 loadPageModule 并行发起 __data，但不阻塞阶段 1 渲染 */
       let _navDataPromise: Promise<_NavProps> | null = null;
       if (!_reservedOrInvalid) {
-        const _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
-        _navDataPromise = fetch(_dataUrl).then(async (_dataRes): Promise<_NavProps> => {
+        const _dataUrl = "${DWEB_DATA_PATH}" + _search;
+        _navDataPromise = fetch(_dataUrl, { headers: { "${DWEB_DATA_PATH_HEADER}": _pathname } }).then(async (_dataRes): Promise<_NavProps> => {
           return (_dataRes && _dataRes.ok)
             ? (await _dataRes.json()) as _NavProps
             : { params: match.params || {}, query: match.query || {} };
@@ -486,8 +486,8 @@ export function clearLayoutCache(): void {
         const _search = (typeof _win.location !== "undefined" && _win.location?.search) ? _win.location.search : "";
         let _rcrNav: _CsrRcrDataProps = {};
         try {
-          const _dataUrl = "/__data?path=" + encodeURIComponent(pathname) + (_search ? "&" + _search.slice(1) : "");
-          const _dataRes = await fetch(_dataUrl);
+          const _dataUrl = "${DWEB_DATA_PATH}" + _search;
+          const _dataRes = await fetch(_dataUrl, { headers: { "${DWEB_DATA_PATH_HEADER}": pathname } });
           if (_dataRes && _dataRes.ok) {
             _rcrNav = (await _dataRes.json()) as _CsrRcrDataProps;
           }
@@ -1189,8 +1189,8 @@ export async function setupHydrationRouterAndHmr(opts: {
             const _hmrPathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
             const _hmrSearch = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
             if (_hmrPathname && _hmrPathname !== "${DWEB_DATA_PATH}" && _hmrPathname.indexOf("/_") !== 0 && _hmrPathname.indexOf("//") === -1) {
-              const _hmrDataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_hmrPathname) + (_hmrSearch ? "&" + _hmrSearch.slice(1) : "");
-              const _hmrDataRes = await fetch(_hmrDataUrl);
+              const _hmrDataUrl = "${DWEB_DATA_PATH}" + _hmrSearch;
+              const _hmrDataRes = await fetch(_hmrDataUrl, { headers: { "${DWEB_DATA_PATH_HEADER}": _hmrPathname } });
               if (_hmrDataRes && _hmrDataRes.ok) {
                 _hmrNavProps = (await _hmrDataRes.json()) as _HmrNavProps;
               }

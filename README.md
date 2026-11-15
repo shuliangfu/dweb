@@ -1104,8 +1104,9 @@ return value to the page component as **props**.
 - **First paint**: The server runs the current route’s `load()` and injects the
   result into the page (or, in CSR, into `globalThis.__DATA__` for the client).
 - **Client-side navigation**: When changing routes, the framework automatically
-  requests `GET /__data?path=...`; the server runs that route’s `load()` and
-  returns JSON, which becomes the page props—no manual `fetch` in your code.
+  requests `GET /__data` with the target path in the `x-dweb-pathname` header;
+  the server runs that route’s `load()` and returns JSON, which becomes the page
+  props—no manual `fetch` in your code.
 
 You only need to **implement `load` and return the data**; the page receives it
 via props.
