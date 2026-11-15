@@ -36,6 +36,7 @@ import {
 import { isPathWithinProject } from "../utils/path.ts";
 import { createDefaultErrorHtml } from "../utils/security.ts";
 import { createRendererSSR } from "./render-ssr.ts";
+import { htmlDocumentCacheControlHeaders } from "./upgrade-prompt.ts";
 
 /**
  * SSG 渲染选项
@@ -227,7 +228,10 @@ export function createRendererSSG(
         if (cached != null) {
           return new Response(cached, {
             status: 200,
-            headers: { "Content-Type": "text/html; charset=utf-8" },
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              ...htmlDocumentCacheControlHeaders(isDev, config),
+            },
           });
         }
       }
@@ -243,6 +247,7 @@ export function createRendererSSG(
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
+          ...htmlDocumentCacheControlHeaders(isDev, config),
         },
       });
     } catch (error) {
@@ -250,10 +255,8 @@ export function createRendererSSG(
       const isDev = getEnv("RUNTIME_ENV") === "dev";
       const errHeaders: Record<string, string> = {
         "Content-Type": "text/html; charset=utf-8",
+        ...htmlDocumentCacheControlHeaders(isDev, config),
       };
-      if (isDev) {
-        errHeaders["Cache-Control"] = "no-cache, no-store, must-revalidate";
-      }
       return new Response(
         createDefaultErrorHtml(error),
         { status: 500, headers: errHeaders },

@@ -90,6 +90,8 @@ describe("init (cmd/init.ts)", () => {
       );
       expect(configTs).toContain('name: "test-app"');
       expect(configTs).toContain('kind: "web"');
+      expect(configTs).toContain("// upgradePrompt: true");
+      expect(configTs).not.toMatch(/^\s*upgradePrompt:\s*true/m);
       expect(configTs).not.toContain("socketIo");
 
       // 验证 deno.json 不包含 name 字段（避免 Deno 警告），且不包含 socket-io 依赖
@@ -163,6 +165,8 @@ describe("init (cmd/init.ts)", () => {
         );
         expect(appConfigTs).toContain(`name: "test-multi-${app}"`);
         expect(appConfigTs).toContain('kind: "web"');
+        expect(appConfigTs).toContain("// upgradePrompt: true");
+        expect(appConfigTs).not.toMatch(/^\s*upgradePrompt:\s*true/m);
       }
 
       await remove(parentDir, { recursive: true });

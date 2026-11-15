@@ -80,6 +80,32 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
   });
 
   describe("generateClientDepContent()", () => {
+    it("开启升级提示时导入本地路径而不是 file://", () => {
+      const code = generateClientDepContent(
+        "view",
+        [
+          {
+            componentPath: "index",
+            fullPath: "/tmp/routes/index.tsx",
+            importName: "Route_index",
+          },
+        ],
+        "/tmp/routes",
+        false,
+        [],
+        "hybrid",
+        {},
+        false,
+        false,
+        false,
+        true,
+      );
+      expect(code).toContain("import { startUpgradePrompt } from");
+      expect(code).toContain("upgrade-prompt-client.ts");
+      expect(code).not.toContain("file://");
+      expect(code).toContain("void startUpgradePrompt()");
+    });
+
     it("生成的 head meta 插入锚点应使用 ChildNode，避免 generated client 类型回归", () => {
       const code = generateClientDepContent(
         "view",

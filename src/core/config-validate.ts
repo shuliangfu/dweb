@@ -44,6 +44,12 @@ export function validateConfig(config: AppConfig): void {
   if (config.hotReload !== undefined && typeof config.hotReload !== "boolean") {
     throwDwebError(DwebErrorCode.CONFIG_HOT_RELOAD_INVALID);
   }
+  if (
+    config.upgradePrompt !== undefined &&
+    typeof config.upgradePrompt !== "boolean"
+  ) {
+    throw new TypeError("config.upgradePrompt must be a boolean");
+  }
   // 验证渲染配置
   if (config.render !== undefined) {
     if (typeof config.render !== "object" || config.render === null) {

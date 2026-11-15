@@ -69,6 +69,8 @@ export default {
 - [ ] 健康检查：`GET /health`
 - [ ] 反向代理终止 TLS；上游可只开 HTTP
 - [ ] 日志级别生产勿长期 debug
+- [ ] 若启用 `upgradePrompt`：发版时把 `AppConfig.version` 加一档；未填写
+      `version` 则提示不会生效
 - [ ] 多应用 / monorepo 确认 `build.server.output` 与 client 输出目录
 
 ## 5. 回归

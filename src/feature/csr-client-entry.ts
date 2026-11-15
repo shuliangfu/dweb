@@ -33,6 +33,7 @@ import {
   type ClientDepRenderMode,
   generateClientDepContent,
 } from "./csr-client-dep.ts";
+import { resolveUpgradePrompt } from "./upgrade-prompt.ts";
 import {
   getRouteClientManifest,
   type RouteComponentInfo,
@@ -249,6 +250,7 @@ export async function ensureClientEntryFile(
     clientDepIsDev,
     has404,
     has500,
+    resolveUpgradePrompt(config, clientDepIsDev) !== null,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug($tr("log.clientDepGenerated", {
@@ -343,6 +345,7 @@ export async function prepareClientBuildEntry(
     clientDepIsDev,
     has404,
     has500,
+    resolveUpgradePrompt(config, clientDepIsDev) !== null,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug(

@@ -7,6 +7,7 @@
 
 import { DWEB_DATA_PATH, DWEB_DATA_PATH_HEADER } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
+import { fromFileUrl } from "../utils/version.ts";
 import {
   extractComponentPathFromRouteFile,
   subpathFromRoutesDirMarker,
@@ -80,6 +81,19 @@ function routeLoaderKeyForClientDep(
 }
 
 /**
+ * 升级提示客户端模块的导入说明符。
+ * `file://` 路径 esbuild 无法直接解析，本地开发转为文件系统路径；
+ * 远程（jsr / https）则保留原 URL，交给 deno-protocol 加载。
+ */
+export function upgradePromptClientSpecifier(): string {
+  const url = new URL("./upgrade-prompt-client.ts", import.meta.url);
+  if (url.protocol === "file:") {
+    return fromFileUrl(url.href).replaceAll("\\", "/");
+  }
+  return url.href;
+}
+
+/**
  * 生成 client.dep.tsx 内容（路由加载器、缓存、HMR CSS、loadLayouts、loadPageModule、renderNotFound、renderError、setupHydrationRouterAndHmr 等）
  * 此文件每次构建/启动都会重新生成；client.tsx 仅不存在时生成，便于用户修改入口逻辑。
  *
@@ -116,6 +130,8 @@ export function generateClientDepContent(
   has404: boolean = false,
   /** When true, include `_500` in ROUTE_LOADERS and prefer it in renderError */
   has500: boolean = false,
+  /** 为 true 时在生成的入口中启动升级提示（@dreamer/storage/client） */
+  enableUpgradePrompt: boolean = false,
 ): string {
   const useNestedLayouts = Boolean(
     routeLayoutKeys && Object.keys(routeLayoutKeys).length > 0,
@@ -588,6 +604,15 @@ export function clearLayoutCache(): void {
  */
 
 import { createRouter } from "@dreamer/router/client";
+${
+    enableUpgradePrompt
+      ? `import { startUpgradePrompt } from ${
+        JSON.stringify(upgradePromptClientSpecifier())
+      };
+void startUpgradePrompt();
+`
+      : ""
+  }
 ${renderAdapterImport}
 ${viewDevtoolsBoot}
 /** 客户端路由类型（与 @dreamer/router ClientRoute 一致） */

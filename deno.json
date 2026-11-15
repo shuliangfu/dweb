@@ -61,6 +61,8 @@
     "@dreamer/session": "jsr:@dreamer/session@^1.1.0",
     "@dreamer/service": "jsr:@dreamer/service@^1.1.0",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.2.1",
+    "@dreamer/storage": "jsr:@dreamer/storage@^1.1.0",
+    "@dreamer/storage/client": "jsr:@dreamer/storage@^1.1.0/client",
     "@dreamer/test": "jsr:@dreamer/test@^1.2.4",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.1.0",
     "@dreamer/view": "jsr:@dreamer/view@^3.1.0",

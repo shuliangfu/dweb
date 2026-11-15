@@ -51,6 +51,10 @@ import {
   streamAfterMountContainer,
   wrapInlineClientBootstrapScript,
 } from "./render-utils.ts";
+import {
+  appendUpgradePromptBootstrap,
+  htmlDocumentCacheControlHeaders,
+} from "./upgrade-prompt.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import { getRender } from "./render.ts";
@@ -390,6 +394,11 @@ export function createRendererSSR(
             };`,
           );
         }
+        appendUpgradePromptBootstrap(
+          bootstrapStatements,
+          resolvedConfig,
+          isDev,
+        );
         const bootstrapScript = wrapInlineClientBootstrapScript(
           bootstrapStatements,
           { isDev },
@@ -402,9 +411,7 @@ export function createRendererSSR(
 
       const responseHeaders: HeadersInit = {
         "Content-Type": "text/html; charset=utf-8",
-        ...(isDev
-          ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-          : {}),
+        ...htmlDocumentCacheControlHeaders(isDev, resolvedConfig),
       };
 
       const failMissingMountContainer = (htmlLength: number): never => {
@@ -520,9 +527,10 @@ export function createRendererSSR(
         routesDirPath,
         error,
         debug: renderConfig.debug === true,
-        headers: isDev
-          ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-          : undefined,
+        headers: (() => {
+          const h = htmlDocumentCacheControlHeaders(isDev, resolvedConfig);
+          return Object.keys(h).length ? h : undefined;
+        })(),
       });
       if (special) return special;
 
@@ -532,9 +540,7 @@ export function createRendererSSR(
           status: 500,
           headers: {
             "Content-Type": "text/html; charset=utf-8",
-            ...(isDev
-              ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-              : {}),
+            ...htmlDocumentCacheControlHeaders(isDev, resolvedConfig),
           },
         },
       );

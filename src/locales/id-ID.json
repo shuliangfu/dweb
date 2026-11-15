@@ -232,7 +232,8 @@
     "clientEntryExistsSkip": "Entry klien ada, lewati buat: {path}",
     "clientScriptBuildComplete": "Build script klien selesai",
     "devServerRunning": "Server dev berjalan di http://{host}:{port}",
-    "prodServerRunning": "Server produksi berjalan di http://{host}:{port}"
+    "prodServerRunning": "Server produksi berjalan di http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt diaktifkan, tetapi AppConfig.version tidak diisi, jadi prompt peningkatan tidak diaktifkan"
   },
   "client": {
     "layoutDefaultExport": "Layout harus gunakan default export",
@@ -258,7 +259,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR sebelum",
     "hmrRenderCsrComplete": "[HMR] renderCSR selesai",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render gagal",
-    "hmrCssFetchFailedPrefix": "[dweb] Gagal mengambil HMR CSS: "
+    "hmrCssFetchFailedPrefix": "[dweb] Gagal mengambil HMR CSS: ",
+    "upgradePromptTitle": "Sistem telah ditingkatkan",
+    "upgradePromptMessage": "Sistem telah diperbarui. Silakan muat ulang halaman untuk menggunakan versi baru.",
+    "upgradePromptConfirm": "OK"
   },
   "db": {
     "noMigrations": "Tidak ada migrasi",
@@ -607,6 +611,7 @@
       "jsxDtsLine2": "Sama dengan @dreamer/view jsx.d.ts; gunakan dengan deno.json compilerOptions.types.",
       "nameDesc": "Nama aplikasi, dipakai di log dan metadata.",
       "versionDesc": "Versi aplikasi (string semver).",
+      "upgradePromptDesc": "Peringatan peningkatan, default nonaktif. Hapus komentar pada baris berikut jika diperlukan dan pastikan version terisi; naikkan version setiap rilis.",
       "envPrefixDesc": "Awalan variabel lingkungan yang dimuat ke config (mis. APP_PORT). Hapus komentar untuk mengaktifkan.",
       "hotReloadDesc": "Aktifkan muat ulang config saat dev; kerangka kerja dimulai ulang saat config berubah.",
       "pluginManagerOptionsDesc": "Pengelola plugin: autoActivate, continueOnError, enableHotReload, hotReloadInterval. Hapus komentar untuk menyesuaikan.",

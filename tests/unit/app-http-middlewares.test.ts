@@ -126,4 +126,122 @@ describe("registerFrameworkHttpMiddlewares", () => {
     sanitizeOps: false,
     sanitizeResources: false,
   });
+
+  it("未开启 upgradePrompt 时不应注册升级提示中间件", () => {
+    const names: string[] = [];
+    const server = {
+      use: (_mw: unknown, _cond?: unknown, name?: string) => {
+        if (name) names.push(name);
+      },
+    };
+    const container = initializeServiceContainer();
+    initializeLogger(container, {});
+    registerFrameworkHttpMiddlewares(
+      server,
+      {},
+      container,
+      { isRuntimeDev: false, useDetailedRequestLog: false },
+    );
+    expect(names).not.toContain("upgrade-prompt");
+  });
+
+  it("生产环境开启 upgradePrompt 时应注册升级提示中间件", () => {
+    const names: string[] = [];
+    const server = {
+      use: (_mw: unknown, _cond?: unknown, name?: string) => {
+        if (name) names.push(name);
+      },
+    };
+    const container = initializeServiceContainer();
+    initializeLogger(container, {});
+    registerFrameworkHttpMiddlewares(
+      server,
+      {
+        upgradePrompt: true,
+        version: "3.2.1",
+        compression: false,
+        rateLimit: false,
+      },
+      container,
+      { isRuntimeDev: false, useDetailedRequestLog: false },
+    );
+    expect(names).toContain("upgrade-prompt");
+  });
+
+  it("开发环境即使开启 upgradePrompt 也不应注册升级提示中间件", () => {
+    const names: string[] = [];
+    const server = {
+      use: (_mw: unknown, _cond?: unknown, name?: string) => {
+        if (name) names.push(name);
+      },
+    };
+    const container = initializeServiceContainer();
+    initializeLogger(container, {});
+    registerFrameworkHttpMiddlewares(
+      server,
+      {
+        upgradePrompt: true,
+        version: "3.2.1",
+        compression: false,
+        rateLimit: false,
+      },
+      container,
+      { isRuntimeDev: true, useDetailedRequestLog: false },
+    );
+    expect(names).not.toContain("upgrade-prompt");
+  });
+
+  it("开发环境开启 upgradePrompt 但未填写 version 时不应注册", () => {
+    const names: string[] = [];
+    const server = {
+      use: (_mw: unknown, _cond?: unknown, name?: string) => {
+        if (name) names.push(name);
+      },
+    };
+    const container = initializeServiceContainer();
+    initializeLogger(container, {});
+    registerFrameworkHttpMiddlewares(
+      server,
+      { upgradePrompt: true },
+      container,
+      { isRuntimeDev: true, useDetailedRequestLog: false },
+    );
+    expect(names).not.toContain("upgrade-prompt");
+  });
+
+  it("api 应用即使开启 upgradePrompt 也不应注册", () => {
+    const names: string[] = [];
+    const server = {
+      use: (_mw: unknown, _cond?: unknown, name?: string) => {
+        if (name) names.push(name);
+      },
+    };
+    const container = initializeServiceContainer();
+    initializeLogger(container, {});
+    registerFrameworkHttpMiddlewares(
+      server,
+      { kind: "api", upgradePrompt: true },
+      container,
+      { isRuntimeDev: false, useDetailedRequestLog: false },
+    );
+    expect(names).not.toContain("upgrade-prompt");
+  });
+
+  it("开启 upgradePrompt 但未填写 version 时不应注册", () => {
+    const names: string[] = [];
+    const server = {
+      use: (_mw: unknown, _cond?: unknown, name?: string) => {
+        if (name) names.push(name);
+      },
+    };
+    const container = initializeServiceContainer();
+    initializeLogger(container, {});
+    registerFrameworkHttpMiddlewares(
+      server,
+      { upgradePrompt: true, compression: false, rateLimit: false },
+      container,
+      { isRuntimeDev: false, useDetailedRequestLog: false },
+    );
+    expect(names).not.toContain("upgrade-prompt");
+  });
 });

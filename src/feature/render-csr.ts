@@ -44,6 +44,10 @@ import {
   hasContainerElementInHtml,
   wrapInlineClientBootstrapScript,
 } from "./render-utils.ts";
+import {
+  appendUpgradePromptBootstrap,
+  htmlDocumentCacheControlHeaders,
+} from "./upgrade-prompt.ts";
 import { getRender } from "./render.ts";
 
 /** 转义 meta 内容中的 HTML 与引号，避免注入与断签 */
@@ -186,6 +190,7 @@ export function createRendererCSR(
             clientRoutes,
             engine,
             routerDebug,
+            config,
           ),
           {
             status: 200,
@@ -436,6 +441,7 @@ export function createRendererCSR(
       bootstrapStatements.push(
         'globalThis.__DWEB_ON_READY__ = function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};',
       );
+      appendUpgradePromptBootstrap(bootstrapStatements, config, isDevCsr);
       const bootstrapScript = wrapInlineClientBootstrapScript(
         bootstrapStatements,
         { isDev: isDevCsr },
@@ -464,9 +470,7 @@ ${csrOptions.bodyTags || ""}`
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
-          ...(isDevCsr
-            ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-            : {}),
+          ...htmlDocumentCacheControlHeaders(isDevCsr, config),
         },
       });
     } catch (error) {
@@ -480,9 +484,10 @@ ${csrOptions.bodyTags || ""}`
         routesDirPath,
         error,
         debug: renderConfig.debug === true,
-        headers: isDevCsr
-          ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-          : undefined,
+        headers: (() => {
+          const h = htmlDocumentCacheControlHeaders(isDevCsr, config);
+          return Object.keys(h).length ? h : undefined;
+        })(),
       });
       if (special) return special;
       return new Response(
@@ -491,9 +496,7 @@ ${csrOptions.bodyTags || ""}`
           status: 500,
           headers: {
             "Content-Type": "text/html; charset=utf-8",
-            ...(isDevCsr
-              ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-              : {}),
+            ...htmlDocumentCacheControlHeaders(isDevCsr, config),
           },
         },
       );
@@ -511,6 +514,7 @@ function generateFallbackCSRHtml(
   routes: Array<{ path: string; component: string; type: string }>,
   engine: "react" | "preact" | "view",
   routerDebug: boolean,
+  config: AppConfig,
 ): string {
   const { clientScript, containerId, title, headTags, bodyTags } = options;
   const loadingStyles = `<style id="dweb-loading-styles">
@@ -539,6 +543,7 @@ function generateFallbackCSRHtml(
   bootstrapStatements.push(
     `globalThis.__DWEB_ON_READY__=function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};`,
   );
+  appendUpgradePromptBootstrap(bootstrapStatements, config, isDev);
   const bootstrapScript = wrapInlineClientBootstrapScript(bootstrapStatements, {
     isDev,
   });

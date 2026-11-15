@@ -108,6 +108,8 @@ deno add jsr:@dreamer/runtime-adapter
 
 - ✅ **完整的全栈支持**：服务端 + 客户端一体化开发
 - ✅ **文件路由系统**：基于文件系统的路由，类似 Next.js
+- ✅ **文件路由 SSE**：handler 直接 `return sse()`，向客户端推送
+  `text/event-stream` 事件
 - ✅ **多种渲染模式**：SSR、CSR、SSG、Hybrid；**CSR/Hybrid 下用路由 `load`
   提供数据即可，无需手写 API 请求**，框架自动在服务端执行 `load` 并通过
   `/__data` 把数据传给页面
@@ -136,6 +138,8 @@ deno add jsr:@dreamer/runtime-adapter
   pt-BR、id-ID、de-DE、fr-FR）；通过 `language` 或环境变量配置
 - ✅ **类型安全**：完整的 TypeScript 支持
 - ✅ **开发体验**：HMR（热模块替换）、CLI 工具、代码提示
+- ✅ **生产升级提示**：可选 `upgradePrompt`，用 `AppConfig.version` 比较版本，经
+  SSE 通知已打开的页面刷新
 
 ## 架构
 
@@ -444,6 +448,42 @@ export async function stop(ctx: ConsoleContext): Promise<void> {
 `dweb-cli init` 可选 Web / API / Console；多应用下每个 app 各自选 `kind`，共用
 `common/`。**一项目最多一个** `api`、**最多一个** `console`。这两个目录名固定为
 `api` 和 `console`，init 不再询问名称。
+
+### 文件路由 SSE
+
+文件路由的 `GET` / `POST` 等 handler 可以直接
+`return sse()`，向客户端持续推送事件（`Content-Type: text/event-stream`）。浏览器用
+`EventSource` 连接这条路由。框架会自动写好响应头（含
+`Cache-Control: no-store`、`X-Accel-Buffering: no`），并在客户端断开时调用你返回的清理函数。生产环境的压缩中间件会跳过该类型，不会把长连接整段读进内存。
+
+```ts
+// routes/ticks.ts —— GET /ticks
+import type { ApiContext } from "@dreamer/dweb";
+import { sse } from "@dreamer/dweb";
+
+export function GET(ctx: ApiContext) {
+  return sse(ctx, (push) => {
+    push.send({ time: Date.now() }, "tick");
+    const timer = setInterval(() => {
+      push.send({ time: Date.now() }, "tick");
+    }, 1000);
+    return () => clearInterval(timer);
+  }, { retry: 3000, pingInterval: 15_000 });
+}
+```
+
+```js
+// 浏览器
+const es = new EventSource("/ticks");
+es.addEventListener("tick", (ev) => {
+  console.log(JSON.parse(ev.data));
+});
+```
+
+`push.send(data, event?, id?)`：非字符串会 `JSON.stringify`，多行会拆成多条
+`data:` 行。另外还有 `push.comment()`、`push.ping()`、`push.close()`。可选参数：
+`retry`（毫秒，供浏览器断线重连）、`pingInterval`（自动心跳）、`signal`、
+`headers`、`status`。
 
 ### 单应用模式（默认）
 
@@ -1848,22 +1888,23 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### 核心 API
 
-| API                          | 说明                                                |
-| ---------------------------- | --------------------------------------------------- |
-| `App`                        | 框架主类，整合服务、中间件、插件、路由、渲染        |
-| `app.use(middleware)`        | 注册全局中间件                                      |
-| `app.use(path, middleware)`  | 注册路径匹配中间件                                  |
-| `app.registerPlugin(plugin)` | 注册插件                                            |
-| `app.on(stage, hook)`        | 注册生命周期钩子（init、start、stop、build、error） |
-| `app.start()`                | 启动应用（开发/生产服务器）                         |
-| `app.stop()`                 | 停止应用                                            |
-| `app.build()`                | 构建生产版本                                        |
-| `app.shutdown()`             | 优雅关闭（含 SIGTERM/SIGINT 处理）                  |
-| `app.container`              | 服务容器，用于获取 getConfig、getLogger 等          |
-| `app.stage`                  | 当前生命周期阶段                                    |
-| `isApiKind(config)`          | 判断配置是否为 API 应用（kind === "api"）           |
-| `isConsoleKind(config)`      | 判断配置是否为 Console 应用（kind === "console"）   |
-| `resolveAppKind(config)`     | 解析应用类型，缺失时回退到默认 "web"                |
+| API                          | 说明                                                                                          |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `App`                        | 框架主类，整合服务、中间件、插件、路由、渲染                                                  |
+| `app.use(middleware)`        | 注册全局中间件                                                                                |
+| `app.use(path, middleware)`  | 注册路径匹配中间件                                                                            |
+| `app.registerPlugin(plugin)` | 注册插件                                                                                      |
+| `app.on(stage, hook)`        | 注册生命周期钩子（init、start、stop、build、error）                                           |
+| `app.start()`                | 启动应用（开发/生产服务器）                                                                   |
+| `app.stop()`                 | 停止应用                                                                                      |
+| `app.build()`                | 构建生产版本                                                                                  |
+| `app.shutdown()`             | 优雅关闭（含 SIGTERM/SIGINT 处理）                                                            |
+| `app.container`              | 服务容器，用于获取 getConfig、getLogger 等                                                    |
+| `app.stage`                  | 当前生命周期阶段                                                                              |
+| `isApiKind(config)`          | 判断配置是否为 API 应用（kind === "api"）                                                     |
+| `isConsoleKind(config)`      | 判断配置是否为 Console 应用（kind === "console"）                                             |
+| `resolveAppKind(config)`     | 解析应用类型，缺失时回退到默认 "web"                                                          |
+| `sse(ctx, start, options?)`  | 文件路由 SSE 响应，handler 直接返回；自动写 event-stream 头、重连与心跳，并在客户端断开时清理 |
 
 ### 配置与参数
 
@@ -1902,21 +1943,24 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### 类型导出
 
-| 类型                | 说明                                                            |
-| ------------------- | --------------------------------------------------------------- |
-| `AppConfig`         | 应用配置接口                                                    |
-| `AppKind`           | 应用类型字面量联合（"web" \| "api" \| "console"）               |
-| `IApp`              | App 类接口                                                      |
-| `AppPlugin`         | 插件类型                                                        |
-| `AppMiddleware`     | 中间件类型                                                      |
-| `AppStage`          | 生命周期阶段                                                    |
-| `Context`           | 路由中间件上下文（HttpContext 别名）                            |
-| `Next`              | 中间件 next 函数类型                                            |
-| `SocketConfig`      | 实时通信配置（socketio \| websocket）                           |
-| `ConsoleContext`    | 控制台动作上下文对象（含 args、options、app、log、signal、cwd） |
-| `ConsoleMiddleware` | 控制台全局中间件函数类型                                        |
-| `ApiContext`        | 纯 HTTP API 路由上下文（从 @dreamer/server 再导出）             |
-| `LoadContext`       | 页面/SSR 数据加载上下文（load(ctx)）                            |
+| 类型                | 说明                                                             |
+| ------------------- | ---------------------------------------------------------------- |
+| `AppConfig`         | 应用配置接口                                                     |
+| `AppKind`           | 应用类型字面量联合（"web" \| "api" \| "console"）                |
+| `IApp`              | App 类接口                                                       |
+| `AppPlugin`         | 插件类型                                                         |
+| `AppMiddleware`     | 中间件类型                                                       |
+| `AppStage`          | 生命周期阶段                                                     |
+| `Context`           | 路由中间件上下文（HttpContext 别名）                             |
+| `Next`              | 中间件 next 函数类型                                             |
+| `SocketConfig`      | 实时通信配置（socketio \| websocket）                            |
+| `ConsoleContext`    | 控制台动作上下文对象（含 args、options、app、log、signal、cwd）  |
+| `ConsoleMiddleware` | 控制台全局中间件函数类型                                         |
+| `ApiContext`        | 纯 HTTP API 路由上下文（从 @dreamer/server 再导出）              |
+| `LoadContext`       | 页面/SSR 数据加载上下文（load(ctx)）                             |
+| `SsePush`           | SSE 推送接口（`send` / `comment` / `ping` / `close`）            |
+| `SseOptions`        | `sse()` 可选参数（retry、pingInterval、signal、headers、status） |
+| `SseContext`        | `sse()` 上下文（`ApiContext` 或 `Request`）                      |
 
 ---
 
@@ -1968,8 +2012,18 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 ## 📚 配置文档
 
 - **[AppConfig 完整配置示例](./APP_CONFIG.md)**：涵盖
-  language、server、router、render、build、logger、database、socket、plugins、middlewares
+  language、`upgradePrompt`、server、router、render、build、logger、database、socket、plugins、middlewares
   等全部配置项及单应用/多应用示例。
+
+### 生产升级提示
+
+默认关闭，且仅生产环境生效（开发环境即使开启也不启用）。在 `config/main.ts`
+里取消 `// upgradePrompt: true,` 的注释，并保证已填写 `version`。发版时把
+`version` 加一档即可。框架会注册 `GET /__version` 与 SSE
+`GET /__version/stream`，已打开的页面在线上版本更新后提示刷新。已确认的版本记在
+localStorage 键 `dweb:app-version`。`kind: "api"` / `"console"` 不生效。详见
+[APP_CONFIG](./APP_CONFIG.md)。
+
 - **配置与参数获取**：见上方「[配置管理](#配置管理)」章节，包含：
   - 框架配置（`getConfig`、`getConfigValue`）的获取方式
   - 业务配置（`config/params.ts`）的获取方式（`getParams`、`getParamValue`）

@@ -206,6 +206,8 @@ export default {
   kind: "web",
   /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
+  /** ${$tr("init.comments.upgradePromptDesc")} */
+  // upgradePrompt: true,
   /** ${$tr("init.comments.routerDesc")} */
   router: {
     /** ${$tr("init.comments.routesDirDesc")} */
@@ -427,6 +429,8 @@ export const commonConfig = {
 export default {
   name: commonConfig.appName,
   version: commonConfig.version,
+  /** ${$tr("init.comments.upgradePromptDesc")} */
+  // upgradePrompt: true,
   /** ${$tr("init.comments.frameworkLanguageShort")} ${
       $tr("init.comments.frameworkLanguageSuffix")
     } */

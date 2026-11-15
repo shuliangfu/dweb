@@ -232,7 +232,8 @@
     "clientEntryExistsSkip": "클라이언트 엔트리 존재, 생성 건너뜀: {path}",
     "clientScriptBuildComplete": "클라이언트 스크립트 빌드 완료",
     "devServerRunning": "개발 서버 실행 중 http://{host}:{port}",
-    "prodServerRunning": "프로덕션 서버 실행 중 http://{host}:{port}"
+    "prodServerRunning": "프로덕션 서버 실행 중 http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt가 켜져 있지만 AppConfig.version이 없어 업그레이드 안내가 활성화되지 않았습니다"
   },
   "client": {
     "layoutDefaultExport": "Layout은 default export를 사용해야 합니다",
@@ -258,7 +259,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR 전",
     "hmrRenderCsrComplete": "[HMR] renderCSR 완료",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 실패",
-    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 가져오기 실패: "
+    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 가져오기 실패: ",
+    "upgradePromptTitle": "시스템이 업데이트되었습니다",
+    "upgradePromptMessage": "시스템이 업데이트되었습니다. 새 버전을 사용하려면 페이지를 새로 고침하세요.",
+    "upgradePromptConfirm": "확인"
   },
   "db": {
     "noMigrations": "마이그레이션이 없습니다",
@@ -607,6 +611,7 @@
       "jsxDtsLine2": "@dreamer/view jsx.d.ts와 동일; deno.json compilerOptions.types와 함께 사용.",
       "nameDesc": "앱 이름. 로그와 메타데이터에 사용됩니다.",
       "versionDesc": "앱 버전(semver 문자열).",
+      "upgradePromptDesc": "업그레이드 알림. 기본은 꺼져 있습니다. 필요할 때 다음 줄의 주석을 해제하고 version을 채우세요. 배포 시 version을 올립니다.",
       "envPrefixDesc": "설정에 로드할 환경 변수 접두사(예: APP_PORT). 켜려면 주석을 해제하세요.",
       "hotReloadDesc": "개발 시 설정 핫 리로드. 설정 변경 시 프레임워크가 재시작합니다.",
       "pluginManagerOptionsDesc": "플러그인 관리: autoActivate, continueOnError, enableHotReload, hotReloadInterval. 사용자 정의 시 주석 해제.",

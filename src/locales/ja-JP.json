@@ -232,7 +232,8 @@
     "clientEntryExistsSkip": "クライアントエントリが存在、生成スキップ: {path}",
     "clientScriptBuildComplete": "クライアントスクリプトビルド完了",
     "devServerRunning": "開発サーバー起動中 http://{host}:{port}",
-    "prodServerRunning": "本番サーバー起動中 http://{host}:{port}"
+    "prodServerRunning": "本番サーバー起動中 http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt は有効ですが、AppConfig.version が未設定のため、アップグレード通知は有効化されませんでした"
   },
   "client": {
     "layoutDefaultExport": "Layout は default export を使用する必要があります",
@@ -258,7 +259,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR 前",
     "hmrRenderCsrComplete": "[HMR] renderCSR 完了",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 失敗",
-    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 取得失敗: "
+    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 取得失敗: ",
+    "upgradePromptTitle": "システムが更新されました",
+    "upgradePromptMessage": "システムが更新されました。新しいバージョンを利用するには、ページを更新してください。",
+    "upgradePromptConfirm": "OK"
   },
   "db": {
     "noMigrations": "マイグレーションがありません",
@@ -607,6 +611,7 @@
       "jsxDtsLine2": "@dreamer/view の jsx.d.ts と同一。deno.json compilerOptions.types と併用。",
       "nameDesc": "アプリ名。ログとメタデータに使用します。",
       "versionDesc": "アプリのバージョン（semver 形式の文字列）。",
+      "upgradePromptDesc": "アップグレード通知。既定は無効です。必要なときに次の行のコメントを外し、version を記入してください。リリース時は version を上げます。",
       "envPrefixDesc": "設定に読み込む環境変数のプレフィックス（例: APP_PORT）。有効にするにはコメントを外してください。",
       "hotReloadDesc": "開発時に設定のホットリロードを有効にします。設定変更時にフレームワークが再起動します。",
       "pluginManagerOptionsDesc": "プラグイン管理: autoActivate、continueOnError、enableHotReload、hotReloadInterval。カスタムする場合はコメントを外してください。",

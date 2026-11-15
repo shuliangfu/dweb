@@ -232,7 +232,8 @@
     "clientEntryExistsSkip": "Client-Entry existiert, Überspringe Generieren: {path}",
     "clientScriptBuildComplete": "Client-Skript-Build abgeschlossen",
     "devServerRunning": "Dev-Server läuft unter http://{host}:{port}",
-    "prodServerRunning": "Produktionsserver läuft unter http://{host}:{port}"
+    "prodServerRunning": "Produktionsserver läuft unter http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt ist aktiviert, aber AppConfig.version fehlt, daher wurde der Update-Hinweis nicht aktiviert"
   },
   "client": {
     "layoutDefaultExport": "Layout muss default export verwenden",
@@ -258,7 +259,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR vorher",
     "hmrRenderCsrComplete": "[HMR] renderCSR abgeschlossen",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render fehlgeschlagen",
-    "hmrCssFetchFailedPrefix": "[dweb] HMR-CSS-Abruf fehlgeschlagen: "
+    "hmrCssFetchFailedPrefix": "[dweb] HMR-CSS-Abruf fehlgeschlagen: ",
+    "upgradePromptTitle": "Das System wurde aktualisiert",
+    "upgradePromptMessage": "Das System wurde aktualisiert. Bitte aktualisieren Sie die Seite, um die neue Version zu verwenden.",
+    "upgradePromptConfirm": "OK"
   },
   "db": {
     "noMigrations": "Keine Migrationen",
@@ -607,6 +611,7 @@
       "jsxDtsLine2": "Wie @dreamer/view jsx.d.ts; mit deno.json compilerOptions.types verwenden.",
       "nameDesc": "Anwendungsname, für Logs und Metadaten.",
       "versionDesc": "Anwendungsversion (Semver-Zeichenkette).",
+      "upgradePromptDesc": "Upgrade-Hinweis, standardmäßig aus. Bei Bedarf die nächste Zeile einkommentieren und version setzen; version bei jeder Veröffentlichung erhöhen.",
       "envPrefixDesc": "Präfix für Umgebungsvariablen, die in die Config geladen werden (z. B. APP_PORT). Zum Aktivieren auskommentieren.",
       "hotReloadDesc": "Hot Reload der Config in der Entwicklung; Framework startet bei Config-Änderung neu.",
       "pluginManagerOptionsDesc": "Plugin-Manager: autoActivate, continueOnError, enableHotReload, hotReloadInterval. Zum Anpassen auskommentieren.",

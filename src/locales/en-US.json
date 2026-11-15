@@ -245,7 +245,8 @@
     "clientEntryExistsSkip": "Client entry exists, skipping generate: {path}",
     "clientScriptBuildComplete": "Client script build complete",
     "devServerRunning": "Dev server running at http://{host}:{port}",
-    "prodServerRunning": "Production server running at http://{host}:{port}"
+    "prodServerRunning": "Production server running at http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt is enabled, but AppConfig.version is missing, so the upgrade prompt was not activated"
   },
   "client": {
     "layoutDefaultExport": "Layout must use default export",
@@ -271,7 +272,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR before",
     "hmrRenderCsrComplete": "[HMR] renderCSR complete",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render failed",
-    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS fetch failed: "
+    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS fetch failed: ",
+    "upgradePromptTitle": "System updated",
+    "upgradePromptMessage": "The system has been updated. Please refresh the page to use the new version.",
+    "upgradePromptConfirm": "OK"
   },
   "db": {
     "noMigrations": "No migrations",
@@ -623,6 +627,7 @@
       "jsxDtsLine2": "Same as @dreamer/view jsx.d.ts; use with deno.json compilerOptions.types.",
       "nameDesc": "Application name, used in logs and metadata.",
       "versionDesc": "Application version (semver string).",
+      "upgradePromptDesc": "Upgrade prompt, off by default. Uncomment the next line when needed and keep version filled; bump version on each release.",
       "envPrefixDesc": "Prefix for env vars to load into config (e.g. APP_PORT). Uncomment to enable.",
       "hotReloadDesc": "Enable config hot reload in dev; framework restarts on config change.",
       "pluginManagerOptionsDesc": "Plugin manager: autoActivate, continueOnError, enableHotReload, hotReloadInterval. Uncomment to customize.",

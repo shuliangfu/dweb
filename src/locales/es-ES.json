@@ -232,7 +232,8 @@
     "clientEntryExistsSkip": "Entrada de cliente existe, omitiendo generar: {path}",
     "clientScriptBuildComplete": "Build de script de cliente completado",
     "devServerRunning": "Servidor de desarrollo en http://{host}:{port}",
-    "prodServerRunning": "Servidor de producción en http://{host}:{port}"
+    "prodServerRunning": "Servidor de producción en http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt está activado, pero falta AppConfig.version, por lo que el aviso de actualización no se habilitó"
   },
   "client": {
     "layoutDefaultExport": "Layout debe usar export por defecto",
@@ -258,7 +259,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR antes",
     "hmrRenderCsrComplete": "[HMR] renderCSR completo",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render fallido",
-    "hmrCssFetchFailedPrefix": "[dweb] Error al obtener HMR CSS: "
+    "hmrCssFetchFailedPrefix": "[dweb] Error al obtener HMR CSS: ",
+    "upgradePromptTitle": "El sistema se ha actualizado",
+    "upgradePromptMessage": "El sistema se ha actualizado. Actualice la página para usar la nueva versión.",
+    "upgradePromptConfirm": "Aceptar"
   },
   "db": {
     "noMigrations": "Sin migraciones",
@@ -607,6 +611,7 @@
       "jsxDtsLine2": "Igual que @dreamer/view jsx.d.ts; usar con deno.json compilerOptions.types.",
       "nameDesc": "Nombre de la aplicación, usado en logs y metadatos.",
       "versionDesc": "Versión de la aplicación (cadena semver).",
+      "upgradePromptDesc": "Aviso de actualización, desactivado por defecto. Descomenta la línea siguiente cuando lo necesites y mantén version rellenado; incrementa version en cada publicación.",
       "envPrefixDesc": "Prefijo de variables de entorno a cargar en la config (p. ej. APP_PORT). Descomente para activar.",
       "hotReloadDesc": "Activar recarga en caliente de la config en desarrollo; el framework reinicia al cambiar la config.",
       "pluginManagerOptionsDesc": "Gestor de plugins: autoActivate, continueOnError, enableHotReload, hotReloadInterval. Descomente para personalizar.",

@@ -232,7 +232,8 @@
     "clientEntryExistsSkip": "Entrada do cliente existe, pulando gerar: {path}",
     "clientScriptBuildComplete": "Build do script do cliente concluído",
     "devServerRunning": "Servidor de desenvolvimento em http://{host}:{port}",
-    "prodServerRunning": "Servidor de produção em http://{host}:{port}"
+    "prodServerRunning": "Servidor de produção em http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt está ativado, mas AppConfig.version não foi definido, então o aviso de atualização não foi habilitado"
   },
   "client": {
     "layoutDefaultExport": "Layout deve usar export padrão",
@@ -258,7 +259,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR antes",
     "hmrRenderCsrComplete": "[HMR] renderCSR completo",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render falhou",
-    "hmrCssFetchFailedPrefix": "[dweb] Falha ao buscar HMR CSS: "
+    "hmrCssFetchFailedPrefix": "[dweb] Falha ao buscar HMR CSS: ",
+    "upgradePromptTitle": "O sistema foi atualizado",
+    "upgradePromptMessage": "O sistema foi atualizado. Atualize a página para usar a nova versão.",
+    "upgradePromptConfirm": "OK"
   },
   "db": {
     "noMigrations": "Sem migrações",
@@ -607,6 +611,7 @@
       "jsxDtsLine2": "Igual ao @dreamer/view jsx.d.ts; use com deno.json compilerOptions.types.",
       "nameDesc": "Nome da aplicação, usado em logs e metadados.",
       "versionDesc": "Versão da aplicação (string semver).",
+      "upgradePromptDesc": "Aviso de atualização, desativado por padrão. Descomente a linha seguinte quando precisar e mantenha version preenchido; incremente version a cada lançamento.",
       "envPrefixDesc": "Prefixo das variáveis de ambiente a carregar na config (ex.: APP_PORT). Descomente para habilitar.",
       "hotReloadDesc": "Habilita recarregamento a quente da config em desenvolvimento; o framework reinicia ao alterar a config.",
       "pluginManagerOptionsDesc": "Gerenciador de plugins: autoActivate, continueOnError, enableHotReload, hotReloadInterval. Descomente para personalizar.",

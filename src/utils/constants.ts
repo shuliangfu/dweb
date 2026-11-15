@@ -42,6 +42,18 @@ export const DEV_NO_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
  */
 export const DATA_ENDPOINT_CACHE_CONTROL = "no-store";
 
+/** 项目版本查询（`GET /__version`），禁止缓存，供已打开的页面与线上比较。 */
+export const DWEB_VERSION_PATH = "/__version";
+
+/** 项目版本 SSE 推送（`GET /__version/stream`），连接时发送当前版本。 */
+export const DWEB_VERSION_STREAM_PATH = "/__version/stream";
+
+/** `/__version` 与 SSE 流的缓存策略，禁止中间层与浏览器缓存。 */
+export const VERSION_ENDPOINT_CACHE_CONTROL = "no-store";
+
+/** 客户端用 @dreamer/storage 记在 localStorage 里的应用版本键，清掉或改成旧版本即可复测升级提示。 */
+export const DWEB_APP_VERSION_STORAGE_KEY = "dweb:app-version";
+
 /**
  * 路径是否像带 content-hash 的产物文件名（如 `index-a1b2c3d4.js`、`chunk-xxxx.js`）。
  * 固定名 `_client.js` 不算 hashed。

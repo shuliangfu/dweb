@@ -371,6 +371,8 @@ const config: AppConfig = {
   kind: "web",
   /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
+  /** ${$tr("init.comments.upgradePromptDesc")} */
+  // upgradePrompt: true,
   /** ${$tr("init.comments.frameworkLanguage")} ${
     $tr("init.comments.frameworkLanguageSuffix")
   } */

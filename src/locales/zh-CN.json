@@ -245,7 +245,8 @@
     "clientEntryExistsSkip": "客户端入口已存在，跳过生成: {path}",
     "clientScriptBuildComplete": "客户端脚本构建完成",
     "devServerRunning": "开发服务器运行在 http://{host}:{port}",
-    "prodServerRunning": "生产服务器运行在 http://{host}:{port}"
+    "prodServerRunning": "生产服务器运行在 http://{host}:{port}",
+    "upgradePromptMissingVersion": "已开启 upgradePrompt，但 AppConfig.version 未填写，升级提示未启用"
   },
   "client": {
     "layoutDefaultExport": "布局组件必须使用 default 导出，例如: export default function Layout() {}",
@@ -271,7 +272,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR 前",
     "hmrRenderCsrComplete": "[HMR] renderCSR 完成",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 失败",
-    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 请求失败: "
+    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 请求失败: ",
+    "upgradePromptTitle": "系统已升级",
+    "upgradePromptMessage": "系统已经更新，请刷新页面以使用新版本。",
+    "upgradePromptConfirm": "确定"
   },
   "db": {
     "noMigrations": "暂无迁移文件",
@@ -623,6 +627,7 @@
       "jsxDtsLine2": "与 @dreamer/view 的 jsx.d.ts 一致，配合 deno.json compilerOptions.types 使用。",
       "nameDesc": "应用名称，用于日志与元数据。",
       "versionDesc": "应用版本号（semver 字符串）。",
+      "upgradePromptDesc": "生产升级提示，默认关闭。需要时取消下一行注释，并保证 version 已填写；发版时把 version 加一档。",
       "envPrefixDesc": "从环境变量注入配置时的前缀（如 APP_PORT）。取消注释以启用。",
       "hotReloadDesc": "开发态启用配置热重载；配置变更时框架会重启。",
       "pluginManagerOptionsDesc": "插件管理器：autoActivate、continueOnError、enableHotReload、hotReloadInterval。取消注释可自定义。",

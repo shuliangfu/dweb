@@ -32,6 +32,15 @@ import {
 } from "../utils/cors-resolve.ts";
 import { getLogger } from "../utils/logger.ts";
 import {
+  createUpgradePromptMiddleware,
+  isUpgradePromptPath,
+} from "../feature/upgrade-prompt-middleware.ts";
+import {
+  isUpgradePromptRequested,
+  readAppConfigVersion,
+} from "../feature/upgrade-prompt.ts";
+import { $tr } from "../utils/i18n.ts";
+import {
   createDevNoCacheMiddleware,
   createHealthCheckMiddleware,
   createSecurityHeadersMiddleware,
@@ -117,7 +126,17 @@ export function registerFrameworkHttpMiddlewares(
     const rateOpts = typeof rateOpt === "object" && rateOpt !== null
       ? rateOpt
       : {};
-    server.use(rateLimit(rateOpts), undefined, "rate-limit");
+    const skipUpgrade = isUpgradePromptRequested(config, opts.isRuntimeDev);
+    server.use(
+      rateLimit({
+        ...rateOpts,
+        skip: (ctx) =>
+          (rateOpts.skip?.(ctx) ?? false) ||
+          (skipUpgrade && isUpgradePromptPath(ctx.path)),
+      }),
+      undefined,
+      "rate-limit",
+    );
   }
   if (config.metrics) {
     const metricsOpts = config.metrics === true ? {} : config.metrics;
@@ -139,14 +158,36 @@ export function registerFrameworkHttpMiddlewares(
       typeof compressionOpt === "object" && compressionOpt !== null
         ? compressionOpt
         : {};
-    server.use(compression(compOpts), undefined, "compression");
+    const userFilter = compOpts.filter;
+    server.use(
+      compression({
+        ...compOpts,
+        filter: (contentType) => {
+          if (contentType.includes("text/event-stream")) return false;
+          if (userFilter) return userFilter(contentType);
+          return (
+            contentType.includes("text/") ||
+            contentType.includes("application/json") ||
+            contentType.includes("application/javascript") ||
+            contentType.includes("application/xml") ||
+            contentType.includes("application/rss+xml") ||
+            contentType.includes("application/atom+xml") ||
+            contentType.includes("image/svg+xml")
+          );
+        },
+      }),
+      undefined,
+      "compression",
+    );
   }
 
   server.use(requestId());
   server.use(
     requestLogger({
       logger: getLogger(container),
-      skip: (ctx) => ctx.path.startsWith("/.well-known/"),
+      skip: (ctx) =>
+        ctx.path.startsWith("/.well-known/") ||
+        isUpgradePromptPath(ctx.path),
       detailed: opts.useDetailedRequestLog,
     }),
   );
@@ -160,4 +201,21 @@ export function registerFrameworkHttpMiddlewares(
     "/health",
     "health-check",
   );
+
+  /**
+   * 升级提示：仅 `upgradePrompt: true` 且非 dev、web 应用时挂载。
+   * 版本取自 `AppConfig.version`；未填写则记录警告且不挂接口。
+   */
+  if (isUpgradePromptRequested(config, opts.isRuntimeDev)) {
+    const version = readAppConfigVersion(config);
+    if (!version) {
+      getLogger(container).warn($tr("log.upgradePromptMissingVersion"));
+    } else {
+      server.use(
+        createUpgradePromptMiddleware(version),
+        undefined,
+        "upgrade-prompt",
+      );
+    }
+  }
 }

@@ -34,6 +34,7 @@ import {
 } from "../core/runtime-adapter.ts";
 
 import type { AppConfig } from "../types/app.ts";
+import { resolveUpgradePrompt } from "./upgrade-prompt.ts";
 import {
   getDreamerClientCacheDir,
   getInferredBuildOutputDirs,
@@ -333,6 +334,7 @@ export async function buildClientScript(
       !isProd,
       has404,
       has500,
+      resolveUpgradePrompt(config, !isProd) !== null,
     );
     if (!skipWritingClientDep) {
       const written = await writeTextFileIfChanged(

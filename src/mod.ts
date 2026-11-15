@@ -96,6 +96,13 @@ export type { HttpContext as Context } from "@dreamer/server";
 export type { ApiContext, LoadContext } from "./types/context.ts";
 
 /**
+ * 文件路由 SSE：在 `GET` 等 handler 中 `return sse(ctx, push => { … })`，
+ * 向客户端持续推送 `text/event-stream` 事件。
+ */
+export { sse } from "./utils/sse.ts";
+export type { SseContext, SseOptions, SsePush } from "./utils/sse.ts";
+
+/**
  * 中间件 next 函数类型
  *
  * 调用以执行后续中间件，在路由中间件中必须调用 next() 才能继续处理请求。

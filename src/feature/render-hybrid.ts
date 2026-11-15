@@ -48,6 +48,10 @@ import {
   hasContainerElementInHtml,
   wrapInlineClientBootstrapScript,
 } from "./render-utils.ts";
+import {
+  appendUpgradePromptBootstrap,
+  htmlDocumentCacheControlHeaders,
+} from "./upgrade-prompt.ts";
 
 /**
  * 转义 style 内容中的 </ 避免提前闭合 style 标签
@@ -382,6 +386,7 @@ export function createRendererHybrid(
           };`,
         );
       }
+      appendUpgradePromptBootstrap(bootstrapStatements, config, isDev);
       const bootstrapScript = wrapInlineClientBootstrapScript(
         bootstrapStatements,
         { isDev, leadingComments: bootstrapComments },
@@ -423,9 +428,7 @@ ${hybridOptions.bodyTags || ""}`
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
-          ...(isDev
-            ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-            : {}),
+          ...htmlDocumentCacheControlHeaders(isDev, config),
         },
       });
     } catch (error) {

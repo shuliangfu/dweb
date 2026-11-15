@@ -232,7 +232,8 @@
     "clientEntryExistsSkip": "Entrée client existe, génération ignorée : {path}",
     "clientScriptBuildComplete": "Build script client terminé",
     "devServerRunning": "Serveur dev à http://{host}:{port}",
-    "prodServerRunning": "Serveur de production à http://{host}:{port}"
+    "prodServerRunning": "Serveur de production à http://{host}:{port}",
+    "upgradePromptMissingVersion": "upgradePrompt est activé, mais AppConfig.version est absent, l'invite de mise à jour n'a donc pas été activée"
   },
   "client": {
     "layoutDefaultExport": "Layout doit utiliser l'export par défaut",
@@ -258,7 +259,10 @@
     "hmrRenderCsrBefore": "[HMR] renderCSR avant",
     "hmrRenderCsrComplete": "[HMR] renderCSR terminé",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render échoué",
-    "hmrCssFetchFailedPrefix": "[dweb] Échec de la récupération du CSS HMR : "
+    "hmrCssFetchFailedPrefix": "[dweb] Échec de la récupération du CSS HMR : ",
+    "upgradePromptTitle": "Le système a été mis à jour",
+    "upgradePromptMessage": "Le système a été mis à jour. Veuillez actualiser la page pour utiliser la nouvelle version.",
+    "upgradePromptConfirm": "OK"
   },
   "db": {
     "noMigrations": "Aucune migration",
@@ -607,6 +611,7 @@
       "jsxDtsLine2": "Identique à @dreamer/view jsx.d.ts ; à utiliser avec deno.json compilerOptions.types.",
       "nameDesc": "Nom de l'application, utilisé dans les journaux et les métadonnées.",
       "versionDesc": "Version de l'application (chaîne semver).",
+      "upgradePromptDesc": "Invite de mise à jour, désactivée par défaut. Décommentez la ligne suivante au besoin et renseignez version ; incrémenter version à chaque publication.",
       "envPrefixDesc": "Préfixe des variables d'environnement à charger dans la config (ex. APP_PORT). Décommenter pour activer.",
       "hotReloadDesc": "Activer le rechargement à chaud de la config en dev ; le framework redémarre lors d'un changement de config.",
       "pluginManagerOptionsDesc": "Gestionnaire de plugins : autoActivate, continueOnError, enableHotReload, hotReloadInterval. Décommenter pour personnaliser.",

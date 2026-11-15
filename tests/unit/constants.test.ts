@@ -13,16 +13,24 @@ import {
   DEFAULT_PRELOAD_MAX_PAGES,
   DEFAULT_PRELOAD_MAX_SIZE_MB,
   DEV_NO_CACHE_CONTROL,
+  DWEB_APP_VERSION_STORAGE_KEY,
   DWEB_DATA_PATH,
   DWEB_DATA_PATH_HEADER,
+  DWEB_VERSION_PATH,
+  DWEB_VERSION_STREAM_PATH,
   getCacheOptions,
   HASHED_ASSET_CACHE_CONTROL,
   setCacheOptions,
+  VERSION_ENDPOINT_CACHE_CONTROL,
 } from "../../src/utils/constants.ts";
 
 describe("constants", () => {
   it("路径常量应稳定", () => {
     expect(DWEB_DATA_PATH).toBe("/__data");
+    expect(DWEB_VERSION_PATH).toBe("/__version");
+    expect(DWEB_VERSION_STREAM_PATH).toBe("/__version/stream");
+    expect(DWEB_APP_VERSION_STORAGE_KEY).toBe("dweb:app-version");
+    expect(VERSION_ENDPOINT_CACHE_CONTROL).toBe("no-store");
     expect(DWEB_DATA_PATH_HEADER).toBe("x-dweb-pathname");
     expect(CLIENT_SCRIPT_PATH).toBe("/_client.js");
     expect(CLIENT_CHUNK_PREFIX).toBe("/_client/");

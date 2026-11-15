@@ -60,6 +60,7 @@
     "@dreamer/service": "npm:@jsr/dreamer__service@^1.1.0",
     "@dreamer/session": "npm:@jsr/dreamer__session@^1.1.0",
     "@dreamer/socket-io": "npm:@jsr/dreamer__socket-io@^1.2.1",
+    "@dreamer/storage": "npm:@jsr/dreamer__storage@^1.1.0",
     "@dreamer/utils": "npm:@jsr/dreamer__utils@^1.1.0",
     "@dreamer/view": "npm:@jsr/dreamer__view@^3.1.0",
     "@dreamer/websocket": "npm:@jsr/dreamer__websocket@^1.1.0",

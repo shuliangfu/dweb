@@ -83,6 +83,16 @@ describe("配置管理 (config.ts)", () => {
         const config = { hotReload: "true" } as unknown as AppConfig;
         expect(() => validateConfig(config)).toThrow(RE.hotReload);
       });
+
+      it("应该拒绝非布尔类型的 upgradePrompt", () => {
+        const config = { upgradePrompt: "true" } as unknown as AppConfig;
+        expect(() => validateConfig(config)).toThrow(/upgradePrompt/);
+      });
+
+      it("应该接受 upgradePrompt 为布尔值", () => {
+        expect(() => validateConfig({ upgradePrompt: true })).not.toThrow();
+        expect(() => validateConfig({ upgradePrompt: false })).not.toThrow();
+      });
     });
 
     describe("渲染配置验证", () => {

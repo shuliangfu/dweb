@@ -126,6 +126,8 @@ The framework auto-detects the runtime and adapts subprocess spawning
 
 - ✅ **Full-stack support**: Server + client integrated development
 - ✅ **File-based routing**: File-system based routing, similar to Next.js
+- ✅ **SSE file routes**: Return `sse()` from a handler to push
+  `text/event-stream` events
 - ✅ **Multiple render modes**: SSR, CSR, SSG, Hybrid; **in CSR/Hybrid, use
   route `load` to supply data—no manual API requests**; the framework runs
   `load` on the server and passes data to the page via `/__data`
@@ -156,6 +158,8 @@ The framework auto-detects the runtime and adapts subprocess spawning
 - ✅ **Type safety**: Full TypeScript support
 - ✅ **Developer experience**: HMR (hot module replacement), CLI tools, code
   hints
+- ✅ **Upgrade prompt**: Optional `upgradePrompt` compares `AppConfig.version`
+  and asks open tabs to refresh over SSE when a new release is live
 
 ## Architecture
 
@@ -470,6 +474,44 @@ See also `examples/app-kinds/multi-web-api-console`.
 picks its own `kind` and shares `common/`. **At most one** `api` and **at most
 one** `console` per project. Their directories are fixed as `api` and `console`;
 init does not ask for those names.
+
+### SSE file routes
+
+File-route `GET` / `POST` handlers can `return sse()` to push events
+(`Content-Type: text/event-stream`). The browser connects with `EventSource`.
+The helper writes the response headers (including `Cache-Control: no-store` and
+`X-Accel-Buffering: no`) and runs your cleanup function when the client
+disconnects. Production compression skips this content type, so the long-lived
+stream is not buffered into memory.
+
+```ts
+// routes/ticks.ts — GET /ticks
+import type { ApiContext } from "@dreamer/dweb";
+import { sse } from "@dreamer/dweb";
+
+export function GET(ctx: ApiContext) {
+  return sse(ctx, (push) => {
+    push.send({ time: Date.now() }, "tick");
+    const timer = setInterval(() => {
+      push.send({ time: Date.now() }, "tick");
+    }, 1000);
+    return () => clearInterval(timer);
+  }, { retry: 3000, pingInterval: 15_000 });
+}
+```
+
+```js
+// Browser
+const es = new EventSource("/ticks");
+es.addEventListener("tick", (ev) => {
+  console.log(JSON.parse(ev.data));
+});
+```
+
+`push.send(data, event?, id?)` JSON-stringifies non-strings and splits multiline
+values into `data:` lines. Also available: `push.comment()`, `push.ping()`, and
+`push.close()`. Options: `retry` (ms, for browser reconnection), `pingInterval`
+(automatic heartbeat), `signal`, `headers`, and `status`.
 
 ### Single-app mode (default)
 
@@ -1818,22 +1860,23 @@ manual reload.
 
 ### Core API
 
-| API                          | Description                                                          |
-| ---------------------------- | -------------------------------------------------------------------- |
-| `App`                        | Main class; integrates services, middleware, plugins, router, render |
-| `app.use(middleware)`        | Register global middleware                                           |
-| `app.use(path, middleware)`  | Register path-prefix middleware                                      |
-| `app.registerPlugin(plugin)` | Register plugin                                                      |
-| `app.on(stage, hook)`        | Lifecycle hooks (init, start, stop, build, error)                    |
-| `app.start()`                | Start app (dev/production server)                                    |
-| `app.stop()`                 | Stop app                                                             |
-| `app.build()`                | Build for production                                                 |
-| `app.shutdown()`             | Graceful shutdown (SIGTERM/SIGINT)                                   |
-| `app.container`              | Service container (getConfig, getLogger, etc.)                       |
-| `app.stage`                  | Current lifecycle stage                                              |
-| `isApiKind(config)`          | Check if config is an API app (kind === "api")                       |
-| `isConsoleKind(config)`      | Check if config is a Console app (kind === "console")                |
-| `resolveAppKind(config)`     | Resolve app kind, falling back to default "web"                      |
+| API                          | Description                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `App`                        | Main class; integrates services, middleware, plugins, router, render                                                       |
+| `app.use(middleware)`        | Register global middleware                                                                                                 |
+| `app.use(path, middleware)`  | Register path-prefix middleware                                                                                            |
+| `app.registerPlugin(plugin)` | Register plugin                                                                                                            |
+| `app.on(stage, hook)`        | Lifecycle hooks (init, start, stop, build, error)                                                                          |
+| `app.start()`                | Start app (dev/production server)                                                                                          |
+| `app.stop()`                 | Stop app                                                                                                                   |
+| `app.build()`                | Build for production                                                                                                       |
+| `app.shutdown()`             | Graceful shutdown (SIGTERM/SIGINT)                                                                                         |
+| `app.container`              | Service container (getConfig, getLogger, etc.)                                                                             |
+| `app.stage`                  | Current lifecycle stage                                                                                                    |
+| `isApiKind(config)`          | Check if config is an API app (kind === "api")                                                                             |
+| `isConsoleKind(config)`      | Check if config is a Console app (kind === "console")                                                                      |
+| `resolveAppKind(config)`     | Resolve app kind, falling back to default "web"                                                                            |
+| `sse(ctx, start, options?)`  | SSE response for file routes; writes event-stream headers, retry, and heartbeat, and cleans up when the client disconnects |
 
 ### Config and params
 
@@ -1872,21 +1915,24 @@ manual reload.
 
 ### Type exports
 
-| Type                | Description                                                    |
-| ------------------- | -------------------------------------------------------------- |
-| `AppConfig`         | App config interface                                           |
-| `AppKind`           | App kind union ("web" \| "api" \| "console")                   |
-| `IApp`              | App interface                                                  |
-| `AppPlugin`         | Plugin type                                                    |
-| `AppMiddleware`     | Middleware type                                                |
-| `AppStage`          | Lifecycle stage                                                |
-| `Context`           | Route middleware context (HttpContext alias)                   |
-| `Next`              | Middleware next type                                           |
-| `SocketConfig`      | Real-time config (socketio \| websocket)                       |
-| `ConsoleContext`    | Console route context (args, options, app, log, signal, cwd)   |
-| `ConsoleMiddleware` | Global console middleware type                                 |
-| `ApiContext`        | Pure HTTP API route context (re-exported from @dreamer/server) |
-| `LoadContext`       | Page/SSR data loader context (load(ctx))                       |
+| Type                | Description                                                        |
+| ------------------- | ------------------------------------------------------------------ |
+| `AppConfig`         | App config interface                                               |
+| `AppKind`           | App kind union ("web" \| "api" \| "console")                       |
+| `IApp`              | App interface                                                      |
+| `AppPlugin`         | Plugin type                                                        |
+| `AppMiddleware`     | Middleware type                                                    |
+| `AppStage`          | Lifecycle stage                                                    |
+| `Context`           | Route middleware context (HttpContext alias)                       |
+| `Next`              | Middleware next type                                               |
+| `SocketConfig`      | Real-time config (socketio \| websocket)                           |
+| `ConsoleContext`    | Console route context (args, options, app, log, signal, cwd)       |
+| `ConsoleMiddleware` | Global console middleware type                                     |
+| `ApiContext`        | Pure HTTP API route context (re-exported from @dreamer/server)     |
+| `LoadContext`       | Page/SSR data loader context (load(ctx))                           |
+| `SsePush`           | SSE push interface (`send` / `comment` / `ping` / `close`)         |
+| `SseOptions`        | Options for `sse()` (retry, pingInterval, signal, headers, status) |
+| `SseContext`        | Context for `sse()` (`ApiContext` or `Request`)                    |
 
 ---
 
@@ -1938,8 +1984,19 @@ Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use
 ## 📚 Config docs
 
 - **[AppConfig full example](./docs/en-US/APP_CONFIG.md)**: All options
-  (language, server, router, render, build, logger, database, socket, plugins,
-  middlewares).
+  (language, `upgradePrompt`, server, router, render, build, logger, database,
+  socket, plugins, middlewares).
+
+### Upgrade prompt
+
+Off by default, and only active in production (ignored in development even when
+enabled). In `config/main.ts`, uncomment `// upgradePrompt: true,` and keep
+`version` filled. Bump `version` when you release. The framework registers
+`GET /__version` and SSE `GET /__version/stream`; open tabs are asked to refresh
+when the live version is newer. The confirmed version is stored in the
+`dweb:app-version` localStorage key. Ignored for `kind: "api"` / `"console"`.
+See [APP_CONFIG](./docs/en-US/APP_CONFIG.md).
+
 - **Config and params**: See "[Config management](#config-management)" above
   for:
   - Framework config (`getConfig`, `getConfigValue`)

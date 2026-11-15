@@ -303,8 +303,20 @@ export interface AppConfig extends Record<string, unknown> {
    * 缺省或未设置时按 web 处理，兼容旧项目
    */
   kind?: AppKind;
-  /** 应用版本 */
+  /**
+   * 应用版本。开启 `upgradePrompt` 时以此字段为唯一版本来源
+   * （未填写或空白则即使开启也不启用升级提示）。
+   */
   version?: string;
+  /**
+   * 升级提示（**默认关闭**）。仅生产环境生效，开发环境即使开启也不启用。
+   * `true` 时使用 {@link AppConfig.version}，经 `GET /__version/stream`（SSE）
+   * 把当前版本推到已打开的页面。首次访问没有本地记录时只写入当前版本、不弹层；
+   * 之后若线上版本大于 localStorage 中记录的版本，则提示用户确认后强制刷新。
+   * 记录键为 `dweb:app-version`（`@dreamer/storage`）。
+   * `kind: "api"` / `"console"` 不生效。
+   */
+  upgradePrompt?: boolean;
   /**
    * 框架语言（默认：自动检测环境变量 LANGUAGE/LC_ALL/LANG，检测不到则 en-US）
    * 影响 CLI 输出、日志、错误消息等框架内置文案

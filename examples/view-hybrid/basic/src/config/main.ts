@@ -16,6 +16,8 @@ const config: AppConfig = {
   version: "1.0.0",
   language: language as AppLanguage,
 
+  // upgradePrompt: true,
+
   // 服务器配置（e2e 并行测试时与 view-csr/react-csr/react-hybrid 端口区分；PORT 环境变量可覆盖）
   server: {
     port: serverPort,

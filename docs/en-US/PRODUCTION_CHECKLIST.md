@@ -67,6 +67,8 @@ export default {
 - [ ] Health: `GET /health`
 - [ ] Terminate TLS at reverse proxy
 - [ ] Avoid permanent debug logging in production
+- [ ] If `upgradePrompt` is on, bump `AppConfig.version` on each release; the
+      prompt stays off when `version` is missing
 
 ## 5. Regression
 
