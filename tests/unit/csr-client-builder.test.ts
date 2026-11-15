@@ -7,6 +7,13 @@
  */
 
 import "../setup.ts";
+import {
+  join,
+  makeTempDir,
+  readTextFile,
+  remove,
+  stat,
+} from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import {
@@ -545,25 +552,25 @@ describe("generateClientDepContent — engine / path / nested branches", () => {
 
 describe("writeTextFileIfChanged()", () => {
   it("writes a new file and skips an unchanged rewrite", async () => {
-    const dir = await Deno.makeTempDir({ prefix: "dweb-client-dep-" });
-    const path = `${dir}/_client.dep.tsx`;
+    const dir = await makeTempDir({ prefix: "dweb-client-dep-" });
+    const path = join(dir, "_client.dep.tsx");
     try {
       expect(await writeTextFileIfChanged(path, "export const a = 1;\n")).toBe(
         true,
       );
-      expect(await Deno.readTextFile(path)).toBe("export const a = 1;\n");
-      const first = await Deno.stat(path);
+      expect(await readTextFile(path)).toBe("export const a = 1;\n");
+      const first = await stat(path);
       expect(await writeTextFileIfChanged(path, "export const a = 1;\n")).toBe(
         false,
       );
-      const second = await Deno.stat(path);
+      const second = await stat(path);
       expect(second.mtime?.getTime()).toBe(first.mtime?.getTime());
       expect(await writeTextFileIfChanged(path, "export const a = 2;\n")).toBe(
         true,
       );
-      expect(await Deno.readTextFile(path)).toBe("export const a = 2;\n");
+      expect(await readTextFile(path)).toBe("export const a = 2;\n");
     } finally {
-      await Deno.remove(dir, { recursive: true });
+      await remove(dir, { recursive: true });
     }
   });
 });
