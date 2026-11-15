@@ -226,11 +226,6 @@ export async function ensureClientEntryFile(
     );
 
   if (await exists(tempClientEntryPath)) {
-    logger.debug(
-      $tr("log.clientEntryExists", {
-        path: pathForLog(tempClientEntryPath),
-      }),
-    );
     return tempClientEntryPath;
   }
 

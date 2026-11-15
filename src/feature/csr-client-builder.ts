@@ -264,10 +264,6 @@ export async function buildClientScript(
 
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
-  logger.debug($tr("log.clientScriptBuilding", {
-    path: pathForLog(tempClientEntryPath),
-  }));
-
   try {
     // 获取运行模式（提前计算，用于决定是否写入 client.dep.tsx 避免 HMR 循环）
     const serverConfig = (config.server || {}) as { mode?: "dev" | "prod" };

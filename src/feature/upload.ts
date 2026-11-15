@@ -127,8 +127,5 @@ export async function registerUploadIntegration(
   };
 
   server.use(mw, basePath, "upload");
-  if (container.has("logger")) {
-    getLogger(container).debug(`upload mounted at ${basePath}`);
-  }
   return basePath;
 }

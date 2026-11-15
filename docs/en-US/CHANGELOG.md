@@ -10,6 +10,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.10.3] - 2026-11-16
+
+### Changed
+
+- **Drop verbose debug logs at dev startup**: no longer prints `upload mounted`,
+  client-entry-already-exists, or building-client-script progress messages.
+
 ## [3.10.2] - 2026-11-16
 
 ### Changed
