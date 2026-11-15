@@ -9,6 +9,26 @@
 
 ## [Unreleased]
 
+## [3.9.9] - 2026-11-15
+
+### 修复
+
+- **HMR 预加载非当前路由**：编辑其他路由页时，把带缓存破坏参数的 chunk 预取进
+  `MODULE_CACHE` 和 `ROUTE_LOADERS`，不替换当前页。内容未变的 `_client.dep.tsx`
+  不再重写，避免每次 HMR 都触发整次重建。
+- **单测适配**：`writeTextFileIfChanged` 覆盖测试改用
+  `@dreamer/runtime-adapter`，不再直接调用 `Deno.makeTempDir`，Bun 下也能通过。
+
+### 变更
+
+- **依赖**：`@dreamer/view` `^3.0.6` → `^3.1.0`；`@dreamer/render` `^1.5.3` →
+  `^1.5.5`；`@dreamer/server` `^1.3.2` → `^1.3.3`；`@dreamer/plugins` `^1.2.0` →
+  `^1.2.1`；`preact-render-to-string` `6.8.2` → `6.8.3`。根上的 Tailwind／
+  `@tailwindcss/postcss` 从 `4.3.4` 对齐到 `4.3.5`。示例项目同步这些依赖，
+  并更新了 Tailwind、esbuild、PostCSS、Lightning CSS、Chart.js 和 UnoCSS。
+
+---
+
 ## [3.9.8] - 2026-11-15
 
 ### 变更

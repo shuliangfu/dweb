@@ -10,6 +10,29 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.9.9] - 2026-11-15
+
+### Fixed
+
+- **HMR preload for other routes**: when a foreign page chunk changes, prefetch
+  it with a cache-busting URL into `MODULE_CACHE` and `ROUTE_LOADERS` without
+  swapping the current page. Unchanged `_client.dep.tsx` content is no longer
+  rewritten, avoiding a full rebuild on every HMR tick.
+- **Test adapter**: the `writeTextFileIfChanged` coverage test now uses
+  `@dreamer/runtime-adapter` instead of `Deno.makeTempDir`, so it also passes
+  under Bun.
+
+### Changed
+
+- **Dependencies**: `@dreamer/view` `^3.0.6` → `^3.1.0`; `@dreamer/render`
+  `^1.5.3` → `^1.5.5`; `@dreamer/server` `^1.3.2` → `^1.3.3`; `@dreamer/plugins`
+  `^1.2.0` → `^1.2.1`; `preact-render-to-string` `6.8.2` → `6.8.3`. Root
+  Tailwind / `@tailwindcss/postcss` aligned from `4.3.4` to `4.3.5`. Example
+  projects follow these bumps and also update Tailwind, esbuild, PostCSS,
+  Lightning CSS, Chart.js, and UnoCSS.
+
+---
+
 ## [3.9.8] - 2026-11-15
 
 ### Changed
