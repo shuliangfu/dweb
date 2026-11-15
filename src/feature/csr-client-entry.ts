@@ -34,6 +34,7 @@ import {
   generateClientDepContent,
 } from "./csr-client-dep.ts";
 import { resolveUpgradePrompt } from "./upgrade-prompt.ts";
+import { resolveUpgradePromptClientSpecifier } from "./upgrade-prompt-client-spec.ts";
 import {
   getRouteClientManifest,
   type RouteComponentInfo,
@@ -239,6 +240,8 @@ export async function ensureClientEntryFile(
   const clientDepIsDev = getEnv("RUNTIME_ENV") === "dev";
   const has404 = await exists(join(routesDirPath, "_404.tsx"));
   const has500 = await exists(join(routesDirPath, "_500.tsx"));
+  const enableUpgradePrompt =
+    resolveUpgradePrompt(config, clientDepIsDev) !== null;
   const clientDepCode = generateClientDepContent(
     engine,
     components,
@@ -250,7 +253,10 @@ export async function ensureClientEntryFile(
     clientDepIsDev,
     has404,
     has500,
-    resolveUpgradePrompt(config, clientDepIsDev) !== null,
+    enableUpgradePrompt,
+    enableUpgradePrompt
+      ? await resolveUpgradePromptClientSpecifier(srcDir)
+      : undefined,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug($tr("log.clientDepGenerated", {
@@ -334,6 +340,8 @@ export async function prepareClientBuildEntry(
   const clientDepIsDev = getEnv("RUNTIME_ENV") === "dev";
   const has404 = await exists(join(routesDirPath, "_404.tsx"));
   const has500 = await exists(join(routesDirPath, "_500.tsx"));
+  const enableUpgradePrompt =
+    resolveUpgradePrompt(config, clientDepIsDev) !== null;
   const clientDepCode = generateClientDepContent(
     engine,
     components,
@@ -345,7 +353,10 @@ export async function prepareClientBuildEntry(
     clientDepIsDev,
     has404,
     has500,
-    resolveUpgradePrompt(config, clientDepIsDev) !== null,
+    enableUpgradePrompt,
+    enableUpgradePrompt
+      ? await resolveUpgradePromptClientSpecifier(srcDir)
+      : undefined,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug(

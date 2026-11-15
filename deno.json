@@ -21,7 +21,8 @@
     "./feature/build": "./src/feature/build.ts",
     "./feature/command": "./src/feature/command.ts",
     "./feature/socket-io": "./src/feature/socket-io.ts",
-    "./feature/websocket": "./src/feature/websocket.ts"
+    "./feature/websocket": "./src/feature/websocket.ts",
+    "./upgrade-prompt-client": "./src/feature/upgrade-prompt-client.ts"
   },
   "publish": {
     "include": [

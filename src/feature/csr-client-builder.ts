@@ -55,6 +55,7 @@ import {
   type ClientDepRenderMode,
   generateClientDepContent,
 } from "./csr-client-dep.ts";
+import { resolveUpgradePromptClientSpecifier } from "./upgrade-prompt-client-spec.ts";
 import { getRouteClientManifest } from "./csr-client-route-manifest.ts";
 import { createStripLoadPlugin } from "./strip-load-plugin.ts";
 
@@ -323,6 +324,7 @@ export async function buildClientScript(
     // 开发态且本次由 client 入口文件变更触发时跳过写入，避免 watch 循环
     const has404 = await exists(join(routesDirPath, "_404.tsx"));
     const has500 = await exists(join(routesDirPath, "_500.tsx"));
+    const enableUpgradePrompt = resolveUpgradePrompt(config, !isProd) !== null;
     const clientDepCode = generateClientDepContent(
       engine,
       components,
@@ -334,7 +336,10 @@ export async function buildClientScript(
       !isProd,
       has404,
       has500,
-      resolveUpgradePrompt(config, !isProd) !== null,
+      enableUpgradePrompt,
+      enableUpgradePrompt
+        ? await resolveUpgradePromptClientSpecifier(srcDir)
+        : undefined,
     );
     if (!skipWritingClientDep) {
       const written = await writeTextFileIfChanged(

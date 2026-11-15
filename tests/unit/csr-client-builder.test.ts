@@ -103,6 +103,36 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(code).toContain("import { startUpgradePrompt } from");
       expect(code).toContain("upgrade-prompt-client.ts");
       expect(code).not.toContain("file://");
+      expect(code).not.toContain("https://");
+      expect(code).toContain("void startUpgradePrompt()");
+    });
+
+    it("传入 jsr.io URL 时不得写进生成代码，改为包导出路径", () => {
+      const code = generateClientDepContent(
+        "view",
+        [
+          {
+            componentPath: "index",
+            fullPath: "/tmp/routes/index.tsx",
+            importName: "Route_index",
+          },
+        ],
+        "/tmp/routes",
+        false,
+        [],
+        "hybrid",
+        {},
+        false,
+        false,
+        false,
+        true,
+        "https://jsr.io/@dreamer/dweb/3.10.0/src/feature/upgrade-prompt-client.ts",
+      );
+      expect(code).toContain("import { startUpgradePrompt } from");
+      expect(code).toContain("@dreamer/dweb/upgrade-prompt-client");
+      expect(code).not.toContain("https://");
+      expect(code).not.toContain("jsr.io");
+      expect(code).not.toContain("file://");
       expect(code).toContain("void startUpgradePrompt()");
     });
 

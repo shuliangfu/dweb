@@ -17,6 +17,7 @@ out/
 
 # 框架生成的客户端依赖（每次构建重新生成，不提交）
 _client.dep.tsx
+_upgrade-prompt/
 
 # View SSR 路由单包等运行时缓存（项目根 runtime/
 runtime/

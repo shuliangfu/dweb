@@ -7,11 +7,14 @@
 
 import { DWEB_DATA_PATH, DWEB_DATA_PATH_HEADER } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
-import { fromFileUrl } from "../utils/version.ts";
 import {
   extractComponentPathFromRouteFile,
   subpathFromRoutesDirMarker,
 } from "../utils/path.ts";
+import {
+  toBundledUpgradePromptSpecifier,
+  upgradePromptClientSpecifier,
+} from "./upgrade-prompt-client-spec.ts";
 import type { RouteComponentInfo } from "./csr-client-route-manifest.ts";
 import { RESOLVE_HMR_PAGE_MODULE_SOURCE } from "./hmr-refresh.ts";
 
@@ -80,18 +83,7 @@ function routeLoaderKeyForClientDep(
   return "index";
 }
 
-/**
- * 升级提示客户端模块的导入说明符。
- * `file://` 路径 esbuild 无法直接解析，本地开发转为文件系统路径；
- * 远程（jsr / https）则保留原 URL，交给 deno-protocol 加载。
- */
-export function upgradePromptClientSpecifier(): string {
-  const url = new URL("./upgrade-prompt-client.ts", import.meta.url);
-  if (url.protocol === "file:") {
-    return fromFileUrl(url.href).replaceAll("\\", "/");
-  }
-  return url.href;
-}
+export { upgradePromptClientSpecifier };
 
 /**
  * 生成 client.dep.tsx 内容（路由加载器、缓存、HMR CSS、loadLayouts、loadPageModule、renderNotFound、renderError、setupHydrationRouterAndHmr 等）
@@ -132,6 +124,8 @@ export function generateClientDepContent(
   has500: boolean = false,
   /** 为 true 时在生成的入口中启动升级提示（@dreamer/storage/client） */
   enableUpgradePrompt: boolean = false,
+  /** 升级提示客户端的打包说明符；缺省时按运行中的模块解析，并去掉远程 URL */
+  upgradePromptSpecifier?: string,
 ): string {
   const useNestedLayouts = Boolean(
     routeLayoutKeys && Object.keys(routeLayoutKeys).length > 0,
@@ -607,7 +601,11 @@ import { createRouter } from "@dreamer/router/client";
 ${
     enableUpgradePrompt
       ? `import { startUpgradePrompt } from ${
-        JSON.stringify(upgradePromptClientSpecifier())
+        JSON.stringify(
+          toBundledUpgradePromptSpecifier(
+            upgradePromptSpecifier ?? upgradePromptClientSpecifier(),
+          ),
+        )
       };
 void startUpgradePrompt();
 `
