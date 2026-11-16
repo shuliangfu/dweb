@@ -10,6 +10,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- **Startup order**: when a database is configured, connect it and sync the
+  manager onto the `@dreamer/database` singleton before plugin `onInit`.
+  Connection is no longer deferred to the `starting` lifecycle hook, whose hooks
+  run in parallel and could race with plugins. Socket.IO / WebSocket are also
+  initialized before plugins (without listening). Plugins still register in
+  config-array order, with `registerPlugin` calls from `main.ts` following
+  those. HTTP listen stays on the `started` stage, after plugins are ready.
+  Build mode (`--build`) skips connecting.
+
 ## [3.10.3] - 2026-11-16
 
 ### Changed

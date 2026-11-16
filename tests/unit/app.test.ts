@@ -10,6 +10,7 @@
  */
 
 import "../setup.ts";
+import { closeDatabase, isDatabaseInitialized } from "@dreamer/database";
 import type { Plugin } from "@dreamer/plugin";
 import { describe, expect, it } from "@dreamer/test";
 import { App } from "../../src/core/app.ts";
@@ -141,6 +142,44 @@ describe("App 类 (app.ts)", () => {
       };
 
       expect(() => app.registerPlugin(plugin)).not.toThrow();
+    });
+  });
+
+  describe("App 启动顺序", () => {
+    it("插件 onInit 时数据库已连接", async () => {
+      let dbReady = false;
+      let onInitRan = false;
+      let resolveInit!: () => void;
+      const inited = new Promise<void>((resolve) => {
+        resolveInit = resolve;
+      });
+      const config: AppConfig = {
+        name: "startup-order-app",
+        database: {
+          default: {
+            adapter: "sqlite",
+            connection: { filename: ":memory:" },
+          },
+        },
+        plugins: [
+          {
+            name: "probe-db",
+            version: "1.0.0",
+            onInit() {
+              onInitRan = true;
+              dbReady = isDatabaseInitialized();
+              resolveInit();
+            },
+          },
+        ],
+      };
+
+      new App(config);
+      await inited;
+
+      expect(onInitRan).toBe(true);
+      expect(dbReady).toBe(true);
+      await closeDatabase().catch(() => {});
     });
   });
 

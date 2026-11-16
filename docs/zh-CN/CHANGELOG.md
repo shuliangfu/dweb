@@ -9,6 +9,15 @@
 
 ## [Unreleased]
 
+### 变更
+
+- **启动顺序**：配置了数据库时，在插件 `onInit` 之前立即连接，并把管理器同步到
+  `@dreamer/database` 全局单例；不再推迟到生命周期 `starting`
+  钩子（该阶段钩子并行执行， 会与插件抢跑）。Socket.IO / WebSocket
+  也在插件之前初始化（此时尚未 listen）。 插件仍按配置数组顺序注册，`main.ts` 里
+  `registerPlugin` 的排在配置插件之后。 HTTP 监听仍在 `started`
+  阶段，等插件就绪后再对外服务。构建模式（`--build`）跳过连库。
+
 ## [3.10.3] - 2026-11-16
 
 ### 变更

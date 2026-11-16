@@ -378,19 +378,15 @@ export class App extends EventEmitter implements IApp {
     // 初始化插件系统（依赖配置）
     initializePlugin(this.container, mergedConfig.pluginManagerOptions);
 
-    // 初始化数据库（如果配置了）
+    // 数据库是插件和实时通道的基础：先创建管理器并立即连接。
+    // 构建模式跳过连库，避免打包时要求活库。
     if (mergedConfig.database) {
       initializeDatabase(this.container, mergedConfig);
-
-      // 注册生命周期钩子，在启动阶段连接数据库
-      const lifecycleManager = getLifecycleManager(this.container);
-      const dbStartingHook: LifecycleHook = async () => {
+      if (!this._isBuildMode()) {
         await connectDatabases(this.container, mergedConfig);
-      };
-      lifecycleManager.on("starting", dbStartingHook);
-      this.lifecycleListeners.push({ stage: "starting", hook: dbStartingHook });
+      }
 
-      // 注册生命周期钩子，在停止阶段断开数据库
+      const lifecycleManager = getLifecycleManager(this.container);
       const dbStoppingHook: LifecycleHook = async () => {
         await disconnectDatabases(this.container);
       };
@@ -398,7 +394,13 @@ export class App extends EventEmitter implements IApp {
       this.lifecycleListeners.push({ stage: "stopping", hook: dbStoppingHook });
     }
 
-    // 先注册插件并触发 onInit，再初始化服务器/构建 client（以便 getHmrCssEntries 等能读到 tailwindConfig 等）
+    // Socket 在插件之前初始化（此时尚未 listen；HTTP 挂载仍在 server 就绪后）
+    if (mergedConfig.server && !this._consoleMode) {
+      this._initializeRealtime(mergedConfig);
+    }
+
+    // 再按配置顺序注册插件并触发 onInit，之后才初始化服务器/构建 client
+    // （以便 getHmrCssEntries 等能读到 tailwindConfig 等）
     await this._registerPluginsFromConfig(mergedConfig);
     if (!this._consoleSlim) {
       await this._registerMiddlewaresFromConfig(mergedConfig);
@@ -441,21 +443,6 @@ export class App extends EventEmitter implements IApp {
 
       // 初始化服务器
       initializeServer(this.container, mergedConfig);
-      // 根据 config.socket.adapter 初始化实时通信（socketio | websocket）
-      const socketConfig = mergedConfig.socket as
-        | { adapter?: string }
-        | undefined;
-      const socketPluginHandlers = {
-        onConnection: (ctx: SocketContext) =>
-          pluginEvents.emitOnSocket(this.container, ctx),
-        onDisconnect: (ctx: SocketContext) =>
-          pluginEvents.emitOnSocketClose(this.container, ctx),
-      };
-      if (isSocketIOAdapter(socketConfig?.adapter)) {
-        initializeSocketIo(this.container, mergedConfig, socketPluginHandlers);
-      } else if (socketConfig?.adapter === "websocket") {
-        initializeWebSocket(this.container, mergedConfig, socketPluginHandlers);
-      }
 
       // 注册客户端资源目录（多应用时为 dist/<appDir>/client/assets），供 Tailwind 等插件在生产模式解析带 hash 的 CSS 路径
       if (!apiApp) {
@@ -595,6 +582,25 @@ export class App extends EventEmitter implements IApp {
    *
    * @param config 应用配置
    */
+  /**
+   * 按 config.socket.adapter 初始化实时通信（socketio | websocket）。
+   * 只创建服务实例并写入容器，不 listen；插件 onInit 之后再挂到 HTTP 服务器。
+   */
+  private _initializeRealtime(config: AppConfig): void {
+    const socketConfig = config.socket as { adapter?: string } | undefined;
+    const socketPluginHandlers = {
+      onConnection: (ctx: SocketContext) =>
+        pluginEvents.emitOnSocket(this.container, ctx),
+      onDisconnect: (ctx: SocketContext) =>
+        pluginEvents.emitOnSocketClose(this.container, ctx),
+    };
+    if (isSocketIOAdapter(socketConfig?.adapter)) {
+      initializeSocketIo(this.container, config, socketPluginHandlers);
+    } else if (socketConfig?.adapter === "websocket") {
+      initializeWebSocket(this.container, config, socketPluginHandlers);
+    }
+  }
+
   private async _registerPluginsFromConfig(config: AppConfig): Promise<void> {
     const plugins = config.plugins;
     if (!plugins || plugins.length === 0) {
