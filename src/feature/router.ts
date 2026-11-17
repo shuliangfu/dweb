@@ -1,7 +1,7 @@
 /**
  * @dreamer/router 集成
  *
- * 初始化文件路由系统，扫描路由、匹配分发、解析参数，触发 onRoute 插件事件。
+ * 初始化文件路由系统，扫描路由、匹配分发、解析参数，触发 onRoute 并挂载插件提供的页面路由。
  * 导出 initializeRouter、getRouter。
  *
  * @module
@@ -16,6 +16,7 @@ import {
 import type { ServiceContainer } from "@dreamer/service";
 import { cwd } from "../core/runtime-adapter.ts";
 import { pluginEvents, type RouteDefinition } from "../core/plugin-events.ts";
+import { applyOnRoutePageDefinitions } from "./plugin-page-routes.ts";
 import type { AppConfig } from "../types/app.ts";
 import { resolveRouterRoutesDirPath } from "../utils/path.ts";
 
@@ -57,12 +58,11 @@ export async function initializeRouter(
   // 扫描路由文件
   await router.scan();
 
-  // 获取当前路由列表并触发 onRoute 事件
-  // 通知插件路由已扫描完成（文件路由系统不支持动态修改）
+  // 将扫描结果交给 onRoute。插件可追加带 meta.fullPath 的页面路由；
+  // 这些页面由 applyOnRoutePageDefinitions 挂到 Router 上（匹配、getRoutes、CSR）。
   const routes = router.getRoutes();
-  if (routes && routes.length > 0) {
-    // 转换为 RouteDefinition 格式（只读，供插件查看）
-    const routeDefinitions: RouteDefinition[] = routes.map((route: Route) => ({
+  const routeDefinitions: RouteDefinition[] = (routes ?? []).map(
+    (route: Route) => ({
       path: route.path,
       meta: {
         file: route.file,
@@ -72,11 +72,15 @@ export async function initializeRouter(
         isSpecial: route.isSpecial,
         specialType: route.specialType,
       },
-    }));
-
-    // 触发 onRoute 事件（通知插件）
-    await pluginEvents.emitOnRoute(container, routeDefinitions);
-  }
+    }),
+  );
+  const modified = await pluginEvents.emitOnRoute(container, routeDefinitions);
+  applyOnRoutePageDefinitions(
+    container,
+    router,
+    modified,
+    (routes ?? []).map((route: Route) => route.path),
+  );
 
   // 将路由注册到服务容器
   container.registerSingleton("router", () => router);

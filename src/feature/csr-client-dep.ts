@@ -116,6 +116,26 @@ function routeLoaderKeyForClientDep(
 }
 
 /**
+ * Import specifier for a ROUTE_LOADERS entry.
+ * Host pages stay as `./routes/<key>.tsx` (resolved next to client.dep.tsx).
+ * Plugin pages live outside the host routes dir, so use their absolute file path.
+ */
+export function clientRouteImportSpecifier(
+  routesDirPath: string,
+  c: RouteComponentInfo,
+  key: string,
+  routeExt = ".tsx",
+): string {
+  const full = (c.clientFullPath || c.fullPath || "").replace(/\\/g, "/");
+  const root = routesDirPath.replace(/\\/g, "/").replace(/\/$/, "");
+  const isAbs = full.startsWith("/") || /^[A-Za-z]:\//.test(full);
+  if (isAbs && root && full !== root && !full.startsWith(`${root}/`)) {
+    return full;
+  }
+  return `./routes/${key}${routeExt}`;
+}
+
+/**
  * 生成 client.dep.tsx 内容（路由加载器、缓存、HMR CSS、loadLayouts、loadPageModule、renderNotFound、renderError、setupHydrationRouterAndHmr 等）
  * 此文件每次构建/启动都会重新生成；client.tsx 仅不存在时生成，便于用户修改入口逻辑。
  *
@@ -209,7 +229,7 @@ import { createSignal, hydrate, mount, type Signal } from "@dreamer/view";`
   const routeLoadersBase = pageComponents
     .map((c) => {
       const k = routeLoaderKeyForClientDep(routesDirPath, c);
-      const spec = `./routes/${k}${routeExt}`;
+      const spec = clientRouteImportSpecifier(routesDirPath, c, k, routeExt);
       return `  ${JSON.stringify(k)}: () => import(${JSON.stringify(spec)}),`;
     })
     .join("\n");

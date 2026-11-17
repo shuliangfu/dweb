@@ -18,6 +18,7 @@ import {
   normalizePathStringForSubpathExtraction,
   subpathFromRoutesDirMarker,
 } from "../utils/path.ts";
+import { getPluginPageRoutes } from "./plugin-page-routes.ts";
 
 /** 路由组件信息 */
 export interface RouteComponentInfo {
@@ -25,6 +26,8 @@ export interface RouteComponentInfo {
   componentPath: string;
   /** 完整文件路径 */
   fullPath: string;
+  /** Optional client-only module path (no `load`); used by the browser bundle. */
+  clientFullPath?: string;
   /** 导入变量名 */
   importName: string;
 }
@@ -451,12 +454,32 @@ export async function getRouteClientManifest(
     }
   }
 
+  const routeLayoutKeys = { ...scanned.routeLayoutKeys };
+  for (const page of getPluginPageRoutes(_container)) {
+    if (!routeLayoutKeys[page.path]) {
+      routeLayoutKeys[page.path] = freshRouter.getLayoutKeysForPath(page.path);
+    }
+    if (seenPaths.has(page.component)) continue;
+    if (page.fullPath.startsWith("file://") || await exists(page.fullPath)) {
+      merged.push({
+        componentPath: page.component,
+        fullPath: page.fullPath,
+        clientFullPath: page.clientFullPath,
+        importName: routeImportName(page.component),
+      });
+      seenPaths.add(page.component);
+    }
+  }
+
+  const hasLayout = scanned.hasLayout ||
+    Object.values(routeLayoutKeys).some((arr) => arr.length > 0);
+
   return {
     components: sanitizeClientRouteComponents(
       merged.length > 0 ? merged : fsComponents,
       routesDirPath,
     ),
-    hasLayout: scanned.hasLayout,
-    routeLayoutKeys: scanned.routeLayoutKeys,
+    hasLayout,
+    routeLayoutKeys,
   };
 }

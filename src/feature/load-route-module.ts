@@ -30,6 +30,7 @@ import {
 import { getCacheOptions } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
+import { isRegisteredPluginPageFile } from "./plugin-page-routes.ts";
 import { getModuleVersion } from "./module-cache.ts";
 import { resetViewSsrBundleShutdownInterruptFlag } from "./view-ssr-route-bundle.ts";
 
@@ -346,7 +347,7 @@ export async function loadRouteModule(
         fallbackAllowed = inputNorm === routeRootNorm ||
           inputNorm.startsWith(routeRootNorm + "/");
       }
-      if (!fallbackAllowed) {
+      if (!fallbackAllowed && !isRegisteredPluginPageFile(absPath)) {
         console.warn(`${$tr("log.pathMustBeInProject")}: ${filePath}`);
         return null;
       }

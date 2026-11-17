@@ -43,11 +43,8 @@ export interface ServerResponse {
   redirect(url: string, status?: number): Response;
   /**
    * 返回 JSON 响应（Content-Type: application/json）。
-   * 将业务载荷 `data` 统一封装为 `{ success, data }`：
-   * - `success`：由 `init.status` 推断（默认 `200`）；**2xx** 为 `true`，否则为 `false`。
-   * - `data`：第一参传入的对象或其它可序列化值；未传时为 `null`。
-   *
-   * 行为与 `@dreamer/server` 的 {@link createServerResponse} 中 `json` 一致。
+   * 第一参原样序列化，不再包 `{ success, data }`。
+   * 未传时 body 为 `null`。行为与 `@dreamer/server` 的 {@link createServerResponse} 中 `json` 一致。
    */
   json(data: unknown, init?: ResponseInit): Response;
   /**
@@ -345,14 +342,7 @@ export function createServerResponse(): ServerResponse {
       });
     },
     json(data: unknown, init?: ResponseInit): Response {
-      // HTTP 状态码决定 success；业务载荷一律放在 data，与 @dreamer/server createServerResponse 保持一致
-      const status = init?.status ?? 200;
-      const success = status >= 200 && status < 300;
-      const envelope = {
-        success,
-        data: data === undefined ? null : data,
-      };
-      const body = JSON.stringify(envelope);
+      const body = JSON.stringify(data === undefined ? null : data);
       const headers = new Headers(init?.headers ?? JSON_HEADERS);
       return new Response(body, { ...init, headers });
     },

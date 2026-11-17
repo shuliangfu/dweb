@@ -151,11 +151,37 @@ function stripExportConstLoad(source: string): string {
 }
 
 /**
- * 创建「客户端构建时剔除 route 模块中 load 导出」的 esbuild 插件。
- * 仅对路径在 routesDir 下的 .ts/.tsx/.js/.jsx 生效，避免 load 及其依赖被打进浏览器 chunk。
+ * Whether the strip-load plugin should rewrite this module.
+ * Host route files under `routesDirAbs` are included, plus any exact
+ * plugin page module paths (files outside the host routes directory).
  */
-export function createStripLoadPlugin(routesDirAbs: string): BuildPlugin {
+export function shouldStripLoadPath(
+  filePath: string,
+  routesDirAbs: string,
+  extraFiles: string[] = [],
+): boolean {
+  const pathNorm = filePath.replace(/\\/g, "/");
   const normalizedRoutes = routesDirAbs.replace(/\\/g, "/");
+  if (normalizedRoutes && pathNorm.includes(normalizedRoutes)) return true;
+  const extras = new Set(
+    extraFiles.map((item) => item.replace(/\\/g, "/")),
+  );
+  return extras.has(pathNorm);
+}
+
+/**
+ * 创建「客户端构建时剔除 route 模块中 load 导出」的 esbuild 插件。
+ * 对路径在 routesDir 下，或在 extraFiles 中的 .ts/.tsx/.js/.jsx 生效，
+ * 避免 load 及其依赖被打进浏览器 chunk。
+ */
+export function createStripLoadPlugin(
+  routesDirAbs: string,
+  extraFiles: string[] = [],
+): BuildPlugin {
+  const normalizedRoutes = routesDirAbs.replace(/\\/g, "/");
+  const extraSet = new Set(
+    extraFiles.map((item) => item.replace(/\\/g, "/")),
+  );
   return {
     name: "dweb-strip-load",
     setup(build) {
@@ -163,7 +189,12 @@ export function createStripLoadPlugin(routesDirAbs: string): BuildPlugin {
         { filter: /\.(tsx?|jsx?)$/ },
         async (args) => {
           const pathNorm = args.path.replace(/\\/g, "/");
-          if (!pathNorm.includes(normalizedRoutes)) return null;
+          if (
+            !(normalizedRoutes && pathNorm.includes(normalizedRoutes)) &&
+            !extraSet.has(pathNorm)
+          ) {
+            return null;
+          }
           try {
             const raw = await readTextFile(args.path);
             const stripped = stripLoadExport(raw);

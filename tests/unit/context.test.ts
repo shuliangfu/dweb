@@ -237,19 +237,21 @@ describe("context.ts", () => {
     });
 
     describe("json()", () => {
-      it("返回 application/json 且 body 为 { success, data } 封装", async () => {
+      it("返回 application/json 且 body 为传入对象", async () => {
         const r = res.json({ a: 1 });
         expect(r.headers.get("Content-Type")).toContain("application/json");
-        expect(await r.json()).toEqual({ success: true, data: { a: 1 } });
+        expect(await r.json()).toEqual({ a: 1 });
       });
 
-      it("init.status 非 2xx 时 success 为 false", async () => {
+      it("支持 return res.json({ success: true }) 原样输出", async () => {
+        const r = res.json({ success: true });
+        expect(await r.json()).toEqual({ success: true });
+      });
+
+      it("init.status 只改状态码，不另包一层", async () => {
         const r = res.json({ error: "bad" }, { status: 400 });
         expect(r.status).toBe(400);
-        expect(await r.json()).toEqual({
-          success: false,
-          data: { error: "bad" },
-        });
+        expect(await r.json()).toEqual({ error: "bad" });
       });
     });
 
