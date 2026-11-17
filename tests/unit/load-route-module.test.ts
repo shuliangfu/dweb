@@ -123,7 +123,7 @@ describe("loadRouteModule (load-route-module.ts)", () => {
     it("未注册的远程模块 URL 应返回 null", async () => {
       resetPluginPageFiles();
       const mod = await loadRouteModule(
-        "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/menus.tsx",
+        "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/menus/index.tsx",
       );
       expect(mod).toBeNull();
     });
@@ -131,7 +131,7 @@ describe("loadRouteModule (load-route-module.ts)", () => {
     it("已注册的远程插件页应加载 jsr.io 模块", async () => {
       resetPluginPageFiles();
       const remote =
-        "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/api-path.ts";
+        "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/api-path.ts";
       registerPluginPageFiles([remote]);
       try {
         const mod = await loadRouteModule(remote);
@@ -148,12 +148,12 @@ describe("loadRouteModule (load-route-module.ts)", () => {
       expect(IS_BUN || IS_NODE).toBe(true);
       resetPluginPageFiles();
       const remote =
-        "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/api-path.ts";
+        "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/api-path.ts";
       const local = resolveRemotePluginPageToNpmFile(remote);
       expect(local).not.toBeNull();
       const n = (local ?? "").replace(/\\/g, "/");
       expect(n.includes("node_modules/")).toBe(true);
-      expect(n.endsWith("src/rbac/pages/api-path.ts")).toBe(true);
+      expect(n.endsWith("src/rbac/routes/api-path.ts")).toBe(true);
       registerPluginPageFiles([remote]);
       try {
         const mod = await loadRouteModule(remote);

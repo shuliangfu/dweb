@@ -297,10 +297,10 @@ export async function load() { return { roles: true }; }
 
   it("isRemotePluginModuleSpecifier recognizes jsr and http(s) URLs", () => {
     expect(isRemotePluginModuleSpecifier(
-      "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/menus.tsx",
+      "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/menus/index.tsx",
     )).toBe(true);
     expect(
-      isRemotePluginModuleSpecifier("jsr:@dreamer/plugins/rbac/pages/menus"),
+      isRemotePluginModuleSpecifier("jsr:@dreamer/plugins/rbac/routes/menus"),
     )
       .toBe(true);
     expect(isRemotePluginModuleSpecifier("/tmp/pages/menus.tsx")).toBe(false);
@@ -311,7 +311,7 @@ export async function load() { return { roles: true }; }
 
   it("collectPluginPageRoutes accepts https://jsr.io page modules", () => {
     const remote =
-      "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/menus.tsx";
+      "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/menus/index.tsx";
     const pages = collectPluginPageRoutes([
       {
         path: "/developer/menus",
@@ -331,7 +331,7 @@ export async function load() { return { roles: true }; }
 
   it("clientRouteImportSpecifier emits https plugin page URLs", () => {
     const remote =
-      "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/menus.tsx";
+      "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/menus/index.tsx";
     expect(
       clientRouteImportSpecifier(
         routesDir,
@@ -363,7 +363,7 @@ export async function load() { return { roles: true }; }
 
   it("getRouteClientManifest includes https plugin pages without exists()", async () => {
     const remote =
-      "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/roles.tsx";
+      "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/roles/index.tsx";
     const container = initializeServiceContainer();
     initializePlugin(container);
     await registerPlugin(container, {

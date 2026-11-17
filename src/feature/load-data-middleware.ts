@@ -33,6 +33,7 @@ import { resolveRouterRoutesDirPath } from "../utils/path.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { createJsonErrorBody } from "../utils/security.ts";
 import { loadRouteModule } from "./load-route-module.ts";
+import { isRemotePluginModuleSpecifier } from "./plugin-page-routes.ts";
 
 /** `/__data` JSON 响应公共头：禁止缓存 load 个性化数据 */
 const DATA_JSON_HEADERS = {
@@ -63,6 +64,29 @@ export function resolveDataRequestPathname(ctx: {
 }
 
 /**
+ * 将 router 产出的路由模块路径规范为绝对路径：
+ * - `file://` 与远程插件模块（`https://` / `jsr:`）原样返回，避免 `resolve` 把
+ *   `https://jsr.io/...` 拼到应用根目录并折叠成 `https:/jsr.io/...`；
+ * - 绝对路径：原样返回；
+ * - 相对路径：按 appRootPath 解析，避免依赖全局 cwd。
+ */
+export function resolveAbsoluteRouteModulePath(
+  routePath: string,
+  appRootPath: string,
+): string {
+  if (
+    routePath.startsWith("file://") ||
+    isRemotePluginModuleSpecifier(routePath)
+  ) {
+    return routePath;
+  }
+  if (routePath.startsWith("/") || /^[A-Za-z]:/.test(routePath)) {
+    return routePath;
+  }
+  return resolve(appRootPath, routePath);
+}
+
+/**
  * 创建 Load 数据接口中间件
  *
  * 仅处理 GET 请求且 pathname 为 /__data 的请求：
@@ -79,6 +103,7 @@ export function resolveDataRequestPathname(ctx: {
  * @param config 应用配置
  * @returns 中间件函数
  */
+
 export function createLoadDataMiddleware(
   container: ServiceContainer,
   router: Router,
@@ -109,20 +134,8 @@ export function createLoadDataMiddleware(
     }
     return resolve(routesDirPath, "..");
   })();
-  /**
-   * 将 router 产出的路由文件路径规范为绝对路径：
-   * - 绝对路径：原样返回；
-   * - 相对路径：按 appRootPath 解析，避免依赖全局 cwd。
-   */
-  const toAbsoluteRoutePath = (routePath: string): string => {
-    if (routePath.startsWith("file://")) {
-      return routePath;
-    }
-    if (routePath.startsWith("/") || routePath.match(/^[A-Za-z]:/)) {
-      return routePath;
-    }
-    return resolve(appRootPath, routePath);
-  };
+  const toAbsoluteRoutePath = (routePath: string): string =>
+    resolveAbsoluteRouteModulePath(routePath, appRootPath);
   /** 数据接口只需执行模块的 `load()`，与常规路由加载相同（原生动态 import） */
   const loadOpts = {
     logger: container.has("logger") ? getLogger(container) : undefined,
@@ -204,7 +217,9 @@ export function createLoadDataMiddleware(
             return loadRouteModule(absLayoutPath, {
               ...loadOpts,
               // 使用当前绝对文件路径的目录作为 routesDirPath，避免 Windows 8.3/长路径混用误判
-              routesDirPath: dirname(absLayoutPath),
+              routesDirPath: isRemotePluginModuleSpecifier(absLayoutPath)
+                ? routesDirPath
+                : dirname(absLayoutPath),
             });
           }),
         );
@@ -234,7 +249,9 @@ export function createLoadDataMiddleware(
       const pageModule = await loadRouteModule(absPagePath, {
         ...loadOpts,
         // 使用当前绝对文件路径的目录作为 routesDirPath，避免 Windows 8.3/长路径混用误判
-        routesDirPath: dirname(absPagePath),
+        routesDirPath: isRemotePluginModuleSpecifier(absPagePath)
+          ? routesDirPath
+          : dirname(absPagePath),
       });
       const pageProps: Record<string, unknown> = {
         params: sanitizeRequestParams(match.params),

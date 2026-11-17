@@ -9,7 +9,7 @@ import { createPluginPageUrlPlugin } from "../../src/feature/plugin-page-url-plu
 describe("plugin-page-url-plugin", () => {
   it("createPluginPageUrlPlugin returns a named setup plugin", () => {
     const plugin = createPluginPageUrlPlugin([
-      "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/menus.tsx",
+      "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/menus/index.tsx",
     ]);
     expect(plugin.name).toBe("dweb-plugin-page-url");
     expect(typeof plugin.setup).toBe("function");

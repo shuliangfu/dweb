@@ -13,6 +13,7 @@ import {
   join,
   makeTempDir,
   remove,
+  resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import type { Router } from "@dreamer/router";
@@ -22,6 +23,7 @@ import { initializeServiceContainer } from "../../src/core/service.ts";
 import {
   createLoadDataMiddleware,
   DWEB_DATA_PATH,
+  resolveAbsoluteRouteModulePath,
 } from "../../src/feature/load-data-middleware.ts";
 import { DWEB_DATA_PATH_HEADER } from "../../src/utils/constants.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -299,5 +301,19 @@ export function load() {
     expect(req.ctx.response?.status).toBe(200);
     const body = await readJson(req.ctx.response);
     expect(body.query).toEqual({ path: "/developer/menus" });
+  });
+
+  it("远程 jsr.io 插件页路径不应拼到应用根目录", () => {
+    const remote =
+      "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/permissions/index.tsx";
+    expect(resolveAbsoluteRouteModulePath(remote, "/tmp/app")).toBe(remote);
+    expect(
+      resolveAbsoluteRouteModulePath(
+        "jsr:@dreamer/plugins/rbac/routes/menus",
+        "/tmp/app",
+      ),
+    ).toBe("jsr:@dreamer/plugins/rbac/routes/menus");
+    expect(resolveAbsoluteRouteModulePath("src/routes/index.tsx", "/tmp/app"))
+      .toBe(resolve("/tmp/app", "src/routes/index.tsx"));
   });
 });

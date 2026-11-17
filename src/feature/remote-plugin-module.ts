@@ -53,7 +53,7 @@ export function rewriteRemotePluginSource(code: string): string {
 export interface RemotePluginNpmLocator {
   /** Candidate package names, e.g. `@dreamer/plugins`, `@jsr/dreamer__plugins`. */
   packages: string[];
-  /** Path inside the package, e.g. `src/rbac/pages/api-path.ts`. */
+  /** Path inside the package, e.g. `src/rbac/routes/api-path.ts`. */
   subpath: string;
 }
 

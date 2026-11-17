@@ -14,7 +14,7 @@ import {
 } from "../../src/feature/remote-plugin-module.ts";
 
 const REMOTE_API_PATH =
-  "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/api-path.ts";
+  "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/api-path.ts";
 
 describe("remote-plugin-module", () => {
   describe("mapRemotePluginSpecifier()", () => {
@@ -69,10 +69,10 @@ import { resolveRbacApi } from "./api-path.ts";
         "@dreamer/plugins",
         "@jsr/dreamer__plugins",
       ]);
-      expect(fromHttps?.subpath).toBe("src/rbac/pages/api-path.ts");
+      expect(fromHttps?.subpath).toBe("src/rbac/routes/api-path.ts");
       expect(
         parseRemotePluginNpmLocator(
-          "jsr:@dreamer/plugins@1.2.4/src/rbac/pages/api-path.ts",
+          "jsr:@dreamer/plugins@1.2.5/src/rbac/routes/api-path.ts",
         ),
       ).toEqual(fromHttps);
     });
@@ -95,7 +95,7 @@ import { resolveRbacApi } from "./api-path.ts";
         n.includes("node_modules/@dreamer/plugins/") ||
           n.includes("node_modules/@jsr/dreamer__plugins/"),
       ).toBe(true);
-      expect(n.endsWith("src/rbac/pages/api-path.ts")).toBe(true);
+      expect(n.endsWith("src/rbac/routes/api-path.ts")).toBe(true);
     });
 
     it("Deno does not use the npm-layer file path for remote import", () => {
