@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.10.4",
+  "version": "3.10.5",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "license": "Apache-2.0",
   "exports": {
@@ -53,7 +53,7 @@
     "@dreamer/middleware": "jsr:@dreamer/middleware@^1.1.0",
     "@dreamer/middlewares": "jsr:@dreamer/middlewares@^1.1.0",
     "@dreamer/plugin": "jsr:@dreamer/plugin@^1.1.0",
-    "@dreamer/plugins": "jsr:@dreamer/plugins@^1.2.6",
+    "@dreamer/plugins": "jsr:@dreamer/plugins@^1.2.7",
     "@dreamer/render": "jsr:@dreamer/render@^1.5.6",
     "@dreamer/router": "jsr:@dreamer/router@^1.2.2",
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.2.2",
@@ -101,7 +101,11 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "@dreamer/view",
-    "lib": ["deno.window", "dom", "dom.iterable"]
+    "lib": [
+      "deno.window",
+      "dom",
+      "dom.iterable"
+    ]
   },
   "lint": {
     "include": [

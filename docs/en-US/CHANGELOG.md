@@ -10,6 +10,30 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.10.5] - 2026-11-17
+
+### Fixed
+
+- **Plugin pages**: JSR / `https://jsr.io` plugin pages are included in the
+  client route manifest and imported from their remote module URLs. Deno still
+  loads those URLs natively; Bun and Node resolve them through the host
+  `node_modules` npm compatibility layer. CSR navigation no longer joins
+  `jsr.io` URLs onto the app root (which collapsed them to `https:/jsr.io`).
+- **ROUTE_LOADERS keys**: plugin pages prefer `meta.component` and no longer
+  collapse remote or nested `/routes/` paths onto the host dashboard. Windows
+  drive-letter paths are no longer re-joined into the key; a non-string
+  `route.file` no longer calls `trim()` and throws during SSR.
+- **HMR / SSR cookies**: HMR chunk mapping uses the esbuild metafile; SSR and
+  hybrid render now wrap the request Cookie header.
+- **e2e**: first-paint wait and the render assertion share the same homepage
+  title markers, so layout nav text such as "首页" is no longer treated as a
+  ready page.
+
+### Changed
+
+- **Dependencies**: `@dreamer/plugins` `^1.2.3` → `^1.2.7`; `@dreamer/view`
+  `^3.1.0` → `^3.1.2`; `@dreamer/render` `^1.5.5` → `^1.5.6`.
+
 ## [3.10.4] - 2026-11-17
 
 ### Added

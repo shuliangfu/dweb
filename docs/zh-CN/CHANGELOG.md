@@ -9,6 +9,26 @@
 
 ## [Unreleased]
 
+## [3.10.5] - 2026-11-17
+
+### 修复
+
+- **插件页面**：从 JSR / `https://jsr.io` 加载的插件页会进入客户端路由
+  manifest，并按远程模块 URL 导入。Deno 仍直接拉远程 URL；Bun / Node 走宿主
+  `node_modules` 的 npm 兼容层。CSR 导航不再把 `jsr.io` URL
+  拼到应用根路径（避免变成 `https:/jsr.io`）。
+- **ROUTE_LOADERS key**：插件页优先用 `meta.component`，不再把远程或多段
+  `/routes/` 路径切成宿主仪表盘。Windows 上盘符绝对路径不再被二次拼接进
+  key；非字符串的 `route.file` 不再调用 `trim()` 导致 SSR 抛错。
+- **HMR / SSR cookie**：HMR chunk 映射改用 esbuild metafile；SSR / Hybrid
+  渲染会带上请求的 Cookie。
+- **e2e**：浏览器首屏等待与断言共用同一套首页文案，避免把布局里的「首页」当成页面已渲染。
+
+### 变更
+
+- **依赖**：`@dreamer/plugins` `^1.2.3` → `^1.2.7`；`@dreamer/view` `^3.1.0` →
+  `^3.1.2`；`@dreamer/render` `^1.5.5` → `^1.5.6`。
+
 ## [3.10.4] - 2026-11-17
 
 ### 新增
