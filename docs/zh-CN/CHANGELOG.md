@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+## [3.10.4] - 2026-11-17
+
+### 新增
+
+- **插件页面自动挂载**：插件可在 `onRoute` 里通过 `meta.fullPath` 注册与文件路由
+  兼容的页面模块（导出 `default` 与 `load`）。可选 `meta.clientFullPath` 指定仅
+  客户端打包的模块（不含 `load`）。这些页面会挂到路由器的匹配、`getRoutes` /
+  `getClientRoutes`，并纳入 `loadRouteModule`、CSR 客户端打包、strip-load 和
+  布局解析。宿主已有同路径文件路由时以宿主为准，并跳过 API 桩。
+
 ### 变更
 
 - **启动顺序**：配置了数据库时，在插件 `onInit` 之前立即连接，并把管理器同步到
@@ -17,6 +27,14 @@
   也在插件之前初始化（此时尚未 listen）。 插件仍按配置数组顺序注册，`main.ts` 里
   `registerPlugin` 的排在配置插件之后。 HTTP 监听仍在 `started`
   阶段，等插件就绪后再对外服务。构建模式（`--build`）跳过连库。
+- **`res.json()` 原样序列化**：响应体改为原样序列化第一参，不再包
+  `{ success, data }`。`return res.json({ success: true })` 与
+  `return { success: true }` 都直接返回该对象。与 `@dreamer/server` 1.3.4 对齐。
+- **依赖**：`@dreamer/plugins` `^1.2.1` → `^1.2.3`；`@dreamer/server` `^1.3.3` →
+  `^1.3.4`。示例项目同步这些依赖，并把仍为 `^1.5.1` 的 `@dreamer/esbuild` 升到
+  `^1.5.2`、仍为 `^1.1.0` 的 `@dreamer/logger` 升到 `^1.1.1`。根依赖
+  `@dreamer/esbuild` 再升到 `^1.5.3`。根 `deno.json` 去掉 `esbuild` 这条指向
+  `@dreamer/esbuild` 的别名。
 
 ## [3.10.3] - 2026-11-16
 

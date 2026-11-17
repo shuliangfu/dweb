@@ -10,6 +10,18 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.10.4] - 2026-11-17
+
+### Added
+
+- **Plugin page auto-mount**: plugins can register file-route-compatible page
+  modules in `onRoute` via `meta.fullPath` (export `default` and `load`).
+  Optional `meta.clientFullPath` points at a client-only module (no `load`).
+  These pages are attached to router match, `getRoutes` / `getClientRoutes`, and
+  are included in `loadRouteModule`, the CSR client bundle, strip-load, and
+  layout resolution. Host file routes win when the path already exists; API
+  stubs are skipped.
+
 ### Changed
 
 - **Startup order**: when a database is configured, connect it and sync the
@@ -20,6 +32,16 @@ and this project adheres to
   config-array order, with `registerPlugin` calls from `main.ts` following
   those. HTTP listen stays on the `started` stage, after plugins are ready.
   Build mode (`--build`) skips connecting.
+- **`res.json()` serializes the first argument as-is**: the body is no longer
+  wrapped in `{ success, data }`. Both `return res.json({ success: true })` and
+  `return { success: true }` now return that object directly. Aligns with
+  `@dreamer/server` 1.3.4.
+- **Dependencies**: `@dreamer/plugins` `^1.2.1` → `^1.2.3`; `@dreamer/server`
+  `^1.3.3` → `^1.3.4`. Example projects follow these bumps, and also upgrade
+  remaining `@dreamer/esbuild` `^1.5.1` → `^1.5.2` and `@dreamer/logger`
+  `^1.1.0` → `^1.1.1`. The root `@dreamer/esbuild` pin is further bumped to
+  `^1.5.3`. The root `deno.json` `esbuild` alias to `@dreamer/esbuild` was
+  removed.
 
 ## [3.10.3] - 2026-11-16
 
