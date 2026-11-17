@@ -105,6 +105,7 @@ describe("CSR 客户端路由 manifest (csr-client-route-manifest.ts)", () => {
     );
 
     expect(manifest.components.length).toBe(1);
+    expect(manifest.components[0].fullPath).toBe(aboutPath);
     expect(manifest.components[0].componentPath).toBe("about");
     expect(manifest.components[0].componentPath).not.toMatch(/[A-Z]:\//);
   });

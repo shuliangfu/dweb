@@ -66,8 +66,12 @@ export function routeImportName(componentPath: string): string {
  * @param routesDirPath routes 目录绝对路径
  */
 function normalizeRouteFilePath(raw: string, routesDirPath: string): string {
-  if (raw.startsWith("/")) return raw;
   const normalizedRaw = raw.replace(/\\/g, "/").replace(/^\.\//, "");
+  // Drive-letter paths are absolute on Windows; joining them onto routesDir
+  // yields ".../routes/D:/.../about.tsx" and leaks the drive into ROUTE_LOADERS.
+  if (normalizedRaw.startsWith("/") || /^[A-Za-z]:\//.test(normalizedRaw)) {
+    return normalizedRaw;
+  }
   const routesDirParts = routesDirPath.replace(/\\/g, "/").split("/")
     .filter(Boolean);
   for (let len = Math.min(routesDirParts.length, 4); len >= 1; len--) {
