@@ -213,6 +213,7 @@ async function doDevBuild(
   lang?: "en-US" | "zh-CN",
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
+  metafile?: unknown;
 }> {
   const buildLogger = wrapLoggerForBuildDebug(debug ?? false, logger);
 
@@ -626,6 +627,10 @@ export async function buildClientScript(
           const chunkFileName = getChunkFileNameForComponent(
             componentPath,
             outputNames,
+            {
+              sourcePath: changedPathAbs,
+              metafile: buildResultDev.metafile,
+            },
           );
           if (chunkFileName) {
             // 必须与 ROUTE_LOADERS 的解析路径一致：_client.js 在 /_client.js，import("./routes-xxx.js") 解析为 /routes-xxx.js
@@ -656,6 +661,7 @@ export async function buildClientScript(
       const routeChunkUrlsDev = buildRouteChunkUrlMap(
         components,
         outputNamesForHmr,
+        buildResultDev.metafile,
       );
       result = {
         code: mainCodeDev,

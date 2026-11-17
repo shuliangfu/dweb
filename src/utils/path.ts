@@ -320,10 +320,15 @@ export function subpathFromRoutesDirMarker(absoluteFilePath: string): string {
   const s = absoluteFilePath.trim().replace(/\\/g, "/");
   if (!s) return "";
   const lower = s.toLowerCase();
+  // Remote or package-local routes folders must not be cut on "/routes/".
+  // .../rbac/routes/routes/index would otherwise become "index" and collide
+  // with the host dashboard.
+  if (/^https?:/i.test(s) || lower.startsWith("jsr:")) return "";
   const needle = "/routes/";
-  const idx = lower.lastIndexOf(needle);
-  if (idx < 0) return "";
-  const rest = s.slice(idx + needle.length);
+  const first = lower.indexOf(needle);
+  const last = lower.lastIndexOf(needle);
+  if (first < 0 || first !== last) return "";
+  const rest = s.slice(first + needle.length);
   return rest.replace(/\.(tsx?|jsx?)$/i, "").replace(/\/+$/, "");
 }
 
@@ -348,6 +353,8 @@ export function extractComponentPathFromRouteFile(
   if (!rawPath || typeof rawPath !== "string") return "";
   const trimmed = rawPath.trim();
   if (!trimmed) return "";
+  // jsr.io / https plugin modules are not host-relative keys
+  if (/^https?:/i.test(trimmed) || trimmed.startsWith("jsr:")) return "";
   const noExt = trimmed.replace(/\.(tsx?|jsx?)$/, "").trim();
   const normalizedNoExt = noExt.replace(/\\/g, "/").replace(/^\.\//, "");
 
@@ -429,4 +436,44 @@ export function extractComponentPathFromRouteFile(
     if (viaMarker) return viaMarker;
   }
   return "";
+}
+
+/**
+ * Client ROUTE_LOADERS / hydration key for a route.
+ * Prefer meta.component (plugin pages such as "rbac/routes") over cutting the
+ * module file path on "/routes/".
+ */
+export function clientRouteComponentKey(
+  route: {
+    file?: string;
+    path?: string;
+    meta?: Record<string, unknown>;
+  },
+  routesDirPath: string,
+): string {
+  const rawMeta = route.meta?.component;
+  const fromMeta = typeof rawMeta === "string" ? rawMeta.trim() : "";
+  if (fromMeta) {
+    const key = fromMeta.replace(/\\/g, "/").replace(/^\//, "").replace(
+      /\.(tsx?|jsx?)$/i,
+      "",
+    );
+    if (key && !key.includes("://") && !key.startsWith("jsr:")) return key;
+  }
+  const raw = (route.file || route.path || "").trim();
+  const extracted = extractComponentPathFromRouteFile(routesDirPath, raw);
+  if (
+    extracted && !extracted.includes("://") && !extracted.startsWith("jsr:") &&
+    !extracted.startsWith("/") && !/^[A-Za-z]:\//.test(extracted)
+  ) {
+    return extracted;
+  }
+  const fallback = raw.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim();
+  if (
+    !fallback || fallback.startsWith("/") || /^[A-Za-z]:\//.test(fallback) ||
+    fallback.includes("://") || fallback.startsWith("jsr:")
+  ) {
+    return "";
+  }
+  return fallback.replace(/^\//, "");
 }

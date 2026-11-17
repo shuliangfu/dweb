@@ -20,6 +20,7 @@ import {
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
+  clientRouteComponentKey,
   extractComponentPathFromRouteFile,
   isPathWithinProject,
   normalizePathForCompare,
@@ -230,6 +231,35 @@ describe("路径工具 (path.ts)", () => {
           undefined as unknown as string,
         ),
       ).toBe("");
+    });
+
+    it("插件路由列表 .../rbac/routes/routes/index 不得收成仪表盘的 index", () => {
+      const host = "/Users/x/senvis/src/backend/routes";
+      const pluginFile = "/Users/x/plugins/src/rbac/routes/routes/index.tsx";
+      const jsrFile =
+        "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/routes/index.tsx";
+      expect(extractComponentPathFromRouteFile(host, pluginFile)).toBe("");
+      expect(extractComponentPathFromRouteFile(host, jsrFile)).toBe("");
+    });
+  });
+
+  describe("clientRouteComponentKey()", () => {
+    it("优先使用 meta.component，避免把插件文件路径切成 index", () => {
+      const host = "/Users/x/senvis/src/backend/routes";
+      expect(
+        clientRouteComponentKey({
+          path: "/rbac/routes",
+          file:
+            "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/routes/index.tsx",
+          meta: { component: "rbac/routes" },
+        }, host),
+      ).toBe("rbac/routes");
+      expect(
+        clientRouteComponentKey({
+          path: "/",
+          file: host + "/index.tsx",
+        }, host),
+      ).toBe("index");
     });
   });
 });

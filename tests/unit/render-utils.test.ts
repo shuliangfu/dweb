@@ -123,6 +123,33 @@ describe("render-utils", () => {
     it("无 getRoutes 时应返回空数组", () => {
       expect(collectClientRoutes({} as never, "/routes")).toEqual([]);
     });
+
+    it("插件路由列表应使用 meta.component，不能收成 index", () => {
+      const router = {
+        getRoutes: () => [
+          {
+            path: "/",
+            file: "/proj/src/backend/routes/index.tsx",
+            type: "static",
+          },
+          {
+            path: "/rbac/routes",
+            file:
+              "https://jsr.io/@dreamer/plugins/1.2.5/src/rbac/routes/routes/index.tsx",
+            type: "static",
+            meta: { component: "rbac/routes" },
+          },
+        ],
+      };
+      const routes = collectClientRoutes(
+        router as never,
+        "/proj/src/backend/routes",
+      );
+      expect(routes.find((r) => r.path === "/")?.component).toBe("index");
+      expect(routes.find((r) => r.path === "/rbac/routes")?.component).toBe(
+        "rbac/routes",
+      );
+    });
   });
 
   describe("wrapInlineClientBootstrapScript()", () => {

@@ -36,10 +36,11 @@ import {
 } from "../utils/security.ts";
 import { normalizeMismatchMode } from "../utils/mismatch-mode.ts";
 import {
-  extractComponentPathFromRouteFile,
+  clientRouteComponentKey,
   resolveRouterRoutesDirPath,
 } from "../utils/path.ts";
 import { loadRouteModule } from "./load-route-module.ts";
+import { withRequestCookies } from "./ssr-request-cookie.ts";
 import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import { getRender } from "./render.ts";
 import {
@@ -285,15 +286,19 @@ export function createRendererHybrid(
       const routerDebug =
         (config.router as { debug?: boolean } | undefined)?.debug === true;
 
-      const result = await renderService.renderSSR({
-        engine,
-        component: PageComponent,
-        props: pageProps,
-        layouts,
-        loadContext,
-        contextData,
-        debug: debugRender,
-      });
+      const result = await withRequestCookies(
+        loadContext.req,
+        () =>
+          renderService.renderSSR({
+            engine,
+            component: PageComponent,
+            props: pageProps,
+            layouts,
+            loadContext,
+            contextData,
+            debug: debugRender,
+          }),
+      );
 
       // 获取渲染的 HTML 内容
       let html = result.html;
@@ -328,11 +333,10 @@ export function createRendererHybrid(
       }
 
       // 构建 hydration 数据（component 与 ROUTE_LOADERS key 统一格式，确保 CSR/Hybrid 在 Windows 下 loadPageModule 能正确匹配）
-      const rawComponent = match.route.file || match.route.path || "";
-      const normalizedComponent = typeof rawComponent === "string"
-        ? extractComponentPathFromRouteFile(routesDirPath, rawComponent) ||
-          rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim()
-        : rawComponent;
+      const normalizedComponent = clientRouteComponentKey(
+        match.route,
+        routesDirPath,
+      );
       // layoutData 供客户端 hydrate 时注入到各层 Layout 的 props，与服务端 SSR 一致
       /** 与浏览器 location.pathname 一致（去尾斜杠），用于 hybrid hydrate 门控；勿用 route.path（动态路由常为 `/user/:id` 与 `/user/1` 不等） */
       const hydrationPathname = (ctx.path || "/").replace(/\/$/, "") || "/";

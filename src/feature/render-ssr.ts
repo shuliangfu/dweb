@@ -40,7 +40,7 @@ import {
 import { $tr } from "../utils/i18n.ts";
 import { normalizeMismatchMode } from "../utils/mismatch-mode.ts";
 import {
-  extractComponentPathFromRouteFile,
+  clientRouteComponentKey,
   resolveRouterRoutesDirPath,
 } from "../utils/path.ts";
 import {
@@ -58,6 +58,7 @@ import {
 import { loadRouteModule } from "./load-route-module.ts";
 import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import { getRender } from "./render.ts";
+import { withRequestCookies } from "./ssr-request-cookie.ts";
 import type { AppConfig, IApp } from "../types/app.ts";
 
 /** loadCache: true 时的默认 TTL（毫秒） */
@@ -338,12 +339,10 @@ export function createRendererSSR(
 
       const buildHydrationScript = (): string | null => {
         if (!ssrHydrate) return null;
-        const rawComponent = match.route.file || match.route.path || "";
-        const normalizedComponent = typeof rawComponent === "string"
-          ? extractComponentPathFromRouteFile(routesDirPath, rawComponent) ||
-            rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
-              .trim()
-          : rawComponent;
+        const normalizedComponent = clientRouteComponentKey(
+          match.route,
+          routesDirPath,
+        );
         const hydrationPathname = (ctx.path || "/").replace(/\/$/, "") || "/";
         const hydrationData = {
           page: pageProps,
@@ -430,7 +429,10 @@ export function createRendererSSR(
       };
 
       if (wantStream) {
-        const streamResult = await renderService.renderSSRStream(ssrOptions);
+        const streamResult = await withRequestCookies(
+          loadContext.req,
+          () => renderService.renderSSRStream(ssrOptions),
+        );
         const styleTags = routeCss.length > 0
           ? routeCss
             .map((c) =>
@@ -477,7 +479,10 @@ export function createRendererSSR(
         return new Response(body, { status: 200, headers: responseHeaders });
       }
 
-      const result = await renderService.renderSSR(ssrOptions);
+      const result = await withRequestCookies(
+        loadContext.req,
+        () => renderService.renderSSR(ssrOptions),
+      );
 
       // 注入路由 CSS 到 </head> 前
       let html = result.html;

@@ -802,11 +802,17 @@ function findLoaderForPath(cleanPath: string): (() => Promise<unknown>) | undefi
     loader = ROUTE_LOADERS[cleanPath.slice(11)];
     if (loader) return loader;
   }
-  // 兼容完整 Windows 路径（如 D:/project/src/routes/index 或 C:\\...\\src\\routes\\index）
-  // 查找 "routes/" 或 "/routes/" 后的相对路径（cleanPath 已归一化，无需再 replace 反斜杠）
-  const routesIdx = cleanPath.toLowerCase().indexOf("/routes/");
-  if (routesIdx >= 0) {
-    const afterRoutes = cleanPath.slice(routesIdx + 8);
+  // Host Windows paths like D:/project/src/routes/index.
+  // Skip remote specifiers and paths with more than one "/routes/"
+  // (plugin .../rbac/routes/routes/index would otherwise collapse to "index"
+  // and collide with the host dashboard). Never fall back to the last segment.
+  const isRemote = /^https?:/i.test(cleanPath) || cleanPath.startsWith("jsr:");
+  const lower = cleanPath.toLowerCase();
+  const needle = "/routes/";
+  const first = lower.indexOf(needle);
+  const last = lower.lastIndexOf(needle);
+  if (!isRemote && first >= 0 && first === last) {
+    const afterRoutes = cleanPath.slice(first + needle.length);
     loader = ROUTE_LOADERS[afterRoutes];
     if (loader) return loader;
     const keyAfter = Object.keys(ROUTE_LOADERS).find(
@@ -814,14 +820,7 @@ function findLoaderForPath(cleanPath: string): (() => Promise<unknown>) | undefi
     );
     if (keyAfter) return ROUTE_LOADERS[keyAfter];
   }
-  // 提取最后一段作为 fallback（如 "src/routes/index" -> "index"，仅当单段路由时）
-  const lastSegment = cleanPath.split("/").pop() || cleanPath;
-  loader = ROUTE_LOADERS[lastSegment];
-  if (loader) return loader;
-  const keyByLast = Object.keys(ROUTE_LOADERS).find(
-    (k) => k.toLowerCase() === lastSegment.toLowerCase(),
-  );
-  return keyByLast ? ROUTE_LOADERS[keyByLast] : undefined;
+  return undefined;
 }
 
 /**

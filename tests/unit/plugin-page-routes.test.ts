@@ -257,6 +257,37 @@ export async function load() { return { roles: true }; }
     expect(code).not.toContain('"assign/index"');
   });
 
+  it("client loader lookup does not fall back last-segment index for plugin routes pages", () => {
+    const code = generateClientDepContent(
+      "view",
+      [{
+        componentPath: "index",
+        fullPath: join(routesDir, "index.tsx"),
+        importName: "Route_index",
+      }, {
+        componentPath: "rbac/routes",
+        fullPath: join(
+          testDir,
+          "plugin",
+          "src",
+          "rbac",
+          "routes",
+          "routes",
+          "index.tsx",
+        ),
+        importName: "Route_rbac_routes",
+      }],
+      routesDir,
+      true,
+      [],
+      "csr",
+    );
+    expect(code).toContain('"index"');
+    expect(code).toContain('"rbac/routes"');
+    expect(code).not.toContain("lastSegment");
+    expect(code).toContain("first === last");
+  });
+
   it("clientRouteImportSpecifier prefers clientFullPath over the server entry", () => {
     const clientPage = join(testDir, "plugin", "roles-page.tsx");
     expect(

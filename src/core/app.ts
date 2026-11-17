@@ -83,7 +83,7 @@ import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
 import {
-  extractComponentPathFromRouteFile,
+  clientRouteComponentKey,
   isPathWithinProject,
   resolveRouterRoutesDirPath,
 } from "../utils/path.ts";
@@ -1173,15 +1173,10 @@ export class App extends EventEmitter implements IApp {
               const match = await router.match(pathname);
               if (!match || match.isApi) continue;
               const pageProps = await loadRouteData(route);
-              const rawComponent = match.route.file || match.route.path || "";
-              const normalizedComponent = typeof rawComponent === "string"
-                ? extractComponentPathFromRouteFile(
-                  routesDirPath,
-                  rawComponent,
-                ) ||
-                  rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
-                    .trim()
-                : rawComponent;
+              const normalizedComponent = clientRouteComponentKey(
+                match.route,
+                routesDirPath,
+              );
               /** 与预渲染页面对应的真实 pathname（去尾斜杠），供客户端与 location.pathname 比较以执行 hydrate */
               const hydrationPathname = pathname.replace(/\/$/, "") || "/";
               const hydrationData = {

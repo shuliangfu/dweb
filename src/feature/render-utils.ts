@@ -3,13 +3,13 @@
  */
 
 import type { Router } from "@dreamer/router";
-import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import { clientRouteComponentKey } from "../utils/path.ts";
 
 /**
  * 收集供客户端使用的路由列表（component 与 ROUTE_LOADERS key 统一格式）
  *
  * @param router 路由实例
- * @param routesDirPath routes 目录绝对路径（用于 extractComponentPathFromRouteFile）
+ * @param routesDirPath routes 目录绝对路径（用于 clientRouteComponentKey）
  * @returns 客户端路由数组
  */
 export function collectClientRoutes(
@@ -22,12 +22,11 @@ export function collectClientRoutes(
     file?: string;
     isApi?: boolean;
     type?: string;
+    meta?: Record<string, unknown>;
   }>;
   for (const route of allRoutes) {
     if (route.isApi) continue;
-    const raw = route.file || route.path || "";
-    const component = extractComponentPathFromRouteFile(routesDirPath, raw) ||
-      raw.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim();
+    const component = clientRouteComponentKey(route, routesDirPath);
     routes.push({
       path: route.path,
       component,

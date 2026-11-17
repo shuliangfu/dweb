@@ -17,15 +17,134 @@ import { CLIENT_OUTPUT_MAIN_FILENAME } from "../utils/constants.ts";
  * @param routeComponents `scanRouteComponents` 结果
  * @param outputFileNames 本次构建内存产物中的文件名列表（含 basename 与相对路径键）
  */
-export function buildRouteChunkUrlMap(
-  routeComponents: readonly { componentPath: string }[],
+
+/**
+ * esbuild metafile 中用于定位动态 import 产物的最小形状。
+ * `entryPoint` 是该 chunk 对应的源模块（路由文件或插件页说明符）。
+ */
+export type EsbuildMetafileLike = {
+  outputs?: Record<string, { entryPoint?: string }>;
+};
+
+/** 对照 metafile 时使用的源路径 / 元数据。 */
+export type ChunkMatchContext = {
+  /** 路由源文件绝对路径，或插件模块说明符 */
+  sourcePath?: string;
+  metafile?: EsbuildMetafileLike | unknown;
+};
+
+function normalizeModulePath(path: string): string {
+  let p = path.trim().replace(/\\/g, "/");
+  if (p.startsWith("file:")) {
+    try {
+      p = decodeURIComponent(new URL(p).pathname);
+    } catch {
+      p = p.replace(/^file:\/\/\/?/, "/");
+    }
+  }
+  const q = p.indexOf("?");
+  if (q >= 0) p = p.slice(0, q);
+  if (p.startsWith("./")) p = p.slice(2);
+  return p;
+}
+
+function sameSourceFile(sourcePath: string, entryPoint: string): boolean {
+  const a = normalizeModulePath(sourcePath);
+  const b = normalizeModulePath(entryPoint);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return a.endsWith("/" + b) || b.endsWith("/" + a);
+}
+
+function asMetafile(value: unknown): EsbuildMetafileLike | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const outputs = (value as { outputs?: unknown }).outputs;
+  if (!outputs || typeof outputs !== "object") return undefined;
+  return value as EsbuildMetafileLike;
+}
+
+function listedOutputName(
+  outPath: string,
   outputFileNames: string[],
+): string | null {
+  const base = basename(outPath);
+  if (
+    !base.endsWith(".js") || base.endsWith(".map") ||
+    base === CLIENT_OUTPUT_MAIN_FILENAME
+  ) {
+    return null;
+  }
+  if (outputFileNames.includes(base)) return base;
+  const found = outputFileNames.find((n) =>
+    n === outPath || n.endsWith("/" + base) || basename(n) === base
+  );
+  return found ?? null;
+}
+
+/**
+ * 用 esbuild metafile.entryPoint 精确匹配源文件对应的 chunk。
+ * 短 entry（如 routes/index.tsx）可能命中多个产物时，优先更长的 entry；仍不唯一则放弃。
+ */
+export function getChunkFileNameFromMetafile(
+  sourcePath: string,
+  outputFileNames: string[],
+  metafile: EsbuildMetafileLike | unknown,
+): string | null {
+  const meta = asMetafile(metafile);
+  if (!sourcePath || !meta?.outputs) return null;
+  const candidates: { name: string; entry: string }[] = [];
+  for (const [outPath, out] of Object.entries(meta.outputs)) {
+    const entry = out?.entryPoint;
+    if (!entry || !sameSourceFile(sourcePath, entry)) continue;
+    const name = listedOutputName(outPath, outputFileNames);
+    if (name) candidates.push({ name, entry: normalizeModulePath(entry) });
+  }
+  if (candidates.length === 0) return null;
+  const unique = [...new Set(candidates.map((c) => c.name))];
+  if (unique.length === 1) return unique[0];
+  candidates.sort((a, b) => b.entry.length - a.entry.length);
+  const bestLen = candidates[0].entry.length;
+  const bestNames = new Set(
+    candidates.filter((c) => c.entry.length === bestLen).map((c) => c.name),
+  );
+  return bestNames.size === 1 ? candidates[0].name : null;
+}
+
+/** 按末段或父目录名筛 chunk（去 hash 后精确或 prefix 匹配）。 */
+function chunkNamesForSegment(jsOnly: string[], segment: string): string[] {
+  if (!segment) return [];
+  return jsOnly.filter((name) => {
+    const base = name.slice(0, -3).replace(/\.js$/, "");
+    const baseNoHash = base.replace(/-[A-Za-z0-9]{6,10}$/, "");
+    const baseLastPart = base.includes("/") ? base.split("/").pop()! : base;
+    const baseLastNoHash = baseLastPart.replace(/-[A-Za-z0-9]{6,10}$/, "");
+    return (
+      baseNoHash === segment ||
+      baseLastNoHash === segment ||
+      base.startsWith(segment + "-") ||
+      baseLastPart.startsWith(segment + "-")
+    );
+  });
+}
+
+export function buildRouteChunkUrlMap(
+  routeComponents: readonly {
+    componentPath: string;
+    fullPath?: string;
+    clientFullPath?: string;
+  }[],
+  outputFileNames: string[],
+  metafile?: EsbuildMetafileLike | unknown,
 ): Record<string, string> {
   const map: Record<string, string> = {};
   for (const c of routeComponents) {
     const chunkFileName = getChunkFileNameForComponent(
       c.componentPath,
       outputFileNames,
+      {
+        sourcePath: c.clientFullPath || c.fullPath,
+        metafile,
+      },
     );
     if (chunkFileName) map[c.componentPath] = `/${chunkFileName}`;
   }
@@ -40,7 +159,16 @@ export function buildRouteChunkUrlMap(
 export function getChunkFileNameForComponent(
   componentPath: string,
   outputFileNames: string[],
+  context?: ChunkMatchContext,
 ): string | null {
+  if (context?.sourcePath && context.metafile) {
+    const fromMeta = getChunkFileNameFromMetafile(
+      context.sourcePath,
+      outputFileNames,
+      context.metafile,
+    );
+    if (fromMeta) return fromMeta;
+  }
   const segment = componentPath.split("/").pop() || componentPath;
   let jsOnly = outputFileNames.filter((n) =>
     n.endsWith(".js") && n !== CLIENT_OUTPUT_MAIN_FILENAME
@@ -102,20 +230,15 @@ export function getChunkFileNameForComponent(
      * 若按末段匹配的候选 chunk 唯一，则采纳该文件。
      */
     const lastSeg = segments[segments.length - 1] || "";
-    if (lastSeg) {
-      const lastSegCandidates = jsOnly.filter((name) => {
-        const base = name.slice(0, -3).replace(/\.js$/, "");
-        const baseNoHash = base.replace(/-[A-Za-z0-9]{6,10}$/, "");
-        const baseLastPart = base.includes("/") ? base.split("/").pop()! : base;
-        const baseLastNoHash = baseLastPart.replace(/-[A-Za-z0-9]{6,10}$/, "");
-        return (
-          baseNoHash === lastSeg ||
-          baseLastNoHash === lastSeg ||
-          base.startsWith(lastSeg + "-") ||
-          baseLastPart.startsWith(lastSeg + "-")
-        );
-      });
-      if (lastSegCandidates.length === 1) return lastSegCandidates[0];
+    const lastSegCandidates = chunkNamesForSegment(jsOnly, lastSeg);
+    if (lastSegCandidates.length === 1) return lastSegCandidates[0];
+    // cgm/devices/index.tsx → devices-XXX.js：末段是 index 时，esbuild 常用父目录名。
+    if (lastSeg === "index" && segments.length >= 2) {
+      const parentCandidates = chunkNamesForSegment(
+        jsOnly,
+        segments[segments.length - 2] || "",
+      );
+      if (parentCandidates.length === 1) return parentCandidates[0];
     }
     return null;
   }
@@ -126,13 +249,14 @@ export function getChunkFileNameForComponent(
       return name;
     }
   }
-  // 根 index 路由：esbuild 可能把 routes/index.tsx 打成 routes-XXX.js；仅当 componentPath 为单段 "index" 时匹配
+  // 根 index：esbuild 可能把 routes/index.tsx 打成 routes-XXX.js。
+  // 插件页 .../rbac/routes/routes/index.tsx 也会叫 routes-XXX.js，多个时不得取第一个。
   if (segment === "index" && !componentPath.includes("/")) {
-    const routesChunk = jsOnly.find((n) => {
+    const routesChunks = jsOnly.filter((n) => {
       const base = n.slice(0, -3);
       return base.startsWith("routes-");
     });
-    if (routesChunk) return routesChunk;
+    if (routesChunks.length === 1) return routesChunks[0];
   }
   return null;
 }
