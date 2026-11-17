@@ -260,6 +260,19 @@ describe("路径工具 (path.ts)", () => {
           file: host + "/index.tsx",
         }, host),
       ).toBe("index");
+      // non-string file must not throw; URL path "/home" is not a component key
+      expect(
+        clientRouteComponentKey({
+          path: "/home",
+          file: { weird: true },
+        }, host),
+      ).toBe("");
+      expect(
+        clientRouteComponentKey({
+          path: "home",
+          file: 1,
+        }, host),
+      ).toBe("home");
     });
   });
 });

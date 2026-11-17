@@ -445,8 +445,8 @@ export function extractComponentPathFromRouteFile(
  */
 export function clientRouteComponentKey(
   route: {
-    file?: string;
-    path?: string;
+    file?: unknown;
+    path?: unknown;
     meta?: Record<string, unknown>;
   },
   routesDirPath: string,
@@ -460,7 +460,9 @@ export function clientRouteComponentKey(
     );
     if (key && !key.includes("://") && !key.startsWith("jsr:")) return key;
   }
-  const raw = (route.file || route.path || "").trim();
+  const rawFile = typeof route.file === "string" ? route.file : "";
+  const rawPath = typeof route.path === "string" ? route.path : "";
+  const raw = (rawFile || rawPath).trim();
   const extracted = extractComponentPathFromRouteFile(routesDirPath, raw);
   if (
     extracted && !extracted.includes("://") && !extracted.startsWith("jsr:") &&
