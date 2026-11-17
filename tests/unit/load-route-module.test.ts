@@ -20,6 +20,7 @@ import {
   resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
+import { IS_BUN, IS_DENO, IS_NODE } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
   clearCssRouteCacheForPath,
@@ -30,6 +31,7 @@ import {
   registerPluginPageFiles,
   resetPluginPageFiles,
 } from "../../src/feature/plugin-page-routes.ts";
+import { resolveRemotePluginPageToNpmFile } from "../../src/feature/remote-plugin-module.ts";
 
 /** 从本测试文件路径解析项目根目录，再在 tests/data 下建唯一子目录，避免 Windows 上 makeTempDir 路径导致动态 import 失败 */
 function getLoadRouteTestDir(): string {
@@ -126,10 +128,32 @@ describe("loadRouteModule (load-route-module.ts)", () => {
       expect(mod).toBeNull();
     });
 
-    it("已注册的远程插件页应直接 import URL", async () => {
+    it("已注册的远程插件页应加载 jsr.io 模块", async () => {
       resetPluginPageFiles();
       const remote =
         "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/api-path.ts";
+      registerPluginPageFiles([remote]);
+      try {
+        const mod = await loadRouteModule(remote);
+        expect(mod).not.toBeNull();
+        expect(typeof (mod as { resolveRbacApi?: unknown })?.resolveRbacApi)
+          .toBe("function");
+      } finally {
+        resetPluginPageFiles();
+      }
+    });
+
+    it("Bun 与 Node 通过 npm 兼容层加载已注册的远程插件页", async () => {
+      if (IS_DENO) return;
+      expect(IS_BUN || IS_NODE).toBe(true);
+      resetPluginPageFiles();
+      const remote =
+        "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/api-path.ts";
+      const local = resolveRemotePluginPageToNpmFile(remote);
+      expect(local).not.toBeNull();
+      const n = (local ?? "").replace(/\\/g, "/");
+      expect(n.includes("node_modules/")).toBe(true);
+      expect(n.endsWith("src/rbac/pages/api-path.ts")).toBe(true);
       registerPluginPageFiles([remote]);
       try {
         const mod = await loadRouteModule(remote);
