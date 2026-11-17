@@ -86,13 +86,39 @@ function looksLikeAbsoluteRouteKey(s: string): boolean {
   return false;
 }
 
-function routeLoaderKeyForClientDep(
+function isUnderHostRoutesDir(
+  routesDirPath: string,
+  fullPath: string,
+): boolean {
+  const root = routesDirPath.replace(/\\/g, "/").replace(/\/$/, "");
+  let full = fullPath.replace(/\\/g, "/");
+  if (full.startsWith("file://")) {
+    try {
+      full = decodeURIComponent(new URL(full).pathname);
+      if (full.match(/^\/[A-Za-z]:/)) full = full.slice(1);
+    } catch {
+      return false;
+    }
+  }
+  if (!root || !full) return false;
+  const r = root.toLowerCase();
+  const f = full.toLowerCase();
+  return f === r || f.startsWith(`${r}/`);
+}
+
+/** ROUTE_LOADERS key for a host or plugin page. Exported for unit tests. */
+export function routeLoaderKeyForClientDep(
   routesDirPath: string,
   c: RouteComponentInfo,
 ): string {
   const remote = isRemotePluginModuleSpecifier(c.fullPath) ||
     isRemotePluginModuleSpecifier(c.clientFullPath ?? "");
-  if (remote) {
+  const hostFile = isUnderHostRoutesDir(routesDirPath, c.fullPath) ||
+    isUnderHostRoutesDir(routesDirPath, c.clientFullPath ?? "");
+  // Plugin pages live outside the host routes dir. Trust meta.component —
+  // extractComponentPathFromRouteFile would otherwise cut on a package-local
+  // "/routes/" folder (e.g. plugins/src/rbac/routes/assign/index.tsx → assign/index).
+  if (remote || !hostFile) {
     const cp = c.componentPath.replace(/\\/g, "/");
     if (cp && !looksLikeAbsoluteRouteKey(cp)) return cp;
   }

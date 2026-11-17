@@ -19,6 +19,7 @@ import { getRouter, initializeRouter } from "../../src/feature/router.ts";
 import {
   clientRouteImportSpecifier,
   generateClientDepContent,
+  routeLoaderKeyForClientDep,
 } from "../../src/feature/csr-client-dep.ts";
 import { getRouteClientManifest } from "../../src/feature/csr-client-route-manifest.ts";
 import {
@@ -226,6 +227,34 @@ export async function load() { return { roles: true }; }
     );
     expect(code).toContain(JSON.stringify(pluginPage.replace(/\\/g, "/")));
     expect(code).not.toContain("./routes/rbac/roles.tsx");
+  });
+
+  it("ROUTE_LOADERS key keeps plugin component when the file is under a package routes/ folder", () => {
+    const pluginAssign = join(
+      testDir,
+      "plugin",
+      "src",
+      "rbac",
+      "routes",
+      "assign",
+      "index.tsx",
+    );
+    const info = {
+      componentPath: "rbac2/assign",
+      fullPath: pluginAssign,
+      importName: "Route_rbac2_assign",
+    };
+    expect(routeLoaderKeyForClientDep(routesDir, info)).toBe("rbac2/assign");
+    const code = generateClientDepContent(
+      "view",
+      [info],
+      routesDir,
+      true,
+      [],
+      "csr",
+    );
+    expect(code).toContain('"rbac2/assign"');
+    expect(code).not.toContain('"assign/index"');
   });
 
   it("clientRouteImportSpecifier prefers clientFullPath over the server entry", () => {
