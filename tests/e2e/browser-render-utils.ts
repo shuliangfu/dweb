@@ -425,6 +425,24 @@ type PageWithGoto = {
 };
 
 /**
+ * 首页已渲染的判定文案。不含布局导航里的「首页」等字，避免 CSR 只画出
+ * layout 就提前结束等待，随后断言因正文未到而偶发失败。
+ */
+const BROWSER_RENDER_TITLE_MARKERS = [
+  "欢迎使用 Dweb 框架",
+  "Welcome to Dweb",
+  "React CSR Advanced Example",
+  "React Advanced",
+  "View Advanced",
+  "Preact Advanced",
+  "用户管理",
+] as const;
+
+function htmlHasBrowserRenderTitle(html: string): boolean {
+  return BROWSER_RENDER_TITLE_MARKERS.some((s) => html.includes(s));
+}
+
+/**
  * 在浏览器上下文中轮询检查首屏内容是否就绪（用 evaluate 保证在页面内执行，避免 Bun 下 waitFor 回调在宿主执行导致永不满足）
  * @param browser 含 evaluate 的浏览器上下文
  * @param timeoutMs 总超时毫秒
@@ -435,19 +453,6 @@ async function waitForContentViaEvaluate(
 ): Promise<void> {
   const pollIntervalMs = 400;
   const deadline = Date.now() + timeoutMs;
-  const expectedStrings = [
-    "欢迎使用 Dweb 框架",
-    "Welcome to Dweb",
-    "React CSR Advanced Example",
-    "React Advanced",
-    "View Advanced",
-    "Preact Advanced",
-    "用户管理",
-    "核心特性",
-    "特性",
-    "UnoCSS",
-    "首页",
-  ];
   let lastResult: { ready: boolean; htmlLength: number } = {
     ready: false,
     htmlLength: 0,
@@ -462,8 +467,7 @@ async function waitForContentViaEvaluate(
       return { html, ready, htmlLength: html.length };
     }) as { html: string; ready: boolean; htmlLength: number };
     lastResult = { ready: result.ready, htmlLength: result.htmlLength };
-    const hasText = expectedStrings.some((s) => result.html.includes(s));
-    if (hasText || (result.ready && result.htmlLength > 300)) {
+    if (htmlHasBrowserRenderTitle(result.html)) {
       return;
     }
     await new Promise((r) => setTimeout(r, pollIntervalMs));
@@ -884,19 +888,6 @@ async function assertBrowserRender(
               | undefined;
             const appInnerLength = appEl?.innerHTML?.length ?? 0;
             const appSnippet = appEl?.innerHTML?.slice(0, 500) ?? "";
-            // 检查期望文案是否存在于 body（与 assertBrowserRender waitFor 条件一致）
-            const hasExpectText = bodyHtml.includes("欢迎使用 Dweb 框架") ||
-              bodyHtml.includes("Welcome to Dweb") ||
-              bodyHtml.includes("React CSR Advanced Example") ||
-              bodyHtml.includes("React Advanced") ||
-              bodyHtml.includes("View Advanced") ||
-              bodyHtml.includes("Preact Advanced") ||
-              bodyHtml.includes("用户管理") ||
-              bodyHtml.includes("核心特性") ||
-              bodyHtml.includes("特性") ||
-              bodyHtml.includes("UnoCSS") ||
-              bodyHtml.includes("首页") ||
-              (bodyHtml.length > 300 && doc?.readyState === "complete");
             const expectTextIndex = bodyHtml.length > 0 ? 0 : -1;
             return {
               url: String(
@@ -911,7 +902,6 @@ async function assertBrowserRender(
               renderErrorMsg,
               appInnerLength,
               appSnippet,
-              hasExpectText,
               expectTextIndex,
             };
           }).catch(() => null),
@@ -931,7 +921,13 @@ async function assertBrowserRender(
           readyState?: string;
           appInnerLength?: number;
           hasExpectText?: boolean;
+          bodySnippet?: string;
         } | null;
+        if (diagObj) {
+          diagObj.hasExpectText = htmlHasBrowserRenderTitle(
+            diagObj.bodySnippet ?? "",
+          );
+        }
         const diagSummary = diagObj
           ? `readyState=${diagObj.readyState ?? "?"} appLen=${
             diagObj.appInnerLength ?? "?"
@@ -963,23 +959,13 @@ async function assertBrowserRender(
       // CSR 场景下 waitFor 通过后 DOM 可能仍在更新，短暂延迟再取 body 避免 race（如 react-csr-advanced）
       await new Promise((r) => setTimeout(r, 400));
 
-      const hasTitle = await browser.evaluate(() => {
+      const titleHtml = await browser.evaluate(() => {
         const doc = (globalThis as Record<string, unknown>).document as
           | { body?: { innerHTML?: string } }
           | undefined;
-        const html = doc?.body?.innerHTML ?? "";
-        return (
-          html.includes("欢迎使用 Dweb 框架") ||
-          html.includes("Welcome to Dweb") ||
-          html.includes("React CSR Advanced Example") ||
-          html.includes("React Advanced") ||
-          html.includes("View Advanced") ||
-          html.includes("Preact Advanced") ||
-          html.includes("用户管理")
-        );
-      });
-
-      expect(hasTitle).toBe(true);
+        return doc?.body?.innerHTML ?? "";
+      }) as string;
+      expect(htmlHasBrowserRenderTitle(titleHtml)).toBe(true);
 
       const allErrors = [...consoleErrors, ...pageErrors];
       const hydrateErrors = allErrors.filter(
