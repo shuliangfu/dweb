@@ -14,6 +14,7 @@ import {
 import { fromFileUrl } from "../utils/version.ts";
 import type { RouteComponentInfo } from "./csr-client-route-manifest.ts";
 import { RESOLVE_HMR_PAGE_MODULE_SOURCE } from "./hmr-refresh.ts";
+import { isRemotePluginModuleSpecifier } from "./plugin-page-routes.ts";
 
 /** JSR 包作为后备说明符，避免把 https URL 写进浏览器代码 */
 export const UPGRADE_PROMPT_PACKAGE_SPECIFIER =
@@ -89,6 +90,12 @@ function routeLoaderKeyForClientDep(
   routesDirPath: string,
   c: RouteComponentInfo,
 ): string {
+  const remote = isRemotePluginModuleSpecifier(c.fullPath) ||
+    isRemotePluginModuleSpecifier(c.clientFullPath ?? "");
+  if (remote) {
+    const cp = c.componentPath.replace(/\\/g, "/");
+    if (cp && !looksLikeAbsoluteRouteKey(cp)) return cp;
+  }
   const fromFull = extractComponentPathFromRouteFile(
     routesDirPath,
     c.fullPath,
@@ -128,8 +135,14 @@ export function clientRouteImportSpecifier(
 ): string {
   const full = (c.clientFullPath || c.fullPath || "").replace(/\\/g, "/");
   const root = routesDirPath.replace(/\\/g, "/").replace(/\/$/, "");
-  const isAbs = full.startsWith("/") || /^[A-Za-z]:\//.test(full);
-  if (isAbs && root && full !== root && !full.startsWith(`${root}/`)) {
+  const isRemote = isRemotePluginModuleSpecifier(full) ||
+    full.startsWith("file://");
+  const isAbs = full.startsWith("/") || /^[A-Za-z]:\//.test(full) ||
+    isRemote;
+  if (
+    isAbs &&
+    (isRemote || (root && full !== root && !full.startsWith(`${root}/`)))
+  ) {
     return full;
   }
   return `./routes/${key}${routeExt}`;

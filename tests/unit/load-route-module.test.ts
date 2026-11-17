@@ -26,6 +26,10 @@ import {
   clearMtimeModuleCacheForPath,
   loadRouteModule,
 } from "../../src/feature/load-route-module.ts";
+import {
+  registerPluginPageFiles,
+  resetPluginPageFiles,
+} from "../../src/feature/plugin-page-routes.ts";
 
 /** 从本测试文件路径解析项目根目录，再在 tests/data 下建唯一子目录，避免 Windows 上 makeTempDir 路径导致动态 import 失败 */
 function getLoadRouteTestDir(): string {
@@ -112,6 +116,29 @@ describe("loadRouteModule (load-route-module.ts)", () => {
       );
       const mod = await loadRouteModule("/outside/path.ts", { logger });
       expect(mod).toBeNull();
+    });
+
+    it("未注册的远程模块 URL 应返回 null", async () => {
+      resetPluginPageFiles();
+      const mod = await loadRouteModule(
+        "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/menus.tsx",
+      );
+      expect(mod).toBeNull();
+    });
+
+    it("已注册的远程插件页应直接 import URL", async () => {
+      resetPluginPageFiles();
+      const remote =
+        "https://jsr.io/@dreamer/plugins/1.2.4/src/rbac/pages/api-path.ts";
+      registerPluginPageFiles([remote]);
+      try {
+        const mod = await loadRouteModule(remote);
+        expect(mod).not.toBeNull();
+        expect(typeof (mod as { resolveRbacApi?: unknown })?.resolveRbacApi)
+          .toBe("function");
+      } finally {
+        resetPluginPageFiles();
+      }
     });
   });
 

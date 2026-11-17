@@ -30,7 +30,10 @@ import {
 import { getCacheOptions } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
-import { isRegisteredPluginPageFile } from "./plugin-page-routes.ts";
+import {
+  isRegisteredPluginPageFile,
+  isRemotePluginModuleSpecifier,
+} from "./plugin-page-routes.ts";
 import { getModuleVersion } from "./module-cache.ts";
 import { resetViewSsrBundleShutdownInterruptFlag } from "./view-ssr-route-bundle.ts";
 
@@ -313,6 +316,15 @@ export async function loadRouteModule(
   try {
     /** 避免上一条路由在关闭中设置的标记污染本次结果 */
     resetViewSsrBundleShutdownInterruptFlag();
+    // JSR plugin pages resolve to https://jsr.io/... (not a filesystem path).
+    if (isRemotePluginModuleSpecifier(pathInput)) {
+      if (!isRegisteredPluginPageFile(pathInput)) {
+        console.warn(`${$tr("log.pathMustBeInProject")}: ${filePath}`);
+        return null;
+      }
+      const mod = await import(pathInput) as Record<string, unknown>;
+      return mod ?? null;
+    }
     // 解析为绝对路径并校验在项目内，防止路径穿越
     let absPath: string;
     if (pathInput.startsWith("file://")) {

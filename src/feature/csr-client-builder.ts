@@ -57,6 +57,7 @@ import {
 } from "./csr-client-dep.ts";
 import { getRouteClientManifest } from "./csr-client-route-manifest.ts";
 import { getRegisteredPluginPageFiles } from "./plugin-page-routes.ts";
+import { createPluginPageUrlPlugin } from "./plugin-page-url-plugin.ts";
 import { createStripLoadPlugin } from "./strip-load-plugin.ts";
 
 // 向后兼容：chunk 纯函数从 csr-client-chunk 拆出，仍从此模块 re-export
@@ -107,7 +108,10 @@ export function createDwebClientBundlePlugins(
   extraStripFiles: string[] = getRegisteredPluginPageFiles(),
 ): BuildPlugin[] {
   const routesAbs = resolve(routesDirPath);
-  return [createStripLoadPlugin(routesAbs, extraStripFiles)];
+  return [
+    createPluginPageUrlPlugin(extraStripFiles),
+    createStripLoadPlugin(routesAbs, extraStripFiles),
+  ];
 }
 
 /**

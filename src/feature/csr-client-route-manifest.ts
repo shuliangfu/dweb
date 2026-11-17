@@ -18,7 +18,10 @@ import {
   normalizePathStringForSubpathExtraction,
   subpathFromRoutesDirMarker,
 } from "../utils/path.ts";
-import { getPluginPageRoutes } from "./plugin-page-routes.ts";
+import {
+  getPluginPageRoutes,
+  isRemotePluginModuleSpecifier,
+} from "./plugin-page-routes.ts";
 
 /** 路由组件信息 */
 export interface RouteComponentInfo {
@@ -460,7 +463,13 @@ export async function getRouteClientManifest(
       routeLayoutKeys[page.path] = freshRouter.getLayoutKeysForPath(page.path);
     }
     if (seenPaths.has(page.component)) continue;
-    if (page.fullPath.startsWith("file://") || await exists(page.fullPath)) {
+    if (
+      isRemotePluginModuleSpecifier(page.fullPath) ||
+      (page.clientFullPath != null &&
+        isRemotePluginModuleSpecifier(page.clientFullPath)) ||
+      page.fullPath.startsWith("file://") ||
+      await exists(page.fullPath)
+    ) {
       merged.push({
         componentPath: page.component,
         fullPath: page.fullPath,

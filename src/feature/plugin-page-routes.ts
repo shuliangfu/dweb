@@ -46,6 +46,12 @@ export function normalizePluginPageFile(path: string): string {
   return raw.replace(/\\/g, "/");
 }
 
+/** True for http(s): / jsr: plugin page modules (JSR `import.meta.url`). */
+export function isRemotePluginModuleSpecifier(path: string): boolean {
+  const raw = path.trim();
+  return raw.startsWith("jsr:") || /^https?:\/\//i.test(raw);
+}
+
 function normalizeRoutePath(path: string): string {
   const trimmed = path.trim();
   if (!trimmed || trimmed === "/") return "/";
