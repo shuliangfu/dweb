@@ -9,6 +9,7 @@ import {
   normalizeStoredAppVersion,
   readStoredAppVersion,
   resolveStoredUpgradeAction,
+  startUpgradePrompt,
   writeStoredAppVersion,
 } from "../../src/feature/upgrade-prompt-client.ts";
 
@@ -96,6 +97,47 @@ describe("localStorage 直接读写", () => {
       expect(readStoredAppVersion()).toBe("2.0.0");
     } finally {
       restore();
+    }
+  });
+});
+
+describe("startUpgradePrompt 早退", () => {
+  it("未开启引导标志时应直接返回", () => {
+    const g = globalThis as { __DWEB_UPGRADE_PROMPT__?: boolean };
+    const prev = g.__DWEB_UPGRADE_PROMPT__;
+    try {
+      delete g.__DWEB_UPGRADE_PROMPT__;
+      startUpgradePrompt();
+    } finally {
+      if (prev === undefined) delete g.__DWEB_UPGRADE_PROMPT__;
+      else g.__DWEB_UPGRADE_PROMPT__ = prev;
+    }
+  });
+
+  it("已开启标志但没有 localStorage 时应直接返回", () => {
+    const g = globalThis as {
+      __DWEB_UPGRADE_PROMPT__?: boolean;
+      localStorage?: Storage;
+    };
+    const prevFlag = g.__DWEB_UPGRADE_PROMPT__;
+    const orig = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    try {
+      g.__DWEB_UPGRADE_PROMPT__ = true;
+      Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        get() {
+          throw new Error("no storage");
+        },
+      });
+      startUpgradePrompt();
+    } finally {
+      if (prevFlag === undefined) delete g.__DWEB_UPGRADE_PROMPT__;
+      else g.__DWEB_UPGRADE_PROMPT__ = prevFlag;
+      if (orig) Object.defineProperty(globalThis, "localStorage", orig);
+      else {
+        // deno-lint-ignore no-explicit-any
+        delete (globalThis as any).localStorage;
+      }
     }
   });
 });

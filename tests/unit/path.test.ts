@@ -22,10 +22,13 @@ import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
   clientRouteComponentKey,
   extractComponentPathFromRouteFile,
+  getRelativePathToRoutesBySegments,
   isPathWithinProject,
   normalizePathForCompare,
+  normalizePathStringForSubpathExtraction,
   pathForLog,
   resolveRouterRoutesDirPath,
+  subpathFromRoutesDirMarker,
 } from "../../src/utils/path.ts";
 
 describe("路径工具 (path.ts)", () => {
@@ -273,6 +276,62 @@ describe("路径工具 (path.ts)", () => {
           file: 1,
         }, host),
       ).toBe("home");
+    });
+  });
+
+  describe("normalizePathStringForSubpathExtraction()", () => {
+    it("应统一反斜杠、去掉末尾斜杠并折叠 /./", () => {
+      expect(
+        normalizePathStringForSubpathExtraction("src\\routes\\./index.tsx/"),
+      )
+        .toBe("src/routes/index.tsx");
+    });
+  });
+
+  describe("getRelativePathToRoutesBySegments()", () => {
+    it("文件短于 routes 或段对不齐时应返回 null", () => {
+      expect(getRelativePathToRoutesBySegments("src/routes", "src/routes/app"))
+        .toBeNull();
+      expect(getRelativePathToRoutesBySegments("src/other/index", "src/routes"))
+        .toBeNull();
+    });
+
+    it("完全等于 routes 目录时应返回空串，子路径应返回相对段", () => {
+      expect(getRelativePathToRoutesBySegments("src/routes", "src/routes"))
+        .toBe("");
+      expect(
+        getRelativePathToRoutesBySegments("src/routes/user/[id]", "src/routes"),
+      ).toBe("user/[id]");
+      expect(
+        getRelativePathToRoutesBySegments("SRC/ROUTES/about", "src/routes"),
+      ).toBe("about");
+    });
+  });
+
+  describe("subpathFromRoutesDirMarker()", () => {
+    it("空值、远程路径或出现多段 /routes/ 时应返回空串", () => {
+      expect(subpathFromRoutesDirMarker("")).toBe("");
+      expect(subpathFromRoutesDirMarker("   ")).toBe("");
+      expect(subpathFromRoutesDirMarker(null as unknown as string)).toBe("");
+      expect(
+        subpathFromRoutesDirMarker(
+          "https://jsr.io/@dreamer/plugins/1.0.0/src/rbac/routes/index.tsx",
+        ),
+      ).toBe("");
+      expect(
+        subpathFromRoutesDirMarker(
+          "/Users/x/plugins/src/rbac/routes/routes/index.tsx",
+        ),
+      ).toBe("");
+    });
+
+    it("唯一的 /routes/ 标记应取出无扩展名的相对路径", () => {
+      expect(subpathFromRoutesDirMarker("/app/src/routes/user/[id].tsx")).toBe(
+        "user/[id]",
+      );
+      expect(subpathFromRoutesDirMarker("/app/src/routes/about.jsx")).toBe(
+        "about",
+      );
     });
   });
 });

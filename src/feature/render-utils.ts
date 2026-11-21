@@ -180,3 +180,88 @@ export function wrapInlineClientBootstrapScript(
   }
   return `<script>${parts.join("")}</script>`;
 }
+
+const HTML_DOCTYPE = "<!DOCTYPE html>\n";
+
+/**
+ * 判断 HTML 是否已带文档类型声明（允许前面有 BOM、空白或注释）。
+ */
+export function htmlHasDoctype(html: string): boolean {
+  return /^(?:\uFEFF|\s|<!--[\s\S]*?-->)*<!DOCTYPE\b/i.test(html);
+}
+
+function doctypeDecision(html: string): "yes" | "no" | "need-more" {
+  if (htmlHasDoctype(html)) return "yes";
+  let i = html.charCodeAt(0) === 0xFEFF ? 1 : 0;
+  while (i < html.length) {
+    const c = html.charCodeAt(i);
+    if (
+      c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d || c === 0x0c
+    ) {
+      i++;
+      continue;
+    }
+    if (html.startsWith("<!--", i)) {
+      const end = html.indexOf("-->", i + 4);
+      if (end === -1) return "need-more";
+      i = end + 3;
+      continue;
+    }
+    break;
+  }
+  if (i >= html.length) return "need-more";
+  const head = html.slice(i, i + 9);
+  if (head.length < 9) {
+    const lower = head.toLowerCase();
+    if (
+      "<!doctype".startsWith(lower) || lower === "<!" ||
+      "<!-".startsWith(lower)
+    ) {
+      return "need-more";
+    }
+  }
+  return "no";
+}
+
+/**
+ * 渲染 `_app` 得到的 HTML 若缺少 `<!DOCTYPE html>` 则补在开头；已有文档头则原样返回。
+ */
+export function ensureHtmlDoctype(html: string): string {
+  if (htmlHasDoctype(html)) return html;
+  if (html.charCodeAt(0) === 0xFEFF) {
+    return `\uFEFF${HTML_DOCTYPE}${html.slice(1)}`;
+  }
+  return `${HTML_DOCTYPE}${html}`;
+}
+
+/** 给 SSR 流式输出补上缺失的文档类型声明；已有则不改。 */
+export function createEnsureHtmlDoctypeTransform(): TransformStream<
+  Uint8Array,
+  Uint8Array
+> {
+  const decoder = new TextDecoder("utf-8");
+  const encoder = new TextEncoder();
+  let pending = "";
+  let decided = false;
+  return new TransformStream({
+    transform(chunk, controller) {
+      if (decided) {
+        controller.enqueue(chunk);
+        return;
+      }
+      pending += decoder.decode(chunk, { stream: true });
+      if (doctypeDecision(pending) === "need-more") return;
+      decided = true;
+      controller.enqueue(encoder.encode(ensureHtmlDoctype(pending)));
+      pending = "";
+    },
+    flush(controller) {
+      const tail = decoder.decode();
+      if (decided) {
+        if (tail) controller.enqueue(encoder.encode(tail));
+        return;
+      }
+      controller.enqueue(encoder.encode(ensureHtmlDoctype(pending + tail)));
+    },
+  });
+}

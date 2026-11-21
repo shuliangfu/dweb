@@ -45,6 +45,7 @@ import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import { getRender } from "./render.ts";
 import {
   collectClientRoutes,
+  ensureHtmlDoctype,
   escapeHtmlInStyle,
   hasContainerElementInHtml,
   wrapInlineClientBootstrapScript,
@@ -428,6 +429,7 @@ ${hybridOptions.bodyTags || ""}`
       }
 
       // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）
+      html = ensureHtmlDoctype(html);
       return new Response(html, {
         status: 200,
         headers: {

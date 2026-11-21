@@ -10,17 +10,28 @@
 import "../setup.ts";
 import type { Plugin, SocketContext, SocketIOSocket } from "@dreamer/plugin";
 import { describe, expect, it } from "@dreamer/test";
+import type { HttpContext } from "@dreamer/server";
 import {
   emitOnBuild,
   emitOnBuildComplete,
+  emitOnError,
+  emitOnHealthCheck,
+  emitOnHotReload,
   emitOnInit,
+  emitOnRequest,
+  emitOnRequestEnd,
+  emitOnResponse,
+  emitOnRoute,
   emitOnShutdown,
   emitOnSocket,
   emitOnSocketClose,
+  emitOnSSREnd,
   emitOnStart,
   emitOnStop,
   emitPluginEvent,
+  pluginEvents,
 } from "../../src/core/plugin-events.ts";
+import { initializeLogger } from "../../src/utils/logger.ts";
 import { initializePlugin, registerPlugin } from "../../src/core/plugin.ts";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 
@@ -365,6 +376,197 @@ describe("插件事件系统 (plugin-events.ts)", () => {
 
       await emitOnInit(container);
       expect(order).toEqual(["first", "second", "third"]);
+    });
+  });
+
+  describe("请求与健康检查事件", () => {
+    function ctx(path = "/hello"): HttpContext {
+      return {
+        path,
+        request: new Request(`http://localhost${path}`),
+      } as HttpContext;
+    }
+
+    it("emitOnRequest 可短路返回 Response，并跳过无钩子或未激活插件", async () => {
+      const container = createTestEnv();
+      await registerAndActivate(container, {
+        name: "skip-hook",
+        version: "1.0.0",
+      } as Plugin);
+      await registerAndActivate(container, {
+        name: "short-circuit",
+        version: "1.0.0",
+        onRequest() {
+          return new Response("from-plugin", { status: 200 });
+        },
+      } as Plugin);
+      const res = await emitOnRequest(container, ctx());
+      expect(res).toBeInstanceOf(Response);
+      expect(await res!.text()).toBe("from-plugin");
+    });
+
+    it("emitOnRequest 钩子抛错时应吞掉并继续，最终返回 undefined", async () => {
+      const container = createTestEnv();
+      initializeLogger(container, {});
+      await registerAndActivate(container, {
+        name: "boom",
+        version: "1.0.0",
+        onRequest() {
+          throw new Error("request hook fail");
+        },
+      } as Plugin);
+      const res = await emitOnRequest(container, ctx());
+      expect(res).toBeUndefined();
+    });
+
+    it("emitOnResponse / emitOnHotReload 应调用对应钩子", async () => {
+      const container = createTestEnv();
+      const seen: string[] = [];
+      await registerAndActivate(container, {
+        name: "obs",
+        version: "1.0.0",
+        onResponse() {
+          seen.push("response");
+        },
+        onHotReload(files: string[]) {
+          seen.push(`reload:${files.join(",")}`);
+        },
+      } as Plugin);
+      await emitOnResponse(container, ctx("/r"));
+      await emitOnHotReload(container, ["src/routes/index.tsx"]);
+      expect(seen).toEqual(["response", "reload:src/routes/index.tsx"]);
+    });
+
+    it("emitOnRequestEnd / emitOnSSREnd 应调用插件钩子和配置回调，并吞掉配置回调错误", async () => {
+      const container = createTestEnv();
+      const seen: string[] = [];
+      await registerAndActivate(container, {
+        name: "obs",
+        version: "1.0.0",
+        onRequestEnd() {
+          seen.push("plugin-req");
+        },
+        onSSREnd() {
+          seen.push("plugin-ssr");
+        },
+      } as Plugin);
+      container.registerSingleton("config", () => ({
+        onRequestEnd() {
+          seen.push("cfg-req");
+        },
+        onSSREnd() {
+          throw new Error("ssr end fail");
+        },
+      }));
+      initializeLogger(container, {});
+      await emitOnRequestEnd(container, {
+        path: "/",
+        method: "GET",
+        status: 200,
+        durationMs: 3,
+      });
+      await emitOnSSREnd(container, {
+        path: "/",
+        mode: "ssr",
+        durationMs: 5,
+        ok: true,
+      });
+      expect(seen).toEqual(["plugin-req", "cfg-req", "plugin-ssr"]);
+    });
+
+    it("emitOnRequestEnd 在没有 config 时应只跑插件", async () => {
+      const container = createTestEnv();
+      await emitOnRequestEnd(container, {
+        path: "/",
+        method: "GET",
+        status: 200,
+        durationMs: 1,
+      });
+    });
+
+    it("emitOnRoute 应允许插件改写路由，钩子失败时保留当前列表", async () => {
+      const container = createTestEnv();
+      initializeLogger(container, {});
+      await registerAndActivate(container, {
+        name: "add-route",
+        version: "1.0.0",
+        onRoute(routes: Array<{ path: string }>) {
+          return [...routes, { path: "/added" }];
+        },
+      } as unknown as Plugin);
+      await registerAndActivate(container, {
+        name: "boom",
+        version: "1.0.0",
+        onRoute() {
+          throw new Error("onRoute fail");
+        },
+      } as unknown as Plugin);
+      const routes = await emitOnRoute(container, [{ path: "/" }]);
+      expect(routes.map((r) => r.path)).toEqual(["/", "/added"]);
+    });
+
+    it("emitOnError 可返回 Response，钩子失败时继续", async () => {
+      const container = createTestEnv();
+      initializeLogger(container, {});
+      await registerAndActivate(container, {
+        name: "boom",
+        version: "1.0.0",
+        onError() {
+          throw new Error("onError hook fail");
+        },
+      } as Plugin);
+      await registerAndActivate(container, {
+        name: "handler",
+        version: "1.0.0",
+        onError() {
+          return new Response("handled", { status: 500 });
+        },
+      } as Plugin);
+      const res = await emitOnError(container, new Error("boom"), ctx());
+      expect(res).toBeInstanceOf(Response);
+      expect(res!.status).toBe(500);
+      expect(await res!.text()).toBe("handled");
+    });
+
+    it("emitOnHealthCheck 应聚合组件状态并在钩子失败时标为 unhealthy", async () => {
+      const container = createTestEnv();
+      await registerAndActivate(container, {
+        name: "ok",
+        version: "1.0.0",
+        onHealthCheck() {
+          return {
+            status: "healthy",
+            components: { db: { status: "healthy" } },
+          };
+        },
+      } as Plugin);
+      await registerAndActivate(container, {
+        name: "degraded",
+        version: "1.0.0",
+        onHealthCheck() {
+          return { status: "degraded" };
+        },
+      } as Plugin);
+      await registerAndActivate(container, {
+        name: "boom",
+        version: "1.0.0",
+        onHealthCheck() {
+          throw new Error("health fail");
+        },
+      } as Plugin);
+      const status = await emitOnHealthCheck(container);
+      expect(status.status).toBe("unhealthy");
+      expect(status.components?.db?.status).toBe("healthy");
+      expect(status.components?.degraded?.status).toBe("degraded");
+      expect(status.components?.boom?.status).toBe("unhealthy");
+      expect(status.components?.boom?.message).toBe("health fail");
+      expect(typeof status.timestamp).toBe("number");
+    });
+
+    it("pluginEvents 应暴露与具名导出相同的函数", () => {
+      expect(pluginEvents.emitOnInit).toBe(emitOnInit);
+      expect(pluginEvents.emitOnRequest).toBe(emitOnRequest);
+      expect(pluginEvents.emitOnHealthCheck).toBe(emitOnHealthCheck);
     });
   });
 });

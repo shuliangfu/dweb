@@ -41,6 +41,7 @@ import { loadRouteModule } from "./load-route-module.ts";
 import { tryRenderErrorSpecialPage } from "./error-special.ts";
 import {
   collectClientRoutes,
+  ensureHtmlDoctype,
   hasContainerElementInHtml,
   wrapInlineClientBootstrapScript,
 } from "./render-utils.ts";
@@ -185,13 +186,13 @@ export function createRendererCSR(
 
       if (!AppComponent) {
         return new Response(
-          generateFallbackCSRHtml(
+          ensureHtmlDoctype(generateFallbackCSRHtml(
             csrOptions,
             clientRoutes,
             engine,
             routerDebug,
             config,
-          ),
+          )),
           {
             status: 200,
             headers: {
@@ -466,7 +467,7 @@ ${csrOptions.bodyTags || ""}`
         html += clientConfigScript;
       }
 
-      return new Response(html, {
+      return new Response(ensureHtmlDoctype(html), {
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",

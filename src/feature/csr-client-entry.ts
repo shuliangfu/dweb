@@ -158,11 +158,11 @@ initApp()
     const currentRoute = app.router.getCurrentRoute?.() ??
       app.router.match(pathname);
     if (currentRoute) {
-      console.log(
-        ${JSON.stringify($tr("client.routeCurrent"))},
-        currentRoute.route.component,
-        currentRoute.params,
-      );
+      // console.log(
+      //   ${JSON.stringify($tr("client.routeCurrent"))},
+      //   currentRoute.route.component,
+      //   currentRoute.params,
+      // );
     }
 
     // 路由前置守卫（拦截）：在导航前执行，返回 false 阻止导航，返回 string 重定向到该路径
@@ -177,7 +177,7 @@ initApp()
     // 路由后置守卫：导航完成后执行（可做埋点、日志等）
     app.router.afterRoute((to, _from) => {
       if (to) {
-        console.log(${
+        // console.log(${
     JSON.stringify($tr("client.routeSwitched"))
   }, to.route.component, to.params, to.query);
       }

@@ -45,6 +45,8 @@ import {
 } from "../utils/path.ts";
 import {
   collectClientRoutes,
+  createEnsureHtmlDoctypeTransform,
+  ensureHtmlDoctype,
   escapeHtmlInStyle,
   hasContainerElementInHtml,
   MountContainerMissingError,
@@ -442,7 +444,9 @@ export function createRendererSSR(
           : "";
         const clientConfigScript = buildHydrationScript();
         // 与整页路径同序：先注入 head CSS，再替换 manifest，最后注入 hydration。
-        let body: ReadableStream<Uint8Array> = streamResult.body;
+        let body: ReadableStream<Uint8Array> = streamResult.body.pipeThrough(
+          createEnsureHtmlDoctypeTransform(),
+        );
         if (styleTags) {
           body = body.pipeThrough(
             createHtmlInjectTransform([{
@@ -515,7 +519,7 @@ export function createRendererSSR(
         }
       }
 
-      return new Response(html, {
+      return new Response(ensureHtmlDoctype(html), {
         status: 200,
         headers: responseHeaders,
       });

@@ -6,7 +6,10 @@ import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   collectClientRoutes,
+  createEnsureHtmlDoctypeTransform,
+  ensureHtmlDoctype,
   hasContainerElementInHtml,
+  htmlHasDoctype,
   MountContainerMissingError,
   streamAfterMountContainer,
   wrapInlineClientBootstrapScript,
@@ -193,6 +196,64 @@ describe("render-utils", () => {
       );
       expect(out).toContain("// Hydration 数据");
       expect(out).toContain('globalThis.__DATA__ = {"a":1};');
+    });
+  });
+
+  describe("ensureHtmlDoctype()", () => {
+    it("缺少文档头时补上 <!DOCTYPE html>", () => {
+      const html = "<html><head></head><body></body></html>";
+      expect(ensureHtmlDoctype(html)).toBe(
+        "<!DOCTYPE html>\n" + html,
+      );
+      expect(htmlHasDoctype(ensureHtmlDoctype(html))).toBe(true);
+    });
+
+    it("已有文档头（含大小写、前置空白或注释）则不重复添加", () => {
+      const a = "<!DOCTYPE html>\n<html></html>";
+      const b = "  <!doctype HTML><html></html>";
+      const c = "<!-- x -->\n<!DOCTYPE html><html></html>";
+      expect(ensureHtmlDoctype(a)).toBe(a);
+      expect(ensureHtmlDoctype(b)).toBe(b);
+      expect(ensureHtmlDoctype(c)).toBe(c);
+    });
+  });
+
+  describe("createEnsureHtmlDoctypeTransform()", () => {
+    async function readStream(
+      stream: ReadableStream<Uint8Array>,
+    ): Promise<string> {
+      return await new Response(stream).text();
+    }
+
+    function chunked(
+      html: string,
+      chunkSize: number,
+    ): ReadableStream<Uint8Array> {
+      const bytes = new TextEncoder().encode(html);
+      return new ReadableStream({
+        start(controller) {
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            controller.enqueue(bytes.subarray(i, i + chunkSize));
+          }
+          controller.close();
+        },
+      });
+    }
+
+    it("分片到达的 <html> 前应补文档头", async () => {
+      const html = "<html><body>ok</body></html>";
+      const out = chunked(html, 1).pipeThrough(
+        createEnsureHtmlDoctypeTransform(),
+      );
+      expect(await readStream(out)).toBe("<!DOCTYPE html>\n" + html);
+    });
+
+    it("已有文档头的流不改写", async () => {
+      const html = "<!DOCTYPE html>\n<html><body>ok</body></html>";
+      const out = chunked(html, 3).pipeThrough(
+        createEnsureHtmlDoctypeTransform(),
+      );
+      expect(await readStream(out)).toBe(html);
     });
   });
 });

@@ -1,13 +1,18 @@
 /**
  * start 命令测试
  *
- * 测试 src/cmd/start.ts：
- * - main 在无 deno.json 时提前返回
+ * 测试 src/cmd/start.ts 的早退与短任务回退，不启动生产服务器。
  */
 
 import "../setup.ts";
-import { chdir, cwd, makeTempDir, remove } from "@dreamer/runtime-adapter";
-import { afterAll, beforeAll, describe, it } from "@dreamer/test";
+import {
+  chdir,
+  cwd,
+  makeTempDir,
+  remove,
+  writeTextFile,
+} from "@dreamer/runtime-adapter";
+import { afterAll, afterEach, beforeAll, describe, it } from "@dreamer/test";
 import { main } from "../../src/cmd/start.ts";
 
 describe("start (cmd/start.ts)", () => {
@@ -27,5 +32,84 @@ describe("start (cmd/start.ts)", () => {
 
   it("无 deno.json 时应正常返回（不抛错）", async () => {
     await main([], {});
+  });
+});
+
+describe("start 早退与短任务", () => {
+  const temps: string[] = [];
+  const cwdStack: string[] = [];
+
+  afterEach(async () => {
+    while (cwdStack.length) chdir(cwdStack.pop()!);
+    for (const dir of temps.splice(0)) {
+      await remove(dir, { recursive: true }).catch(() => {});
+    }
+  });
+
+  async function enterTemp(prefix: string, denoJson: unknown): Promise<void> {
+    const dir = await makeTempDir({ prefix });
+    temps.push(dir);
+    await writeTextFile(`${dir}/deno.json`, JSON.stringify(denoJson));
+    cwdStack.push(cwd());
+    chdir(dir);
+  }
+
+  it("单应用没有 start task 时应返回", async () => {
+    await enterTemp("dweb-start-notask-", { name: "tmp", version: "0.0.1" });
+    await main(["ignored"], {});
+  });
+
+  it("单应用有 start task 且成功时应走完", async () => {
+    await enterTemp("dweb-start-ok-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { start: "echo start-ok" },
+    });
+    await main([], {});
+  });
+
+  it("单应用有 start task 且失败时不应抛出", async () => {
+    await enterTemp("dweb-start-fail-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { start: "exit 1" },
+    });
+    await main(["extra"], { app: "web" });
+  });
+
+  it("多应用未指定应用名时应返回", async () => {
+    await enterTemp("dweb-start-multi-need-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { "start:web": "echo web" },
+    });
+    await main([], {});
+  });
+
+  it("多应用指定不存在的应用时应返回", async () => {
+    await enterTemp("dweb-start-multi-missing-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { "start:web": "echo web" },
+    });
+    await main([], { app: "api" });
+  });
+
+  it("多应用有对应 task 且成功时应走完", async () => {
+    await enterTemp("dweb-start-multi-ok-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { "start:web": "echo web" },
+    });
+    await main(["web"], {});
+  });
+
+  it("多应用有对应 task 且失败时不应抛出", async () => {
+    await enterTemp("dweb-start-multi-fail-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { "start:web": "exit 1" },
+    });
+    await main([], { app: "web" });
   });
 });

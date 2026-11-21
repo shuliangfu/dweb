@@ -12,6 +12,7 @@ import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
 import { getLogger } from "../utils/logger.ts";
 import { loadRouteModule } from "./load-route-module.ts";
+import { ensureHtmlDoctype } from "./render-utils.ts";
 
 /** Special file types used for unhandled 5xx / render errors. */
 export type ErrorSpecialType = "_500" | "_error";
@@ -126,7 +127,7 @@ export async function tryRenderErrorSpecialPage(
       },
       debug: opts.debug === true,
     });
-    return new Response(result.html, {
+    return new Response(ensureHtmlDoctype(result.html), {
       status: 500,
       headers: {
         "Content-Type": "text/html; charset=utf-8",

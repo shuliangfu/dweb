@@ -3,11 +3,25 @@
  *
  * 测试 src/cmd/fmt.ts：
  * - main 在无 deno.json 时提前返回
+ * - 有 fmt task 时走 task；无 task 时回退 deno fmt
  */
 
 import "../setup.ts";
-import { chdir, cwd, makeTempDir, remove } from "@dreamer/runtime-adapter";
-import { afterAll, beforeAll, describe, it } from "@dreamer/test";
+import {
+  chdir,
+  cwd,
+  makeTempDir,
+  remove,
+  writeTextFile,
+} from "@dreamer/runtime-adapter";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+} from "@dreamer/test";
 import { main } from "../../src/cmd/fmt.ts";
 
 describe("fmt (cmd/fmt.ts)", () => {
@@ -26,6 +40,54 @@ describe("fmt (cmd/fmt.ts)", () => {
   });
 
   it("无 deno.json 时应正常返回（不抛错）", async () => {
-    await main([], {});
+    expect(await main([], {})).toBe(2);
+  });
+});
+
+describe("fmt 早退与 task 回退", () => {
+  const temps: string[] = [];
+  const cwdStack: string[] = [];
+
+  afterEach(async () => {
+    while (cwdStack.length) chdir(cwdStack.pop()!);
+    for (const dir of temps.splice(0)) {
+      await remove(dir, { recursive: true }).catch(() => {});
+    }
+  });
+
+  async function enterTemp(prefix: string, denoJson: unknown): Promise<string> {
+    const dir = await makeTempDir({ prefix });
+    temps.push(dir);
+    await writeTextFile(`${dir}/deno.json`, JSON.stringify(denoJson));
+    cwdStack.push(cwd());
+    chdir(dir);
+    return dir;
+  }
+
+  it("有 fmt task 且成功时应返回 0", async () => {
+    await enterTemp("dweb-fmt-ok-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { fmt: "echo formatted" },
+    });
+    expect(await main([], {})).toBe(0);
+  });
+
+  it("有 fmt task 且失败时应返回非 0", async () => {
+    await enterTemp("dweb-fmt-fail-", {
+      name: "tmp",
+      version: "0.0.1",
+      tasks: { fmt: "exit 7" },
+    });
+    expect(await main([], {})).toBe(7);
+  });
+
+  it("没有 fmt task 时应回退直接 fmt 并成功", async () => {
+    const dir = await enterTemp("dweb-fmt-fallback-", {
+      name: "tmp",
+      version: "0.0.1",
+    });
+    await writeTextFile(`${dir}/ok.ts`, "export const n = 1;\n");
+    expect(await main([`${dir}/ok.ts`], {})).toBe(0);
   });
 });
