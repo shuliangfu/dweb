@@ -476,6 +476,30 @@ export function getFmtArgs(useTask: boolean = false): string[] {
 }
 
 /**
+ * Run a `deno.json` task line as a shell command on Bun / Node.
+ * Deno keeps using `deno task <name>` and does not need this.
+ */
+export function getShellCommandForTaskLine(
+  taskLine: string,
+): { command: string; args: string[] } {
+  if (isWindows()) {
+    return { command: "cmd", args: ["/d", "/s", "/c", taskLine] };
+  }
+  return { command: "sh", args: ["-c", taskLine] };
+}
+
+/**
+ * Executable used with `getFmtArgs` / `getLintArgs` / `getTaskArgs` fallbacks.
+ * Node must use `npm`, not `node`, otherwise `node run fmt` looks for a `run` module.
+ */
+export function getPackageRunnerCommand(): "deno" | "bun" | "npm" {
+  if (IS_DENO) return "deno";
+  if (IS_BUN) return "bun";
+  if (IS_NODE) return "npm";
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
+}
+
+/**
  * Deno 2.9 起默认拒绝 24 小时内新发布的 JSR/npm 版本。
  * 升级刚发布的 dweb 时要显式关掉，否则 `deno run` / `deno install` 选不到新版本。
  */

@@ -4,12 +4,14 @@
 
 import "../setup.ts";
 import {
+  IS_DENO,
   join,
   makeTempDir,
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
+import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { createPluginPageUrlPlugin } from "../../src/feature/plugin-page-url-plugin.ts";
 
@@ -21,6 +23,44 @@ type ResolveArgs = {
 type LoadArgs = { path: string };
 type ResolveFn = (args: ResolveArgs) => unknown | Promise<unknown>;
 type LoadFn = (args: LoadArgs) => unknown | Promise<unknown>;
+
+
+async function serveHttp(
+  handler: (req: Request) => Response | Promise<Response>,
+): Promise<{ origin: string; close: () => Promise<void> }> {
+  const server = createServer((req, res) => {
+    const addr = server.address();
+    const port = typeof addr === "object" && addr ? addr.port : 0;
+    const url = new URL(req.url ?? "/", `http://127.0.0.1:${port}`);
+    Promise.resolve(handler(new Request(url, { method: req.method }))).then(
+      async (response) => {
+        res.statusCode = response.status;
+        response.headers.forEach((value, key) => {
+          res.setHeader(key, value);
+        });
+        res.end(new Uint8Array(await response.arrayBuffer()));
+      },
+    ).catch((err) => {
+      res.statusCode = 500;
+      res.end(String(err));
+    });
+  });
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+  const addr = server.address();
+  if (!addr || typeof addr === "string") {
+    throw new Error("listen failed");
+  }
+  return {
+    origin: `http://127.0.0.1:${addr.port}`,
+    close: () =>
+      new Promise((resolve, reject) => {
+        server.close((err) => err ? reject(err) : resolve());
+      }),
+  };
+}
 
 function attachPlugin(extraFiles: string[]) {
   const resolvers: Array<
@@ -155,14 +195,13 @@ describe("plugin-page-url-plugin", () => {
       expect(result.contents).toContain("function Page");
     });
 
-    it("http 拉取失败时应返回 esbuild errors", async () => {
-      const server = Deno.serve(
-        { hostname: "127.0.0.1", port: 0 },
-        () => new Response("nope", { status: 503 }),
-      );
+    it.skipIf(
+      !IS_DENO,
+      "http 拉取失败时应返回 esbuild errors",
+      async () => {
+      const server = await serveHttp(() => new Response("nope", { status: 503 }));
       try {
-        const addr = server.addr as Deno.NetAddr;
-        const url = `http://127.0.0.1:${addr.port}/missing.tsx`;
+        const url = `${server.origin}/missing.tsx`;
         const { resolve: res, load: loadHttp } = attachPlugin([url]);
         expect(await res({ path: url })).toEqual({
           path: url,
@@ -174,24 +213,24 @@ describe("plugin-page-url-plugin", () => {
         expect(result.errors[0]?.text).toContain("Failed to fetch");
         expect(result.errors[0]?.text).toContain("503");
       } finally {
-        await server.shutdown();
+        await server.close();
       }
     });
 
-    it("http 拉取成功时应返回改写后的源码", async () => {
+    it.skipIf(
+      !IS_DENO,
+      "http 拉取成功时应返回改写后的源码",
+      async () => {
       const body =
         "export function load() { return { ok: 1 }; }\nexport default function Page() { return null; }\n";
-      const server = Deno.serve(
-        { hostname: "127.0.0.1", port: 0 },
-        () =>
-          new Response(body, {
-            status: 200,
-            headers: { "content-type": "text/tsx" },
-          }),
+      const server = await serveHttp(() =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/tsx" },
+        })
       );
       try {
-        const addr = server.addr as Deno.NetAddr;
-        const url = `http://127.0.0.1:${addr.port}/page.tsx`;
+        const url = `${server.origin}/page.tsx`;
         const { load: loadHttp } = attachPlugin([url]);
         const result = await loadHttp({ path: url }) as {
           contents: string;
@@ -201,7 +240,7 @@ describe("plugin-page-url-plugin", () => {
         expect(typeof result.contents).toBe("string");
         expect(result.contents.length).toBeGreaterThan(0);
       } finally {
-        await server.shutdown();
+        await server.close();
       }
     });
   });

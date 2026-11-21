@@ -88,6 +88,11 @@ describe("lint 早退与 task 回退", () => {
       version: "0.0.1",
     });
     await writeTextFile(`${dir}/ok.ts`, "export const n = 1;\n");
+    // Bun/Node fallback is `bun run` / `npm run`; Deno still uses `deno lint`.
+    await writeTextFile(
+      `${dir}/package.json`,
+      JSON.stringify({ scripts: { lint: "echo linted" } }),
+    );
     expect(await main([`${dir}/ok.ts`], {})).toBe(0);
   });
 });

@@ -14,7 +14,13 @@ import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getLintArgs, getRuntime } from "../utils/runtime.ts";
+import {
+  getLintArgs,
+  getPackageRunnerCommand,
+  getRuntime,
+  getShellCommandForTaskLine,
+  IS_DENO,
+} from "../utils/runtime.ts";
 
 /**
  * lint 命令主入口
@@ -42,8 +48,11 @@ export async function main(
   const taskName = "lint";
   if (projectInfo.tasks[taskName]) {
     info($tr("lint.running"));
-    const cmd = createCommand(runtime, {
-      args: [...getLintArgs(true), ...args],
+    const shell = IS_DENO
+      ? undefined
+      : getShellCommandForTaskLine(projectInfo.tasks[taskName]);
+    const cmd = createCommand(shell ? shell.command : runtime, {
+      args: shell ? shell.args : [...getLintArgs(true), ...args],
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -61,7 +70,7 @@ export async function main(
 
   // 无 lint task，直接运行 lint
   info($tr("lint.running"));
-  const cmd = createCommand(runtime, {
+  const cmd = createCommand(IS_DENO ? runtime : getPackageRunnerCommand(), {
     args: [...getLintArgs(false), ...args],
     cwd: projectRoot,
     stdin: "inherit",

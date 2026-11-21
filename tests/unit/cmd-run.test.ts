@@ -24,25 +24,10 @@ import {
   expect,
   it,
 } from "@dreamer/test";
+import { stubExit } from "../helpers/stub-exit.ts";
 import { main } from "../../src/cmd/run.ts";
 import { PROJECT_CONFIG_ENV } from "../../src/utils/project-import-map.ts";
 
-function stubExit() {
-  const orig = Deno.exit;
-  let code: number | undefined;
-  Deno.exit = ((c?: number) => {
-    code = c ?? 0;
-    throw new Error(`DENO_EXIT:${c ?? 0}`);
-  }) as typeof Deno.exit;
-  return {
-    get code() {
-      return code;
-    },
-    restore() {
-      Deno.exit = orig;
-    },
-  };
-}
 
 describe("run (cmd/run.ts)", () => {
   const temps: string[] = [];

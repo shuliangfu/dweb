@@ -14,24 +14,9 @@ import {
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterEach, describe, expect, it } from "@dreamer/test";
+import { stubExit } from "../helpers/stub-exit.ts";
 import { main } from "../../src/cmd/doctor.ts";
 
-function stubExit() {
-  const orig = Deno.exit;
-  let code: number | undefined;
-  Deno.exit = ((c?: number) => {
-    code = c ?? 0;
-    throw new Error(`DENO_EXIT:${c ?? 0}`);
-  }) as typeof Deno.exit;
-  return {
-    get code() {
-      return code;
-    },
-    restore() {
-      Deno.exit = orig;
-    },
-  };
-}
 
 describe("doctor (cmd/doctor.ts)", () => {
   const temps: string[] = [];

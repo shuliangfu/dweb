@@ -14,7 +14,13 @@ import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getFmtArgs, getRuntime } from "../utils/runtime.ts";
+import {
+  getFmtArgs,
+  getPackageRunnerCommand,
+  getRuntime,
+  getShellCommandForTaskLine,
+  IS_DENO,
+} from "../utils/runtime.ts";
 
 /**
  * fmt 命令主入口
@@ -38,8 +44,11 @@ export async function main(
   const taskName = "fmt";
   if (projectInfo.tasks[taskName]) {
     info($tr("fmt.running"));
-    const cmd = createCommand(runtime, {
-      args: [...getFmtArgs(true), ...args],
+    const shell = IS_DENO
+      ? undefined
+      : getShellCommandForTaskLine(projectInfo.tasks[taskName]);
+    const cmd = createCommand(shell ? shell.command : runtime, {
+      args: shell ? shell.args : [...getFmtArgs(true), ...args],
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -57,7 +66,7 @@ export async function main(
 
   // 无 fmt task，直接运行 fmt
   info($tr("fmt.running"));
-  const cmd = createCommand(runtime, {
+  const cmd = createCommand(IS_DENO ? runtime : getPackageRunnerCommand(), {
     args: [...getFmtArgs(false), ...args],
     cwd: projectRoot,
     stdin: "inherit",
