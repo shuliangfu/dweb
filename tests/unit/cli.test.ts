@@ -18,7 +18,6 @@ import { afterEach, describe, expect, it } from "@dreamer/test";
 import { stubExit } from "../helpers/stub-exit.ts";
 import { createCLI } from "../../src/cli.ts";
 
-
 describe("CLI (cli.ts)", () => {
   describe("createCLI()", () => {
     it("应返回 Command 实例且包含 execute 方法", () => {

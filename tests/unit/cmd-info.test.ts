@@ -16,7 +16,6 @@ import { afterEach, describe, expect, it } from "@dreamer/test";
 import { stubExit } from "../helpers/stub-exit.ts";
 import { main } from "../../src/cmd/info.ts";
 
-
 describe("info (cmd/info.ts)", () => {
   const temps: string[] = [];
   const cwdStack: string[] = [];

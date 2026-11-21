@@ -24,7 +24,6 @@ type LoadArgs = { path: string };
 type ResolveFn = (args: ResolveArgs) => unknown | Promise<unknown>;
 type LoadFn = (args: LoadArgs) => unknown | Promise<unknown>;
 
-
 async function serveHttp(
   handler: (req: Request) => Response | Promise<Response>,
 ): Promise<{ origin: string; close: () => Promise<void> }> {
@@ -199,49 +198,53 @@ describe("plugin-page-url-plugin", () => {
       !IS_DENO,
       "http 拉取失败时应返回 esbuild errors",
       async () => {
-      const server = await serveHttp(() => new Response("nope", { status: 503 }));
-      try {
-        const url = `${server.origin}/missing.tsx`;
-        const { resolve: res, load: loadHttp } = attachPlugin([url]);
-        expect(await res({ path: url })).toEqual({
-          path: url,
-          namespace: "dweb-plugin-page-url",
-        });
-        const result = await loadHttp({ path: url }) as {
-          errors: Array<{ text: string }>;
-        };
-        expect(result.errors[0]?.text).toContain("Failed to fetch");
-        expect(result.errors[0]?.text).toContain("503");
-      } finally {
-        await server.close();
-      }
-    });
+        const server = await serveHttp(() =>
+          new Response("nope", { status: 503 })
+        );
+        try {
+          const url = `${server.origin}/missing.tsx`;
+          const { resolve: res, load: loadHttp } = attachPlugin([url]);
+          expect(await res({ path: url })).toEqual({
+            path: url,
+            namespace: "dweb-plugin-page-url",
+          });
+          const result = await loadHttp({ path: url }) as {
+            errors: Array<{ text: string }>;
+          };
+          expect(result.errors[0]?.text).toContain("Failed to fetch");
+          expect(result.errors[0]?.text).toContain("503");
+        } finally {
+          await server.close();
+        }
+      },
+    );
 
     it.skipIf(
       !IS_DENO,
       "http 拉取成功时应返回改写后的源码",
       async () => {
-      const body =
-        "export function load() { return { ok: 1 }; }\nexport default function Page() { return null; }\n";
-      const server = await serveHttp(() =>
-        new Response(body, {
-          status: 200,
-          headers: { "content-type": "text/tsx" },
-        })
-      );
-      try {
-        const url = `${server.origin}/page.tsx`;
-        const { load: loadHttp } = attachPlugin([url]);
-        const result = await loadHttp({ path: url }) as {
-          contents: string;
-          loader: string;
-        };
-        expect(result.loader).toBe("tsx");
-        expect(typeof result.contents).toBe("string");
-        expect(result.contents.length).toBeGreaterThan(0);
-      } finally {
-        await server.close();
-      }
-    });
+        const body =
+          "export function load() { return { ok: 1 }; }\nexport default function Page() { return null; }\n";
+        const server = await serveHttp(() =>
+          new Response(body, {
+            status: 200,
+            headers: { "content-type": "text/tsx" },
+          })
+        );
+        try {
+          const url = `${server.origin}/page.tsx`;
+          const { load: loadHttp } = attachPlugin([url]);
+          const result = await loadHttp({ path: url }) as {
+            contents: string;
+            loader: string;
+          };
+          expect(result.loader).toBe("tsx");
+          expect(typeof result.contents).toBe("string");
+          expect(result.contents.length).toBeGreaterThan(0);
+        } finally {
+          await server.close();
+        }
+      },
+    );
   });
 });

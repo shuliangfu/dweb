@@ -28,7 +28,6 @@ import { stubExit } from "../helpers/stub-exit.ts";
 import { main } from "../../src/cmd/run.ts";
 import { PROJECT_CONFIG_ENV } from "../../src/utils/project-import-map.ts";
 
-
 describe("run (cmd/run.ts)", () => {
   const temps: string[] = [];
   const cwdStack: string[] = [];
