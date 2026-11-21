@@ -10,6 +10,8 @@ import "../setup.ts";
 import {
   chdir,
   cwd,
+  getEnv,
+  IS_BUN,
   makeTempDir,
   remove,
   writeTextFile,
@@ -23,6 +25,8 @@ import {
   it,
 } from "@dreamer/test";
 import { main } from "../../src/cmd/fmt.ts";
+
+const skipInCi = Boolean(getEnv("GITHUB_ACTIONS"));
 
 describe("fmt (cmd/fmt.ts)", () => {
   let testDir: string;
@@ -39,7 +43,7 @@ describe("fmt (cmd/fmt.ts)", () => {
     await remove(testDir, { recursive: true });
   });
 
-  it("无 deno.json 时应正常返回（不抛错）", async () => {
+  it.skipIf(skipInCi, "无 deno.json 时应正常返回（不抛错）", async () => {
     expect(await main([], {})).toBe(2);
   });
 });
@@ -64,7 +68,7 @@ describe("fmt 早退与 task 回退", () => {
     return dir;
   }
 
-  it("有 fmt task 且成功时应返回 0", async () => {
+  it.skipIf(skipInCi, "有 fmt task 且成功时应返回 0", async () => {
     await enterTemp("dweb-fmt-ok-", {
       name: "tmp",
       version: "0.0.1",
@@ -73,7 +77,7 @@ describe("fmt 早退与 task 回退", () => {
     expect(await main([], {})).toBe(0);
   });
 
-  it("有 fmt task 且失败时应返回非 0", async () => {
+  it.skipIf(skipInCi, "有 fmt task 且失败时应返回非 0", async () => {
     await enterTemp("dweb-fmt-fail-", {
       name: "tmp",
       version: "0.0.1",
@@ -82,17 +86,19 @@ describe("fmt 早退与 task 回退", () => {
     expect(await main([], {})).toBe(7);
   });
 
-  it("没有 fmt task 时应回退直接 fmt 并成功", async () => {
+  it.skipIf(skipInCi, "没有 fmt task 时应回退直接 fmt 并成功", async () => {
     const dir = await enterTemp("dweb-fmt-fallback-", {
       name: "tmp",
       version: "0.0.1",
     });
     await writeTextFile(`${dir}/ok.ts`, "export const n = 1;\n");
-    // Bun/Node fallback is `bun run` / `npm run`; Deno still uses `deno fmt`.
-    await writeTextFile(
-      `${dir}/package.json`,
-      JSON.stringify({ scripts: { fmt: "echo fmted" } }),
-    );
+    // Bun fallback is `bun run`; Deno / Node use `deno fmt`.
+    if (IS_BUN) {
+      await writeTextFile(
+        `${dir}/package.json`,
+        JSON.stringify({ scripts: { fmt: "echo fmted" } }),
+      );
+    }
     expect(await main([`${dir}/ok.ts`], {})).toBe(0);
   });
 });

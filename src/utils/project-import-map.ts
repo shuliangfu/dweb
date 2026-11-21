@@ -96,6 +96,16 @@ export function buildRuntimeDenoConfig(
   };
 }
 
+/** Convert a file URL to a path. POSIX file URLs have no drive letter and
+ *  `fromFileUrl` throws on Windows for those, so fall back to the pathname. */
+function pathFromFileUrl(target: string): string {
+  try {
+    return fromFileUrl(target);
+  } catch {
+    return decodeURIComponent(new URL(target).pathname);
+  }
+}
+
 /**
  * Collect filesystem path aliases from an import map (deno.json or package.json).
  * Remote specs (`jsr:` / `npm:` / http) are skipped. `@common/*` → `@common/` prefix.
@@ -125,7 +135,7 @@ export function pathAliasesFromImports(
     }
     let abs: string;
     if (target.startsWith("file:")) {
-      abs = fromFileUrl(target);
+      abs = pathFromFileUrl(target);
     } else if (
       target.startsWith(".") || target.startsWith("/") || isAbsolute(target)
     ) {

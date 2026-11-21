@@ -430,8 +430,8 @@ export function describeUnsupportedTestReporter(
 /**
  * 获取执行 lint 的参数
  *
- * - Deno: useTask 时 ["task", "lint"]，否则 ["lint"]
- * - Bun/Node: ["run", "lint"]（经 package.json scripts 执行）
+ * - Deno / Node: useTask 时 ["task", "lint"]，否则 ["lint"]
+ * - Bun: ["run", "lint"]（经 package.json scripts 执行）
  *
  * @param useTask 是否使用 task
  * @returns args 数组
@@ -442,10 +442,10 @@ export function describeUnsupportedTestReporter(
  * ```
  */
 export function getLintArgs(useTask: boolean = false): string[] {
-  if (IS_DENO) {
+  if (IS_DENO || IS_NODE) {
     return useTask ? ["task", "lint"] : ["lint"];
   }
-  if (IS_BUN || IS_NODE) {
+  if (IS_BUN) {
     return ["run", "lint"];
   }
   throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
@@ -454,8 +454,8 @@ export function getLintArgs(useTask: boolean = false): string[] {
 /**
  * 获取执行 fmt 的参数
  *
- * - Deno: useTask 时 ["task", "fmt"]，否则 ["fmt"]
- * - Bun/Node: ["run", "fmt"]
+ * - Deno / Node: useTask 时 ["task", "fmt"]，否则 ["fmt"]
+ * - Bun: ["run", "fmt"]
  *
  * @param useTask 是否使用 task
  * @returns args 数组
@@ -466,10 +466,10 @@ export function getLintArgs(useTask: boolean = false): string[] {
  * ```
  */
 export function getFmtArgs(useTask: boolean = false): string[] {
-  if (IS_DENO) {
+  if (IS_DENO || IS_NODE) {
     return useTask ? ["task", "fmt"] : ["fmt"];
   }
-  if (IS_BUN || IS_NODE) {
+  if (IS_BUN) {
     return ["run", "fmt"];
   }
   throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
@@ -486,6 +486,13 @@ export function getShellCommandForTaskLine(
     return { command: "cmd", args: ["/d", "/s", "/c", taskLine] };
   }
   return { command: "sh", args: ["-c", taskLine] };
+}
+
+/** Executable for fmt / lint: Node always uses Deno; Bun keeps `bun run`. */
+export function getFmtLintCommand(): "deno" | "bun" {
+  if (IS_DENO || IS_NODE) return "deno";
+  if (IS_BUN) return "bun";
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
 }
 
 /**

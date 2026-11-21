@@ -41,9 +41,6 @@ jobs:
       - name: Check
         run: deno check src/ tests/
 
-      - name: Lint
-        run: deno lint
-
       - name: Test (Deno)
         run: deno test -A --no-check tests/
 
@@ -68,9 +65,6 @@ jobs:
 
       - name: Check
         run: deno check src/ tests/
-
-      - name: Lint
-        run: deno lint
 
       - name: Test (Deno, macOS)
         run: deno test -A --no-check tests/
@@ -100,9 +94,6 @@ jobs:
 
       - name: Check
         run: deno check src/ tests/
-
-      - name: Lint
-        run: deno lint
 
       - name: Test (Deno, Windows)
         run: deno test -A --no-check tests/

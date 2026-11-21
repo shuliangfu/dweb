@@ -16,23 +16,22 @@ import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
 import {
   getFmtArgs,
-  getPackageRunnerCommand,
-  getRuntime,
+  getFmtLintCommand,
   getShellCommandForTaskLine,
   IS_DENO,
+  IS_NODE,
 } from "../utils/runtime.ts";
 
 /**
  * fmt 命令主入口
  *
- * @param _args 命令行参数（未使用）
- * @param _options 解析后的选项（未使用）
+ * @param args 额外传给宿主 fmt 的路径／参数（与 deno fmt 对齐）
+ * @param options CLI 选项；`quiet` 透传意图预留
  */
 export async function main(
   args: string[],
   _options: ParsedOptions,
 ): Promise<number> {
-  const runtime = getRuntime();
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
 
@@ -41,13 +40,14 @@ export async function main(
     return 2;
   }
 
+  const useDeno = IS_DENO || IS_NODE;
   const taskName = "fmt";
   if (projectInfo.tasks[taskName]) {
     info($tr("fmt.running"));
-    const shell = IS_DENO
+    const shell = useDeno
       ? undefined
       : getShellCommandForTaskLine(projectInfo.tasks[taskName]);
-    const cmd = createCommand(shell ? shell.command : runtime, {
+    const cmd = createCommand(shell ? shell.command : getFmtLintCommand(), {
       args: shell ? shell.args : [...getFmtArgs(true), ...args],
       cwd: projectRoot,
       stdin: "inherit",
@@ -66,7 +66,7 @@ export async function main(
 
   // 无 fmt task，直接运行 fmt
   info($tr("fmt.running"));
-  const cmd = createCommand(IS_DENO ? runtime : getPackageRunnerCommand(), {
+  const cmd = createCommand(getFmtLintCommand(), {
     args: [...getFmtArgs(false), ...args],
     cwd: projectRoot,
     stdin: "inherit",
