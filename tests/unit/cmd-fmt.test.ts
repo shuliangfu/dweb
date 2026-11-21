@@ -29,8 +29,8 @@ import { main } from "../../src/cmd/fmt.ts";
 const skipInCi = Boolean(getEnv("GITHUB_ACTIONS"));
 
 describe("fmt (cmd/fmt.ts)", () => {
-  let testDir: string;
-  let originalCwd: string;
+  let testDir: string | undefined;
+  let originalCwd: string | undefined;
 
   beforeAll(async () => {
     testDir = await makeTempDir({ prefix: "dweb-fmt-test-" });
@@ -39,8 +39,9 @@ describe("fmt (cmd/fmt.ts)", () => {
   });
 
   afterAll(async () => {
-    chdir(originalCwd);
-    await remove(testDir, { recursive: true });
+    // When every it() is skipped (e.g. GITHUB_ACTIONS), beforeAll may not run.
+    if (originalCwd) chdir(originalCwd);
+    if (testDir) await remove(testDir, { recursive: true }).catch(() => {});
   });
 
   it.skipIf(skipInCi, "无 deno.json 时应正常返回（不抛错）", async () => {
