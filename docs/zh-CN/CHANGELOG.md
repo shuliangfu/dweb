@@ -9,6 +9,26 @@
 
 ## [Unreleased]
 
+## [3.10.6] - 2026-11-21
+
+### 修复
+
+- **Windows file URL**：POSIX `file://` URL 在 Windows 上不再于
+  `pathAliasesFromImports` 中抛错。
+- **HTML doctype**：流式 HTML 若缺少 doctype，会自动补上。
+- **Bun/Node CLI**：fmt/lint 改为调用 Deno；`deno.json` 中的 task 行通过宿主
+  shell 执行；包脚本使用 `npm` 而非 `node run`；退出桩同时覆盖 `Deno.exit` 和
+  `process.exit`。
+- **CI**：在 `GITHUB_ACTIONS` 下被跳过的 fmt/lint 单测不再因 `afterAll` 对未赋值
+  工作目录执行 `chdir` 而失败。
+
+### 变更
+
+- **依赖**：`@dreamer/console` `^1.1.1` → `^1.1.2`；`@dreamer/esbuild` `^1.5.3`
+  → `^1.5.4`；`@dreamer/i18n` `^1.1.2` → `^1.1.3`；`@dreamer/view` `^3.1.2` →
+  `^3.1.3`；`@dreamer/test` `^1.2.4` → `^1.2.5`；`autoprefixer` `^10.6.2` →
+  `^10.7.0`。工作区和示例项目同步这些范围。
+
 ## [3.10.5] - 2026-11-17
 
 ### 修复

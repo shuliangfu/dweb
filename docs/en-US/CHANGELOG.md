@@ -10,6 +10,26 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.10.6] - 2026-11-21
+
+### Fixed
+
+- **Windows file URLs**: POSIX `file://` URLs no longer throw in
+  `pathAliasesFromImports` on Windows.
+- **HTML doctype**: streamed HTML is prefixed with a doctype when it is missing.
+- **CLI on Bun/Node**: fmt/lint invoke Deno; task lines from `deno.json` run
+  through the host shell; package scripts use `npm` instead of `node run`; exit
+  stubs cover both `Deno.exit` and `process.exit`.
+- **CI**: fmt/lint unit tests skipped under `GITHUB_ACTIONS` no longer fail in
+  `afterAll` by `chdir`ing to an unset working directory.
+
+### Changed
+
+- **Dependencies**: `@dreamer/console` `^1.1.1` → `^1.1.2`; `@dreamer/esbuild`
+  `^1.5.3` → `^1.5.4`; `@dreamer/i18n` `^1.1.2` → `^1.1.3`; `@dreamer/view`
+  `^3.1.2` → `^3.1.3`; `@dreamer/test` `^1.2.4` → `^1.2.5`; `autoprefixer`
+  `^10.6.2` → `^10.7.0`. Workspace and example projects follow these bumps.
+
 ## [3.10.5] - 2026-11-17
 
 ### Fixed
