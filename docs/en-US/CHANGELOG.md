@@ -10,6 +10,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-11-23
+
 ### Security
 
 - **Session cookie signing**: Production apps that enable `session` must set
@@ -44,6 +46,26 @@ and this project adheres to
   `PluginManager.getActivePluginsWithHook` when the runtime provides it, walking
   only active plugins that implement the hook. Published `@dreamer/plugin`
   without the method falls back to a full scan.
+
+### Fixed
+
+- **Hashed client chunks**: Production in-memory cache for hashed client assets
+  keeps a stable key (output directory + file name), so a hashed chunk still
+  serves after the file is removed, including on Windows where realpath after
+  deletion could miss the cache.
+- **CI seed annotations**: Seed scripts run without `GITHUB_ACTIONS` in the
+  child environment, so an expected-fail `seeds/seed.ts` no longer makes Bun
+  emit a `::error` workflow command that shows up as a check annotation.
+
+### Changed
+
+- **Dependencies**: `@dreamer/database` `^1.2.0` → `^1.3.0`;
+  `@dreamer/middlewares` `^1.1.0` → `^1.1.1`; `@dreamer/plugin` `^1.1.0` →
+  `^1.1.1`; `@dreamer/plugins` `^1.2.7` → `^1.2.9`; `@dreamer/router` `^1.2.2` →
+  `^1.2.3`; `@dreamer/runtime-adapter` `^1.2.2` → `^1.2.4`; `@dreamer/server`
+  `^1.3.4` → `^1.3.5`; `@dreamer/session` `^1.1.0` → `^1.1.1`;
+  `@dreamer/socket-io` `^1.2.1` → `^1.2.2`; `@dreamer/upload` `^2.0.1` →
+  `^2.0.2`. Workspace and example projects follow these bumps.
 
 ## [3.10.6] - 2026-11-21
 

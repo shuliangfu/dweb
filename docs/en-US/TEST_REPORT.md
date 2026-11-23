@@ -6,7 +6,7 @@
 
 | Item             | Value                                                                                                                                  |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Framework        | 3.10.6                                                                                                                                 |
+| Framework        | 3.11.0                                                                                                                                 |
 | Test framework   | @dreamer/test@^1.2.5                                                                                                                   |
 | Test date        | 2026-11-23 (Asia/Shanghai)                                                                                                             |
 | Test environment | Local macOS; Deno, Bun, and Node 22.23.5 / 24.22.3 / 26.13.1 all green. Historical sections below keep earlier version and CI records. |
@@ -15,7 +15,7 @@
 
 ## 📊 Test Results
 
-### v3.10.6 local full suite (2026-11-23)
+### v3.11.0 local full suite (2026-11-23)
 
 Ran unit + integration + e2e on Mac for Deno, Bun, and Node 22.23.5 / 24.22.3 /
 26.13.1; all passed. Node 24 / 26 e2e used the local `@dreamer/runtime-adapter`

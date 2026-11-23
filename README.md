@@ -2056,7 +2056,7 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 
 See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
-**Summary** (local, 2026-11-23, Asia/Shanghai, v3.10.6): Deno **1513 passed**, 0
+**Summary** (local, 2026-11-23, Asia/Shanghai, v3.11.0): Deno **1513 passed**, 0
 failed, 10 ignored (6m56s). Bun and Node 22.23.5 / 24.22.3 / 26.13.1: **1282
 passed**, 10 skipped, 0 failed (unit 1159 / 4 skipped, integration 23, e2e 100 /
 6 skipped). Covers unit, e2e browser-render, and integration
@@ -2090,6 +2090,8 @@ not locks.
 ## 📋 Changelog
 
 ### [Unreleased]
+
+### [3.11.0] - 2026-11-23
 
 - **Security**: Production `session` requires `cookie.secret` (≥32 characters)
   and HMAC-SHA256-signs the session cookie. Unset production cookie flags

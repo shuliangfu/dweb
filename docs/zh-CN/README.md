@@ -2114,7 +2114,7 @@ localStorage 键 `dweb:app-version`。`kind: "api"` / `"console"` 不生效。�
 
 详细结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**（本机，2026-11-23，Asia/Shanghai，v3.10.6）：Deno **1513 通过**，0
+**测试总结**（本机，2026-11-23，Asia/Shanghai，v3.11.0）：Deno **1513 通过**，0
 失败，10 忽略（6m56s）。Bun 与 Node 22.23.5 / 24.22.3 / 26.13.1： **1282
 通过**，10 跳过，0 失败（单测 1159 / 4 跳过，集成 23，e2e 100 / 6
 跳过）。覆盖单元、e2e 浏览器渲染与集成构建（CSR/SSR/SSG/Hybrid）。路径与配置
@@ -2143,6 +2143,8 @@ localStorage 键 `dweb:app-version`。`kind: "api"` / `"console"` 不生效。�
 ## 📋 变更日志
 
 ### [Unreleased]
+
+### [3.11.0] - 2026-11-23
 
 - **安全**：生产环境开启 `session` 时须设置 `cookie.secret`（不少于 32
   个字符），并用 HMAC-SHA256 签名会话 Cookie。未设置的生产 Cookie 标志默认

@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-11-23
+
 ### 安全
 
 - **Session Cookie 签名**：生产环境启用 `session` 时必须配置
@@ -37,6 +39,24 @@
 - `emitOnRequest` 等事件优先使用
   `PluginManager.getActivePluginsWithHook`（若运行时已提供），只遍历实现了该钩子的已激活插件；已发布但尚未提供该方法的
   `@dreamer/plugin` 回退为全表扫描。
+
+### 修复
+
+- **哈希客户端 chunk**：生产模式对哈希客户端资源使用稳定缓存键（产出目录 +
+  文件名），文件删除后仍可命中内存缓存；也覆盖 Windows 上删除后 realpath
+  与首次缓存键不一致的情况。
+- **CI seed 注解**：运行 seed 脚本时去掉子进程中的 `GITHUB_ACTIONS`，避免 Bun
+  把预期失败的 `seeds/seed.ts` 打成 `::error` 工作流命令并出现在检查注解里。
+
+### 变更
+
+- **依赖**：`@dreamer/database` `^1.2.0` → `^1.3.0`；`@dreamer/middlewares`
+  `^1.1.0` → `^1.1.1`；`@dreamer/plugin` `^1.1.0` → `^1.1.1`；`@dreamer/plugins`
+  `^1.2.7` → `^1.2.9`；`@dreamer/router` `^1.2.2` → `^1.2.3`；
+  `@dreamer/runtime-adapter` `^1.2.2` → `^1.2.4`；`@dreamer/server` `^1.3.4` →
+  `^1.3.5`；`@dreamer/session` `^1.1.0` → `^1.1.1`；`@dreamer/socket-io`
+  `^1.2.1` → `^1.2.2`；`@dreamer/upload` `^2.0.1` →
+  `^2.0.2`。工作区和示例项目同步这些范围。
 
 ## [3.10.6] - 2026-11-21
 
