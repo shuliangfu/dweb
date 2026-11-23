@@ -13,6 +13,7 @@ import {
   cwd,
   getEnv,
   join,
+  platform,
   readTextFile,
   stat,
 } from "../core/runtime-adapter.ts";
@@ -26,7 +27,11 @@ import {
 } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import { resolvePathWithinRoot } from "../utils/path.ts";
+import {
+  canonicalizePath,
+  normalizePathForCompare,
+  resolvePathWithinRoot,
+} from "../utils/path.ts";
 import {
   buildClientScript,
   getCachedClientScript,
@@ -74,27 +79,38 @@ async function readMtimeMs(absPath: string): Promise<number> {
 }
 
 /**
- * 生产态读取客户端产物：哈希文件名首次读后常驻；未哈希按 mtime 校验。
+ * 生产缓存键：用产出目录的 realpath + 文件名，不依赖叶子文件是否还在。
+ * Windows 上对已删除文件做 realpath 可能变成 8.3 短名或越界失败，导致缓存 miss。
  */
+function prodClientCacheKey(cacheRoot: string, fileName: string): string {
+  const key = normalizePathForCompare(
+    join(canonicalizePath(cacheRoot), fileName),
+  );
+  return platform() === "windows" ? key.toLowerCase() : key;
+}
+
+/** 生产态读取客户端产物：哈希文件名首次读后常驻；未哈希按 mtime 校验。 */
 async function readProdClientFile(
   absPath: string,
   fileName: string,
+  cacheRoot: string,
 ): Promise<string | null> {
+  const cacheKey = prodClientCacheKey(cacheRoot, fileName);
   try {
     if (isHashedAssetFilename(fileName)) {
-      const hit = prodClientFileCache.get(absPath);
+      const hit = prodClientFileCache.get(cacheKey);
       if (hit) return hit.body;
       const body = await readTextFile(absPath);
-      rememberProdClientFile(absPath, { body });
+      rememberProdClientFile(cacheKey, { body });
       return body;
     }
 
     const mtimeMs = await readMtimeMs(absPath);
     if (mtimeMs <= 0) return null;
-    const hit = prodClientFileCache.get(absPath);
+    const hit = prodClientFileCache.get(cacheKey);
     if (hit && hit.mtimeMs === mtimeMs) return hit.body;
     const body = await readTextFile(absPath);
-    rememberProdClientFile(absPath, { body, mtimeMs });
+    rememberProdClientFile(cacheKey, { body, mtimeMs });
     return body;
   } catch {
     return null;
@@ -204,7 +220,11 @@ export function createClientScriptMiddleware(
           ? `${CLIENT_OUTPUT_MAIN_FILENAME}.map`
           : CLIENT_OUTPUT_MAIN_FILENAME;
         const clientJsPath = join(clientOutputPath, mainFile);
-        const content = await readProdClientFile(clientJsPath, mainFile);
+        const content = await readProdClientFile(
+          clientJsPath,
+          mainFile,
+          clientOutputPath,
+        );
         if (content != null) {
           ctx.response = new Response(content, {
             status: 200,
@@ -304,11 +324,18 @@ export function createClientScriptMiddleware(
         clientOutputPath,
         filePath,
       );
-      if (!boundedChunkPath) {
-        ctx.response = new Response("Not Found", { status: 404 });
-        return;
-      }
-      const content = await readProdClientFile(boundedChunkPath, fileName);
+      // 哈希文件删除后仍应命中内存缓存：Windows 上叶子路径 realpath 可能对不齐或越界
+      const content = boundedChunkPath
+        ? await readProdClientFile(
+          boundedChunkPath,
+          fileName,
+          clientOutputPath,
+        )
+        : (isHashedAssetFilename(fileName)
+          ? (prodClientFileCache.get(
+            prodClientCacheKey(clientOutputPath, fileName),
+          )?.body ?? null)
+          : null);
       if (content != null) {
         ctx.response = new Response(content, {
           status: 200,
