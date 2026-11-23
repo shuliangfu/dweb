@@ -387,6 +387,42 @@ describe("插件事件系统 (plugin-events.ts)", () => {
       } as HttpContext;
     }
 
+    it("有 getActivePluginsWithHook 时只调用索引中的插件，忽略全表中的其它实现", async () => {
+      const container = initializeServiceContainer();
+      const called: string[] = [];
+      const indexed = {
+        name: "indexed",
+        version: "1.0.0",
+        onRequest() {
+          called.push("indexed");
+        },
+      };
+      const hidden = {
+        name: "hidden",
+        version: "1.0.0",
+        onRequest() {
+          called.push("hidden");
+        },
+      };
+      container.registerSingleton("pluginManager", () => ({
+        getActivePluginsWithHook(eventName: string) {
+          return eventName === "onRequest" ? [indexed] : [];
+        },
+        getRegisteredPlugins() {
+          return ["indexed", "hidden"];
+        },
+        getPlugin(name: string) {
+          return name === "hidden" ? hidden : indexed;
+        },
+        getState() {
+          return "active";
+        },
+      }));
+      const res = await emitOnRequest(container, ctx());
+      expect(res).toBeUndefined();
+      expect(called).toEqual(["indexed"]);
+    });
+
     it("emitOnRequest 可短路返回 Response，并跳过无钩子或未激活插件", async () => {
       const container = createTestEnv();
       await registerAndActivate(container, {

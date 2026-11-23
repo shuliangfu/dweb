@@ -33,7 +33,7 @@ import {
   DEFAULT_PRELOAD_MAX_PAGES,
   DEFAULT_PRELOAD_MAX_SIZE_MB,
 } from "../utils/constants.ts";
-import { isPathWithinProject } from "../utils/path.ts";
+import { resolvePathWithinRoot } from "../utils/path.ts";
 import { createDefaultErrorHtml } from "../utils/security.ts";
 import { createRendererSSR } from "./render-ssr.ts";
 import { htmlDocumentCacheControlHeaders } from "./upgrade-prompt.ts";
@@ -175,8 +175,9 @@ export function createRendererSSG(
       // 规范化：resolve 消除 path 中的 ../ 等，避免 pathname 被篡改时读项目外文件
       const resolvedPath = resolve(baseDir, relativePath);
 
-      // 路径穿越防护：仅允许读取 baseDir 内的文件（Windows 兼容：isPathWithinProject 内部做规范化与大小写处理）
-      if (!isPathWithinProject(resolvedPath, baseDir)) {
+      // 路径穿越防护：realpath + 前缀，拒绝 ../ 与符号链接逃逸
+      const boundedPath = resolvePathWithinRoot(baseDir, resolvedPath);
+      if (!boundedPath) {
         return null;
       }
 
@@ -198,10 +199,10 @@ export function createRendererSSG(
             for (const name of htmlNames) {
               if (count >= maxPages || totalBytes >= maxSizeBytes) break;
               const p = join(baseDir, name);
-              const abs = resolve(p);
-              if (!isPathWithinProject(abs, baseDir)) continue;
+              const bounded = resolvePathWithinRoot(baseDir, p);
+              if (!bounded) continue;
               try {
-                const raw = await readTextFile(p);
+                const raw = await readTextFile(bounded);
                 totalBytes += new TextEncoder().encode(raw).length;
                 if (totalBytes > maxSizeBytes) break;
                 const pathnameKey = fileToPathname(name);
@@ -236,12 +237,12 @@ export function createRendererSSG(
         }
       }
 
-      const fileExists = await exists(resolvedPath);
+      const fileExists = await exists(boundedPath);
       if (!fileExists) {
         return null;
       }
 
-      let html = await readTextFile(resolvedPath);
+      let html = await readTextFile(boundedPath);
       html = await replaceAssetPathsInHtml(html, config, outputDir);
       return new Response(html, {
         status: 200,

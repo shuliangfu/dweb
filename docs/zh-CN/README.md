@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
-[![Tests](https://img.shields.io/badge/tests-865%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-1513%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -57,7 +57,9 @@ dweb-cli --help           # 查看完整帮助
 - **Preact**：轻量、兼容 React；多数示例中的默认
 - **React**：在配置中通过 `render.engine: "react"` 指定
 - **会话**：可选 `config.session`（`@dreamer/session`），配置后在
-  `load()`、API、中间件中可用 `ctx.session`
+  `load()`、API、中间件中可用 `ctx.session`。生产环境须设置
+  `cookie.secret`（不少于 32 个字符）；未设置的 Cookie 标志默认 `secure` +
+  `sameSite: "strict"`。CSRF 默认开启（可用 `csrf: false` 关闭）。
 - **渲染模式**：`render.mode` 支持 `ssr`、`csr`、`ssg`、`hybrid`
 
 按需安装独立包（dweb 已内置下列依赖，仅在使用其他 @dreamer/* 时需单独安装）：
@@ -89,8 +91,11 @@ deno add jsr:@dreamer/runtime-adapter
 
 ## 🌍 环境兼容性
 
-- **运行时要求**：Deno 2.6+ 或 Bun 1.3.5
-- **服务端**：✅ 支持（兼容 Deno 和 Bun 运行时，完整的服务端功能）
+- **运行时要求**：Deno 2.6+、Bun ≥1.4.4，或 Node.js ≥22.23.4（Node 24 / 26
+  分别为 ≥24.22.1 / ≥26.12.1）。`dweb doctor` 会检查这些 HTTP2Shell 修复线
+- **入站 Brotli**：请求头 `Content-Encoding` 含 `br` 时默认返回 415，除非设置
+  `allowBrotliRequestEncoding: true`。响应压缩的 `enableBrotli` 仍默认关闭
+- **服务端**：✅ 支持（兼容 Deno、Bun 和 Node.js，完整的服务端功能）
 - **客户端**：✅ 支持（浏览器环境，SSR、CSR、SSG、Hybrid 支持）
 - **跨平台**：✅ 全面兼容 macOS、Linux、Windows，开箱即用，无需额外配置
 - **Bun 构建参数**：使用 `bun run <entry> -- --build`（`--` 保证 Windows Bun 下
@@ -101,6 +106,21 @@ deno add jsr:@dreamer/runtime-adapter
   **CI 亦关闭** Windows Bun **e2e**（浏览器）；Linux／macOS Bun e2e 与其它
   OS／runtime 不停
 - **依赖**：整合所有 @dreamer/* 包
+
+### Node.js 使用
+
+dweb CLI 可在 Node.js 22.23.4+ 下通过 `tsx`（TypeScript 加载器）运行：
+
+```bash
+# 全局安装 dweb-cli（从 Deno/Bun 安装，三端都可用）
+deno run -A jsr:@dreamer/dweb/setup
+
+# 或直接用 Node.js 运行
+npx tsx jsr:@dreamer/dweb/cli dev
+```
+
+Node.js 项目用 `npm` 安装，用 `npx tsx` 运行 dweb 命令。框架会自动检测运行时并
+适配子进程启动（`deno run` → `node --import tsx`，并过滤 Deno 专用标志）。
 
 ---
 
@@ -119,7 +139,13 @@ deno add jsr:@dreamer/runtime-adapter
   `socket: { adapter: "socketio", ... }` 即可启用；支持插件
   `onSocket`、`onSocketClose` 钩子
 - ✅ **会话（Session）**：可选 `config.session`（`@dreamer/session`）；在
-  `load()`、API 处理器和中间件中可用 `ctx.session`，便于有状态应用
+  `load()`、API 处理器和中间件中可用 `ctx.session`。生产环境须设置
+  `cookie.secret`（不少于 32 个字符），Cookie 标志默认 `secure` +
+  `sameSite: "strict"`；CSRF 默认开启（可用 `csrf: false` 关闭）
+- ✅ **安全默认项**：非 `dev` 环境下默认开启 `securityHeaders` 和
+  `rateLimit`；静态与上传路径使用 realpath 边界。入站 `Content-Encoding: br`
+  默认返回 415，除非设置 `allowBrotliRequestEncoding: true`。详见
+  [SECURITY](./SECURITY.md)
 - ✅ **中间件系统**：通用中间件系统，可用于 HTTP、WebSocket、消息队列等多种场景
 - ✅ **插件系统**：插件生命周期管理、插件依赖、插件事件系统、热加载
 - ✅ **事件系统**：App 继承
@@ -131,7 +157,7 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **缓存**：可安装 @dreamer/cache 实现 Redis、内存、文件缓存（dweb
   不内置，需自行初始化）
 - ✅ **任务队列**：可安装 @dreamer/queue 实现异步任务、定时任务、持久化队列
-- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E34）、i18n
+- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E35）、i18n
   国际化、`throwDwebError` / `createDwebError` / `isDwebError` /
   `setDwebErrorTranslator`
 - ✅ **国际化（i18n）**：内置 9 种语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、
@@ -181,7 +207,8 @@ deno add jsr:@dreamer/runtime-adapter
 
 9. **@dreamer/session** - 会话管理
    - 作用：服务端会话存储与 Cookie 管理；配置 `config.session` 后，在
-     `load()`、API 处理器和中间件中可用 `ctx.session`
+     `load()`、API 处理器和中间件中可用 `ctx.session`。生产环境须设置
+     `cookie.secret`，并自动启用 CSRF
    - 重要性：⭐⭐⭐⭐
 
 ### 工具层
@@ -1939,7 +1966,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | `createDwebError(code, params?)` | 创建 DwebError 实例（不抛出） |
 | `isDwebError(error)`             | 类型守卫                      |
 | `setDwebErrorTranslator(fn)`     | 注册错误消息翻译器（i18n）    |
-| `DwebErrorCode`                  | 错误码枚举（DWEB_E01～E34）   |
+| `DwebErrorCode`                  | 错误码枚举（DWEB_E01～E35）   |
 
 ### 类型导出
 
@@ -2012,8 +2039,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 ## 📚 配置文档
 
 - **[AppConfig 完整配置示例](./APP_CONFIG.md)**：涵盖
-  language、`upgradePrompt`、server、router、render、build、logger、database、socket、plugins、middlewares
+  language、`upgradePrompt`、server、router、render、build、logger、database、socket、plugins、middlewares、`cookie`、`session`、`csrf`
   等全部配置项及单应用/多应用示例。
+- **[安全](./SECURITY.md)**：生产环境 Cookie
+  签名、CSRF、路径边界，以及应用仍须自行完成的事项。
+- **[生产检查清单](./PRODUCTION_CHECKLIST.md)**：安全头、限流、会话密钥与 Cookie
+  标志。
 
 ### 生产升级提示
 
@@ -2083,19 +2114,20 @@ localStorage 键 `dweb:app-version`。`kind: "api"` / `"console"` 不生效。�
 
 详细结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**：共 86 个测试文件、865 个用例通过（10 个忽略：2 个 Windows 专属、8
-个 e2e SSG/SSR 下「注入 layout/页面 load 数据」）。覆盖
-单元（config、router、plugin、build、render、windows 等）、e2e 浏览器渲染与
-集成构建。路径与配置加载测试已支持 Windows
-跨平台（pathToFileUrl、makeTempDir）。
+**测试总结**（本机，2026-11-23，Asia/Shanghai，v3.10.6）：Deno **1513 通过**，0
+失败，10 忽略（6m56s）。Bun 与 Node 22.23.5 / 24.22.3 / 26.13.1： **1282
+通过**，10 跳过，0 失败（单测 1159 / 4 跳过，集成 23，e2e 100 / 6
+跳过）。覆盖单元、e2e 浏览器渲染与集成构建（CSR/SSR/SSG/Hybrid）。路径与配置
+加载测试已支持 Windows（pathToFileUrl、makeTempDir）。Node 24 / 26 的 e2e
+使用了本地 `@dreamer/runtime-adapter` 流写入修复，细节见测试报告。
 
 ---
 
 ## 示例依赖
 
 `examples/` 下全部示例（view／react／preact／app-kinds）对齐本仓当前
-`@dreamer/*` 范围（如 `@dreamer/view@^3.0.2`、`@dreamer/render@^1.5`、react
-`^19.3.1`、preact `^11.1.1`）。dweb workspace 根 `deno.json` 写
+`@dreamer/*` 范围（如 `@dreamer/view@^3.1.3`、`@dreamer/render@^1.5.6`、react
+`^19.3.1`、preact `^11.2.0`）。dweb workspace 根 `deno.json` 写
 `minimumDependencyAge: 0`（成员包不能写该字段），便于立刻安装刚发的 JSR；
 `dweb init` 脚手架在独立项目里同样写入，`dweb update` 会透传
 `--min-dep-age=0`。**你可在各示例的 `deno.json`／`package.json`
@@ -2103,12 +2135,23 @@ localStorage 键 `dweb:app-version`。`kind: "api"` / `"console"` 不生效。�
 
 ## Preact 版本
 
-- **脚手架／本仓**钉 **preact ^11.1.1**，配 `preact-render-to-string@6.8.2`，与
-  `@dreamer/render@^1.5.1`（Preact 11）对齐。单应用内建议只钉一个 major。
+- **脚手架／本仓**钉 **preact ^11.2.0**，配 `preact-render-to-string@6.8.3`，与
+  `@dreamer/render@^1.5.6`（Preact 11）对齐。单应用内建议只钉一个 major。
 - view 3.0 `mismatchMode`：dev assert／生产 remount；2.x 容忍须显式
   `continue`——见 [APP_CONFIG](./APP_CONFIG.md)。
 
 ## 📋 变更日志
+
+### [Unreleased]
+
+- **安全**：生产环境开启 `session` 时须设置 `cookie.secret`（不少于 32
+  个字符），并用 HMAC-SHA256 签名会话 Cookie。未设置的生产 Cookie 标志默认
+  `secure: true` 和 `sameSite: "strict"`。开启 `session` 时自动启用 CSRF（可用
+  `csrf: false` 关闭）。静态文件和上传 `localDir` 使用 realpath + 前缀边界。入站
+  `Content-Encoding: br` 默认 415，除非设置
+  `allowBrotliRequestEncoding: true`。默认不信任转发头，仅在 `trustProxy: true`
+  时信任。`engines` 现为 `node >=22.23.4`、 `bun >=1.4.4`。详见
+  [SECURITY](./SECURITY.md)。
 
 ### [3.8.3] - 2026-11-06
 

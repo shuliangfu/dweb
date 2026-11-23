@@ -254,9 +254,9 @@ function isPathUnderRootOnWindows(
  * 校验路径是否在项目目录内，防止加载项目外任意文件
  *
  * 用于：中间件/插件加载、路由模块加载、配置热重载等场景。
- * **Windows** 在逐字/斜杠/ **realPathSync** 后，优先用
- * `isPathUnderRootOnWindows` 做 **relative 判定**；**非 Windows** 用字符串
- * 相等 + 带 `/` 前缀。
+ * 所有平台先将两边收束为 canonical（realpath，缺失段向上解析），
+ * 再比较。**Windows** 用 `isPathUnderRootOnWindows`（relative）；
+ * **非 Windows** 用字符串相等 + 带 `/` 前缀。用于拦截符号链接逃逸。
  *
  * @param resolvedPath 已解析的绝对路径
  * @param projectRoot 项目根目录（默认 cwd）
@@ -266,15 +266,71 @@ export function isPathWithinProject(
   resolvedPath: string,
   projectRoot: string = cwd(),
 ): boolean {
-  const isWin = platform() === "windows";
-  if (isWin) {
-    const child = toComparableRealPath(resolvedPath);
-    const root = toComparableRealPath(projectRoot);
+  const child = canonicalizePath(resolvedPath);
+  const root = canonicalizePath(projectRoot);
+  if (platform() === "windows") {
     return isPathUnderRootOnWindows(child, root);
   }
-  const a = normalizePathForCompare(resolvedPath);
-  const b = normalizePathForCompare(projectRoot);
+  const a = normalizePathForCompare(child);
+  const b = normalizePathForCompare(root);
   return a === b || a.startsWith(b + "/");
+}
+
+/**
+ * 将路径收束为 canonical 形式（realpath；路径尚不存在时向上解析已存在前缀再拼回）。
+ * 用于静态资源与上传目录的目录边界比较，Windows 与 POSIX 均走 realpath。
+ *
+ * @param p 任意路径
+ */
+export function canonicalizePath(p: string): string {
+  return realPathWithMissingSegments(resolve(p));
+}
+
+function isAbsolutePath(p: string): boolean {
+  return p.startsWith("/") || /^[A-Za-z]:[\\/]/.test(p);
+}
+
+function isCanonicalWithinRoot(
+  candidateReal: string,
+  rootReal: string,
+): boolean {
+  if (platform() === "windows") {
+    return isPathUnderRootOnWindows(
+      toComparableRealPath(candidateReal),
+      toComparableRealPath(rootReal),
+    );
+  }
+  const a = normalizePathForCompare(candidateReal);
+  const b = normalizePathForCompare(rootReal);
+  return a === b || a.startsWith(b + "/");
+}
+
+/**
+ * 将 candidate 限制在 root 内并返回 canonical 路径。
+ * candidate 可为绝对路径，或相对 root 的路径。
+ * 使用 realpath + 前缀（Windows 用 relative）比较，拒绝 `..` 穿越与符号链接逃逸。
+ * 逃出 root 或含 NUL 时返回 null。
+ *
+ * @param root 允许的根目录
+ * @param candidate 待检查路径
+ */
+export function resolvePathWithinRoot(
+  root: string,
+  candidate: string,
+): string | null {
+  if (!root || !candidate || root.includes("\0") || candidate.includes("\0")) {
+    return null;
+  }
+  const resolvedRoot = resolve(root);
+  const resolvedCandidate = isAbsolutePath(candidate)
+    ? resolve(candidate)
+    : resolve(resolvedRoot, candidate);
+  const rootReal = canonicalizePath(resolvedRoot);
+  const candidateReal = canonicalizePath(resolvedCandidate);
+  if (!isCanonicalWithinRoot(candidateReal, rootReal)) {
+    return null;
+  }
+  return candidateReal;
 }
 
 /**

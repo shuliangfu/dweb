@@ -174,12 +174,13 @@ export default {
   },
   // Production defaults (non-dev): securityHeaders + rateLimit + compression ON.
   // Escape: securityHeaders: false, rateLimit: false, compression: false
-  // Opt-in: cors allowlist (never cors: true in prod), csrf: true, upload: { requireAuth: true }
+  // Session: set cookie.secret (>=32 chars) in production; CSRF auto-on (csrf: false to opt out)
+  // Opt-in: cors allowlist (never cors: true in prod), upload: { requireAuth: true }
   // cors: {
   //   origin: ["https://app.example.com"],
   //   credentials: true,
   // },
-  // csrf: true,
+  // csrf: false, // opt out if session is on but you have a pure API
   // upload: {
   //   localDir: "./uploads",
   //   requireAuth: false, // demo only; prod: authenticate

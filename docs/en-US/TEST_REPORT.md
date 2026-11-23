@@ -4,16 +4,33 @@
 
 ## 📋 Test Overview
 
-| Item             | Value                                               |
-| ---------------- | --------------------------------------------------- |
-| Framework        | 3.7.6                                               |
-| Test framework   | @dreamer/test@^1.2.3                                |
-| Test date        | 2026-11-05                                          |
-| Test environment | Local Deno for the 3.7.6 change; CI below is v3.7.3 |
+| Item             | Value                                                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework        | 3.10.6                                                                                                                                 |
+| Test framework   | @dreamer/test@^1.2.5                                                                                                                   |
+| Test date        | 2026-11-23 (Asia/Shanghai)                                                                                                             |
+| Test environment | Local macOS; Deno, Bun, and Node 22.23.5 / 24.22.3 / 26.13.1 all green. Historical sections below keep earlier version and CI records. |
 
 ---
 
 ## 📊 Test Results
+
+### v3.10.6 local full suite (2026-11-23)
+
+Ran unit + integration + e2e on Mac for Deno, Bun, and Node 22.23.5 / 24.22.3 /
+26.13.1; all passed. Node 24 / 26 e2e used the local `@dreamer/runtime-adapter`
+(`writeResponseToNodeRes` now uses `pipeline(Readable.fromWeb(...), res)`).
+Published 1.2.3 can crash the process with `ERR_INTERNAL_ASSERTION` on early
+client disconnect when using `Writable.toWeb` + `pipeTo`. This round was not
+pushed to CI and was not published.
+
+| Runtime      | Command                                                                  | Result                                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deno         | `deno test -A --no-check tests/unit tests/integration tests/e2e`         | **1513 passed**, 0 failed, 10 ignored (6m56s)                                                                                                                             |
+| Bun          | `bun test --max-concurrency=1` for unit, integration, then each e2e file | unit 1159 passed / 4 skipped, integration 23 passed, e2e 100 passed / 6 skipped; total **1282 passed**, 10 skipped, 0 failed (unit 4.45s, integration 13.91s, e2e ~6m11s) |
+| Node 22.23.5 | `npm run test:node` / `test:node:integration` / `test:node:e2e`          | unit 1159 passed / 4 skipped (108 files), integration 23 passed (18 files), e2e 100 passed / 6 skipped (16 files); total **1282 passed**, 10 skipped, 0 failed            |
+| Node 24.22.3 | same                                                                     | same: total **1282 passed**, 10 skipped, 0 failed (unit and integration were already green; e2e passed all 16 files after example apps were linked to the local adapter)  |
+| Node 26.13.1 | same                                                                     | same: total **1282 passed**, 10 skipped, 0 failed (full suite ~7m12s)                                                                                                     |
 
 ### Upgrade-campaign local check (2026-11-05)
 

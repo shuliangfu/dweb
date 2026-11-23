@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-865%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-1513%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
 
 ---
 
@@ -57,7 +57,9 @@ dweb-cli --help           # Full help
 - **Preact**: Lightweight, React-compatible; default in many examples
 - **React**: Set `render.engine: "react"` in config
 - **Session**: Optional `config.session` (`@dreamer/session`); then
-  `ctx.session` in `load()`, API, middleware
+  `ctx.session` in `load()`, API, middleware. In production, set `cookie.secret`
+  (≥32 characters); unset cookie flags default to `secure` +
+  `sameSite: "strict"`. CSRF is auto-enabled (`csrf: false` to opt out).
 - **Render modes**: `render.mode` supports `ssr`, `csr`, `ssg`, `hybrid`
 
 Install standalone libraries as needed (dweb already includes these):
@@ -89,7 +91,11 @@ deno add jsr:@dreamer/runtime-adapter
 
 ## 🌍 Compatibility
 
-- **Runtimes**: Deno 2.6+, Bun 1.3+ or Node.js 22+
+- **Runtimes**: Deno 2.6+, Bun ≥1.4.4, or Node.js ≥22.23.4 (Node 24 / 26:
+  ≥24.22.1 / ≥26.12.1). `dweb doctor` checks these HTTP2Shell floors
+- **Inbound Brotli**: request `Content-Encoding: br` is rejected with 415 unless
+  `allowBrotliRequestEncoding: true`. Response `enableBrotli` stays off by
+  default
 - **Server**: ✅ Full support (Deno, Bun and Node.js)
 - **Client**: ✅ Browser (SSR, CSR, SSG, Hybrid)
 - **Cross-platform**: ✅ Fully compatible with macOS, Linux, and Windows—works
@@ -106,7 +112,7 @@ deno add jsr:@dreamer/runtime-adapter
 
 ### Node.js Usage
 
-dweb CLI commands work under Node.js 22+ via `tsx` (TypeScript loader):
+dweb CLI commands work under Node.js 22.23.4+ via `tsx` (TypeScript loader):
 
 ```bash
 # Install dweb-cli globally (from Deno/Bun, works on all runtimes)
@@ -137,7 +143,13 @@ The framework auto-detects the runtime and adapts subprocess spawning
   the same HTTP server; configure `socket: { adapter: "socketio", ... }` to
   enable; supports plugin `onSocket`, `onSocketClose` hooks
 - ✅ **Session**: Optional `config.session` (`@dreamer/session`); `ctx.session`
-  available in `load()`, API handlers, and middleware for stateful apps
+  available in `load()`, API handlers, and middleware. Production requires
+  `cookie.secret` (≥32 characters) and defaults to `secure` +
+  `sameSite: "strict"`; CSRF is auto-enabled (`csrf: false` to opt out)
+- ✅ **Security defaults**: Outside `dev`, `securityHeaders` and `rateLimit` are
+  on; static and upload paths use realpath bounds. Inbound
+  `Content-Encoding: br` is rejected with 415 unless
+  `allowBrotliRequestEncoding: true`. See [SECURITY](./docs/en-US/SECURITY.md)
 - ✅ **Middleware system**: General-purpose middleware for HTTP, WebSocket,
   message queues, and more
 - ✅ **Plugin system**: Plugin lifecycle, dependencies, event system, hot reload
@@ -151,7 +163,7 @@ The framework auto-detects the runtime and adapts subprocess spawning
 - ✅ **Task queue**: Install @dreamer/queue for async tasks, scheduled tasks,
   persistent queues
 - ✅ **Unified error handling**: DwebError class with error codes
-  (DWEB_E01–E34), i18n, `throwDwebError` / `createDwebError` / `isDwebError` /
+  (DWEB_E01–E35), i18n, `throwDwebError` / `createDwebError` / `isDwebError` /
   `setDwebErrorTranslator`
 - ✅ **Internationalization (i18n)**: Built-in 9 locales (zh-CN, en-US, ja-JP,
   ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR); config via `language` or env vars
@@ -201,7 +213,8 @@ The framework auto-detects the runtime and adapts subprocess spawning
 
 9. **@dreamer/session** - Session management
    - Role: Server-side session store and cookie handling; with `config.session`
-     set, `ctx.session` is available in `load()`, API handlers, and middleware
+     set, `ctx.session` is available in `load()`, API handlers, and middleware.
+     Production requires `cookie.secret` and auto-enables CSRF
    - Importance: ⭐⭐⭐⭐
 
 ### Tooling layer
@@ -1911,7 +1924,7 @@ manual reload.
 | `createDwebError(code, params?)` | Create DwebError (no throw)    |
 | `isDwebError(error)`             | Type guard                     |
 | `setDwebErrorTranslator(fn)`     | Register i18n translator       |
-| `DwebErrorCode`                  | Error code enum (DWEB_E01–E34) |
+| `DwebErrorCode`                  | Error code enum (DWEB_E01–E35) |
 
 ### Type exports
 
@@ -1985,7 +1998,11 @@ Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use
 
 - **[AppConfig full example](./docs/en-US/APP_CONFIG.md)**: All options
   (language, `upgradePrompt`, server, router, render, build, logger, database,
-  socket, plugins, middlewares).
+  socket, plugins, middlewares, `cookie`, `session`, `csrf`).
+- **[Security](./docs/en-US/SECURITY.md)**: Production cookie signing, CSRF,
+  path bounds, and what the application must still do.
+- **[Production checklist](./docs/en-US/PRODUCTION_CHECKLIST.md)**: Security
+  headers, rate limit, session secret, and cookie flags.
 
 ### Upgrade prompt
 
@@ -2039,19 +2056,21 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 
 See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
-**Summary**: 86 test files, 865 tests passing (10 ignored: 2 Windows-only, 8 e2e
-“inject layout/page load data” in SSG/SSR mode). Covers unit tests (config, app,
-router, plugin, build, render, windows, etc.), e2e browser-render tests, and
-integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and
-config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
+**Summary** (local, 2026-11-23, Asia/Shanghai, v3.10.6): Deno **1513 passed**, 0
+failed, 10 ignored (6m56s). Bun and Node 22.23.5 / 24.22.3 / 26.13.1: **1282
+passed**, 10 skipped, 0 failed (unit 1159 / 4 skipped, integration 23, e2e 100 /
+6 skipped). Covers unit, e2e browser-render, and integration
+(CSR/SSR/SSG/Hybrid). Path and config-loader tests support Windows
+(pathToFileUrl, makeTempDir). Node 24 / 26 e2e used a local
+`@dreamer/runtime-adapter` stream fix; details are in the test report.
 
 ---
 
 ## Examples dependencies
 
 All packages under `examples/` (view / react / preact / app-kinds) pin current
-`@dreamer/*` ranges used by this repo (e.g. `@dreamer/view@^3.0.2`,
-`@dreamer/render@^1.5`, react `^19.3.1`, preact `^11.1.1`). The dweb workspace
+`@dreamer/*` ranges used by this repo (e.g. `@dreamer/view@^3.1.3`,
+`@dreamer/render@^1.5.6`, react `^19.3.1`, preact `^11.2.0`). The dweb workspace
 root `deno.json` sets `minimumDependencyAge: 0` (members cannot set this field)
 so freshly published JSR builds install immediately; new apps from `dweb init`
 get the same in their own `deno.json`, and `dweb update` passes
@@ -2061,14 +2080,25 @@ not locks.
 
 ## Preact versions
 
-- **Scaffold / this package** pin **preact ^11.1.1** with
-  `preact-render-to-string@6.8.2`, aligned to `@dreamer/render@^1.5.1` (Preact
+- **Scaffold / this package** pin **preact ^11.2.0** with
+  `preact-render-to-string@6.8.3`, aligned to `@dreamer/render@^1.5.6` (Preact
   11). Prefer **one Preact major per app**.
 - See `render.hydration.mismatchMode` in
   [APP_CONFIG](./docs/en-US/APP_CONFIG.md) for view 3.0 assert/remount vs
   explicit `continue`.
 
 ## 📋 Changelog
+
+### [Unreleased]
+
+- **Security**: Production `session` requires `cookie.secret` (≥32 characters)
+  and HMAC-SHA256-signs the session cookie. Unset production cookie flags
+  default to `secure: true` and `sameSite: "strict"`. CSRF auto-enables when
+  `session` is on (`csrf: false` to opt out). Static files and upload `localDir`
+  use realpath + prefix bounds. Inbound `Content-Encoding: br` is rejected with
+  415 unless `allowBrotliRequestEncoding: true`. Forwarded headers are untrusted
+  unless `trustProxy: true`. `engines` is `node >=22.23.4` and `bun >=1.4.4`.
+  See [SECURITY](./docs/en-US/SECURITY.md).
 
 ### [3.8.3] - 2026-11-06
 

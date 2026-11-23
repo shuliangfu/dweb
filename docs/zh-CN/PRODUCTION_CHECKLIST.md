@@ -1,9 +1,11 @@
 # 生产部署检查清单（@dreamer/dweb）
 
-> 与 `OPTIMIZATION_ANALYSIS` 配套。以下配置均为
-> 自本战役起：`securityHeaders`／`rateLimit`／`compression` 在 **非 dev
-> 默认开启**； `cors`／`csrf`／`metrics`／`upload` 仍 **opt-in**。显式 `false`
-> 可关默认项。
+> 与 `OPTIMIZATION_ANALYSIS` 配套。`securityHeaders`／`rateLimit`／`compression`
+> 在 **非 dev 默认开启**；`cors`／`metrics`／`upload` 仍为 opt-in。启用
+> `session` 时自动开 CSRF（`csrf: false` 可关），且生产必须配置
+> `cookie.secret`（≥32 字符）。显式 `false` 可关默认项。
+
+更完整的说明见 [安全](./SECURITY.md) 与 [APP_CONFIG](./APP_CONFIG.md)。
 
 ## 0. 应用种类（`AppConfig.kind`）
 
@@ -41,10 +43,14 @@ export default {
 - [ ] 勿在 credentials 场景使用 `origin: "*"`
 - [ ] 使用 Socket.IO 跨域时配置 `socket.config.cors.origin` 白名单，或依赖
       `AppConfig.cors.origin` 桥接；勿依赖「反射任意 Origin + credentials」
-- [ ] 公共接口评估 `rateLimit` 或前置网关限流（勿在无受信代理时盲信
+- [ ] 公共接口评估 `rateLimit` 或前置网关限流
+- [ ] 仅在会剥离伪造转发头的反向代理后启用 `trustProxy: true`（默认关闭， 不信任
       `X-Forwarded-For`）
-- [ ] Session Cookie：`secure` + `httpOnly` + 合适 `sameSite`（生产示例勿留
-      `secure: false`）
+- [ ] 将 Node 升到 ≥22.23.4 / ≥24.22.1 / ≥26.12.1，或 Bun 升到 ≥1.4.4
+      （HTTP2Shell）。入站 `Content-Encoding: br` 默认会 415
+- [ ] 启用 `session` 时配置 `cookie.secret`（≥32 字符的随机密钥）
+- [ ] Session Cookie：生产默认 `secure` + `sameSite: "strict"`（加上库默认
+      `httpOnly`）；勿在生产示例留下 `secure: false`，除非有明确需求
 - [ ] 勿将 `load()` / 错误栈细节暴露给生产客户端（框架 JSON 错误体已区分环境）
 - [ ] 需要请求耗时观测时配置 `onRequestEnd`（或插件同名钩子）；需要 scrape
       端点时 opt-in `metrics: true`（默认 `/metrics`）
@@ -80,15 +86,17 @@ export default {
 
 ## 相关配置键速查
 
-| 键                | 默认              | 说明                                   |
-| ----------------- | ----------------- | -------------------------------------- |
-| `securityHeaders` | **非 dev 默认开** | nosniff / frame / referrer；CSP 仍显式 |
-| `cors`            | 关（opt-in）      | 勿默认 `*`；生产用白名单               |
-| `csrf`            | 关（opt-in）      | double-submit cookie                   |
-| `compression`     | **非 dev 默认开** | 响应 gzip/br；`false` 可关             |
-| `rateLimit`       | **非 dev 默认开** | 简易限流；`false` 可关                 |
-| `upload`          | 关（opt-in）      | `@dreamer/upload@^2`；默认 requireAuth |
-| `metrics`         | 关                | Prometheus 风格 `/metrics`             |
-| `session`         | 关                | 启用后 ctx.session 可用                |
+| 键                | 默认              | 说明                                     |
+| ----------------- | ----------------- | ---------------------------------------- |
+| `securityHeaders` | **非 dev 默认开** | nosniff / frame / referrer；CSP 仍显式   |
+| `cors`            | 关（opt-in）      | 勿默认 `*`；生产用白名单                 |
+| `csrf`            | session 开启则开  | `csrf: false` 可关；double-submit cookie |
+| `cookie.secret`   | 生产 session 必填 | ≥32 字符；用于签名 session Cookie        |
+| `compression`     | **非 dev 默认开** | 响应 gzip/br；`false` 可关               |
+| `rateLimit`       | **非 dev 默认开** | 简易限流；`false` 可关                   |
+| `upload`          | 关（opt-in）      | `@dreamer/upload@^2`；默认 requireAuth   |
+| `metrics`         | 关                | Prometheus 风格 `/metrics`               |
+| `session`         | 关                | 启用后 ctx.session 可用                  |
 
-更完整的分析见 [OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)。
+详见 [SECURITY](./SECURITY.md) 和
+[OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)。

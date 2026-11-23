@@ -24,6 +24,11 @@ describe("registerFrameworkHttpMiddlewares", () => {
         isRuntimeDev: false,
         useDetailedRequestLog: false,
       });
+      expect(names).toContain("reject-brotli-request");
+      expect(names).toContain("reject-ambiguous-framing");
+      expect(names.indexOf("reject-brotli-request")).toBeLessThan(
+        names.indexOf("dev-no-cache"),
+      );
       expect(names).toContain("dev-no-cache");
       expect(names).toContain("security-headers");
       expect(names).toContain("health-check");

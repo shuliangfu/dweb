@@ -12,6 +12,8 @@
  * | 23-29  | DWEB_E23～E29  | 功能模块（App、Socket、生成、中间件等） |
  * | 30-32  | DWEB_E30～E32  | 文件/HTTP                              |
  * | 33     | DWEB_E33       | 未知错误                               |
+ * | 34     | DWEB_E34       | 用户主目录不可用                       |
+ * | 35     | DWEB_E35       | 生产 session 缺少 cookie.secret        |
  *
  * 职责：
  * - 定义 DwebError 错误类，包含 code、messageKey、params、details
@@ -30,7 +32,7 @@
 /**
  * 错误码枚举，用于 i18n 键与程序化识别
  *
- * 命名规则：DWEB_E + 两位数字，按顺序递增（E01、E02、...、E33）
+ * 命名规则：DWEB_E + 两位数字，按顺序递增（E01、E02、...、E35）
  */
 export const DwebErrorCode = {
   /** 配置项 'name' 必须是字符串类型 */
@@ -105,6 +107,8 @@ export const DwebErrorCode = {
 
   /** 无法获取用户主目录，无法使用 ~/.dreamer 缓存 */
   DREAMER_CACHE_HOME_UNAVAILABLE: "DWEB_E34",
+  /** 生产环境启用 session 时必须提供足够长的 cookie.secret */
+  CONFIG_COOKIE_SECRET_REQUIRED: "DWEB_E35",
 } as const;
 
 /**
@@ -228,6 +232,8 @@ export const DEFAULT_ERROR_MESSAGES: Record<
   [DwebErrorCode.UNKNOWN_ERROR]: "[dweb] Unknown error: {message}",
   [DwebErrorCode.DREAMER_CACHE_HOME_UNAVAILABLE]:
     "Cannot get user home (HOME or USERPROFILE not set), cannot use ~/.dreamer cache",
+  [DwebErrorCode.CONFIG_COOKIE_SECRET_REQUIRED]:
+    "Production session requires cookie.secret of at least 32 characters",
 };
 
 /**

@@ -1,11 +1,12 @@
 /**
  * 框架内置 HTTP 中间件装配（从 app.ts 拆出，行为不变）
  *
- * 顺序：dev-no-cache → security-headers → 可选 cors/csrf → rateLimit/metrics →
+ * 顺序：请求防护（拒 br / 模糊 framing）→ dev-no-cache → security-headers → 可选 cors/csrf → rateLimit/metrics →
  * compression（非 dev 默认开）→ requestId / requestLogger → 可选 session → /health
  *
  * 生产（非 dev）默认：securityHeaders 开、rateLimit 开、compression 开；
- * cors／csrf／metrics 仍 opt-in（cors 不能默认 `*`）。显式 `false` 可关默认项。
+ * cors／metrics 仍 opt-in（cors 不能默认 `*`）。显式 `false` 可关默认项。
+ * 启用 session 时自动开 CSRF（`csrf: false` 可关）；生产 session 须配置 cookie.secret。
  *
  * Socket / 用户 middlewares / 路由 仍由 App 后续注册。
  *
@@ -27,6 +28,10 @@ import { session } from "@dreamer/session";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import {
+  resolveSessionSecurity,
+  wrapSessionCookieSigning,
+} from "../utils/cookie-security.ts";
+import {
   resolveHttpCorsOptions,
   shouldWarnOpenCors,
 } from "../utils/cors-resolve.ts";
@@ -45,6 +50,11 @@ import {
   createHealthCheckMiddleware,
   createSecurityHeadersMiddleware,
 } from "./middleware.ts";
+import {
+  defaultClientKey,
+  rejectAmbiguousBodyFraming,
+  rejectBrotliRequest,
+} from "./request-guards.ts";
 
 /** 最小 server 面：仅需 use（与 @dreamer/server Server 兼容） */
 export interface FrameworkHttpServer {
@@ -73,6 +83,17 @@ export function registerFrameworkHttpMiddlewares(
     useDetailedRequestLog: boolean;
   },
 ): void {
+  server.use(
+    rejectBrotliRequest(config.allowBrotliRequestEncoding === true),
+    undefined,
+    "reject-brotli-request",
+  );
+  server.use(
+    rejectAmbiguousBodyFraming(),
+    undefined,
+    "reject-ambiguous-framing",
+  );
+
   server.use(
     createDevNoCacheMiddleware(opts.isRuntimeDev),
     undefined,
@@ -106,10 +127,11 @@ export function registerFrameworkHttpMiddlewares(
     );
   }
 
-  // CSRF：显式 opt-in（需 cookie + 写方法校验）；不默认开以免破坏纯 API／无 cookie 客户端
-  if (config.csrf) {
-    const csrfOpts = config.csrf === true ? {} : config.csrf;
-    server.use(csrf(csrfOpts), undefined, "csrf");
+  const sessionSecurity = resolveSessionSecurity(config, opts.isRuntimeDev);
+
+  // CSRF：启用 session 时自动开；`csrf: false` 显式关闭；未启用 session 则保持关闭
+  if (sessionSecurity.enableCsrf) {
+    server.use(csrf(sessionSecurity.csrfOptions), undefined, "csrf");
   }
 
   /**
@@ -127,9 +149,14 @@ export function registerFrameworkHttpMiddlewares(
       ? rateOpt
       : {};
     const skipUpgrade = isUpgradePromptRequested(config, opts.isRuntimeDev);
+    const trustProxy =
+      (rateOpts as { trustProxy?: boolean }).trustProxy === true ||
+      config.trustProxy === true;
     server.use(
       rateLimit({
         ...rateOpts,
+        keyGenerator: rateOpts.keyGenerator ??
+          ((ctx) => defaultClientKey(ctx, trustProxy)),
         skip: (ctx) =>
           (rateOpts.skip?.(ctx) ?? false) ||
           (skipUpgrade && isUpgradePromptPath(ctx.path)),
@@ -192,8 +219,17 @@ export function registerFrameworkHttpMiddlewares(
     }),
   );
 
-  if (config.session) {
-    server.use(session(config.session), undefined, "session");
+  if (sessionSecurity.session) {
+    const sessionMw = session(sessionSecurity.session);
+    const secret = sessionSecurity.cookieSecret;
+    const cookieName = sessionSecurity.session.name ?? "sessionId";
+    server.use(
+      secret
+        ? wrapSessionCookieSigning(sessionMw, cookieName, secret)
+        : sessionMw,
+      undefined,
+      "session",
+    );
   }
 
   server.use(

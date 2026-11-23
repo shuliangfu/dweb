@@ -183,4 +183,16 @@ export function validateConfig(config: AppConfig): void {
       throwDwebError(DwebErrorCode.CONFIG_LOGGER_INVALID);
     }
   }
+
+  if (config.cookie !== undefined) {
+    if (typeof config.cookie !== "object" || config.cookie === null) {
+      throw new TypeError("config.cookie must be an object");
+    }
+    if (
+      config.cookie.secret !== undefined &&
+      typeof config.cookie.secret !== "string"
+    ) {
+      throw new TypeError("config.cookie.secret must be a string");
+    }
+  }
 }

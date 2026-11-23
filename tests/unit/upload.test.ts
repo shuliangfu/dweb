@@ -7,7 +7,7 @@
  */
 
 import "../setup.ts";
-import { makeTempDir, remove } from "@dreamer/runtime-adapter";
+import { join, makeTempDir, remove } from "@dreamer/runtime-adapter";
 import { afterEach, describe, expect, it } from "@dreamer/test";
 import type { Middleware } from "@dreamer/middleware";
 import type { HttpContext } from "@dreamer/server";
@@ -138,5 +138,35 @@ describe("registerUploadIntegration (upload.ts)", () => {
     } else {
       expect(nextCalled).toBe(true);
     }
+  });
+
+  it("localDir 含 .. 时应收束为 canonical 根并仍可挂载", async () => {
+    const dir = await makeTempDir({ prefix: "dweb-upload-canon-" });
+    tempDirs.push(dir);
+    const server = fakeServer();
+    const container = initializeServiceContainer();
+    const basePath = await registerUploadIntegration(server, container, {
+      upload: {
+        requireAuth: false,
+        localDir: join(dir, "nested", ".."),
+      },
+    });
+    expect(basePath).toBe("/ui-view-upload");
+    expect(server.calls[0]?.name).toBe("upload");
+  });
+
+  it("localDir 含 NUL 时应拒绝", async () => {
+    const server = fakeServer();
+    const container = initializeServiceContainer();
+    let thrown: unknown;
+    try {
+      await registerUploadIntegration(server, container, {
+        upload: { requireAuth: false, localDir: "up\0loads" },
+      });
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(Error);
+    expect(String(thrown)).toMatch(/localDir is invalid/);
   });
 });

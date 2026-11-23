@@ -10,6 +10,41 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Security
+
+- **Session cookie signing**: Production apps that enable `session` must set
+  `cookie.secret` (≥32 characters). The session cookie is HMAC-SHA256 signed.
+  Dev still works without a secret. Production also defaults session cookies to
+  `secure: true` and `sameSite: "strict"` unless the app already set those
+  fields.
+- **CSRF**: Enabling `session` now auto-enables CSRF (double-submit cookie). Set
+  `csrf: false` to opt out. Apps without session stay CSRF-off.
+- **Path bounds**: Static file serving (preview, production client assets, SSG
+  HTML, console routes) and upload `localDir` use realpath + prefix checks so
+  `..` and symlink escapes cannot leave the allowed root. `isPathWithinProject`
+  now uses a canonical comparison on every platform.
+- **HTTP2Shell / inbound Brotli**: Requests whose `Content-Encoding` includes
+  `br` are rejected with 415 unless `allowBrotliRequestEncoding` is true.
+  Response compression still leaves `enableBrotli` off by default. `dweb doctor`
+  checks Node / Bun patch floors. `engines` is now `node >=22.23.4` and
+  `bun >=1.4.4` (was `node >=22`, `bun >=1.3`).
+- **Rate-limit proxy trust**: Forwarded headers are not trusted by default, and
+  Host is never used as a client IP. Set `trustProxy: true` only behind a
+  trusted reverse proxy.
+- **Other**: 400 if both Content-Length and Transfer-Encoding are still visible;
+  HSTS is default on production HTTPS (not written for local HTTP); redirect and
+  cookies reject CR/LF; config merges ignore `__proto__` and similar keys.
+
+### Performance
+
+- Client `ROUTE_LOADERS` now builds a lowercase index so loader lookup is O(1)
+  instead of a linear scan; HMR updates keep the index in sync. Security
+  response header lists are precomputed when the middleware is created.
+- `emitOnRequest` and other emit paths prefer
+  `PluginManager.getActivePluginsWithHook` when the runtime provides it, walking
+  only active plugins that implement the hook. Published `@dreamer/plugin`
+  without the method falls back to a full scan.
+
 ## [3.10.6] - 2026-11-21
 
 ### Fixed

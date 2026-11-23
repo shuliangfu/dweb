@@ -411,11 +411,19 @@ export interface AppConfig extends Record<string, unknown> {
    */
   cors?: boolean | CorsOptions;
   /**
-   * 可选 CSRF 保护（基于 `@dreamer/middlewares` csrf，double-submit cookie）。
-   * **opt-in**：`true` 用库默认；对象透传 `CsrfOptions`。
-   * 不默认开：纯 API／无 cookie 客户端会被误伤。需 session／cookie 表单时再开。
+   * CSRF 保护（基于 `@dreamer/middlewares` csrf，double-submit cookie）。
+   * 启用 `session` 时自动开启；`csrf: false` 可显式关闭（纯 API／无 cookie 客户端）。
+   * 未启用 session 时默认关闭；`true` 用库默认，对象透传 `CsrfOptions`。
    */
   csrf?: boolean | CsrfOptions;
+  /**
+   * Cookie 安全配置。
+   * `secret` 用于 session Cookie 的 HMAC 签名。生产环境启用 `session` 时必填，且不少于 32 个字符。
+   * 开发环境可不设（Cookie 保持未签名）。
+   * Session Cookie 的 `secure`／`sameSite` 仍写在 `session.cookie`；
+   * 生产未显式配置时默认 `secure: true`、`sameSite: "strict"`，不覆盖已写的值。
+   */
+  cookie?: CookieAppConfig;
   /**
    * 可选响应压缩（基于 `@dreamer/middlewares` compression，gzip/可选 brotli）。
    * - `RUNTIME_ENV=dev`：默认关闭（可用 `true`/对象显式开启）
@@ -428,8 +436,20 @@ export interface AppConfig extends Record<string, unknown> {
    * - 非 dev：**默认开启**（库默认 windowMs=60_000 / max=100）
    * - `false`：显式关闭（逃生）
    * - `true`/对象：显式开启或透传 `RateLimitOptions`
+   * 默认不信任转发头（见 `trustProxy`）；未拿到真实远端地址时键为 `unknown`。
    */
-  rateLimit?: boolean | RateLimitOptions;
+  rateLimit?: boolean | (RateLimitOptions & { trustProxy?: boolean });
+  /**
+   * 是否信任 `X-Forwarded-For` / `X-Real-IP` / `cf-connecting-ip` / `X-Forwarded-Proto`。
+   * 默认 false。仅在会剥离伪造转发头的反向代理之后开启。
+   * 也可写在 `rateLimit: { trustProxy: true }`。
+   */
+  trustProxy?: boolean;
+  /**
+   * 是否允许入站请求 `Content-Encoding: br`。默认 false（返回 415）。
+   * 响应侧 Brotli 压缩仍由 `compression.enableBrotli` 控制，默认关闭。
+   */
+  allowBrotliRequestEncoding?: boolean;
   /**
    * 可选 Prometheus 风格指标（基于 `@dreamer/middlewares` metrics）。
    * 默认关闭；`true` 使用库默认（端点 `/metrics`）；对象则透传 `MetricsOptions`。
@@ -473,8 +493,22 @@ export interface AppConfig extends Record<string, unknown> {
    * 使用 @dreamer/session 的 SessionOptions：store 必填；可选 name、maxAge、cookie、autoSave、genId。
    * 其中 cookie 为 Cookie 选项（path、domain、secure、httpOnly、sameSite、maxAge、expires 等），由 session 中间件在设置 session Cookie 时应用。
    * 启用后 ctx.session 在 load()、API、中间件中可用。
+   * 生产环境须同时配置 {@link CookieAppConfig.secret}；并默认开启 CSRF（`csrf: false` 可关）。
    */
   session?: SessionOptions;
+}
+
+/**
+ * Cookie 安全配置（签名密钥）。
+ * Session Cookie 的 `secure`／`sameSite` 等选项仍位于 `session.cookie`。
+ */
+export interface CookieAppConfig {
+  /**
+   * Session Cookie HMAC 签名密钥。
+   * 生产环境启用 `session` 时必填，且长度不少于 32 个字符。
+   * 开发环境可不设。
+   */
+  secret?: string;
 }
 
 /**

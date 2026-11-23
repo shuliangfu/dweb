@@ -351,13 +351,34 @@ export function createSecurityHeadersMiddleware(
     }
   }
 
+  const defaultHeaderList: Array<[string, string]> = Object.entries(defaults)
+    .filter(([, value]) => value.length > 0);
+  const hstsDisabled =
+    security.headers?.["Strict-Transport-Security"] === false;
   return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
     await next();
     if (!ctx.response) return;
     const headers = new Headers(ctx.response.headers);
-    for (const [key, value] of Object.entries(defaults)) {
-      if (value.length > 0 && !headers.has(key)) {
+    for (const [key, value] of defaultHeaderList) {
+      if (!headers.has(key)) {
         headers.set(key, value);
+      }
+    }
+    // 生产 HTTPS 默认 HSTS（纯 HTTP 本地开发不会写入，避免破坏）。
+    if (
+      !isRuntimeDev &&
+      !hstsDisabled &&
+      !headers.has("Strict-Transport-Security")
+    ) {
+      const forwardedProto = ctx.headers?.get("x-forwarded-proto")
+        ?.split(",")[0]?.trim().toLowerCase();
+      const https = ctx.url?.protocol === "https:" ||
+        (config.trustProxy === true && forwardedProto === "https");
+      if (https) {
+        headers.set(
+          "Strict-Transport-Security",
+          "max-age=15552000; includeSubDomains",
+        );
       }
     }
     ctx.response = new Response(ctx.response.body, {

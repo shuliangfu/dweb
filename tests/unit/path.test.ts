@@ -15,11 +15,15 @@ import {
   ensureDir,
   join,
   makeTempDir,
+  platform,
   remove,
   resolve,
+  symlink,
+  writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
+  canonicalizePath,
   clientRouteComponentKey,
   extractComponentPathFromRouteFile,
   getRelativePathToRoutesBySegments,
@@ -27,6 +31,7 @@ import {
   normalizePathForCompare,
   normalizePathStringForSubpathExtraction,
   pathForLog,
+  resolvePathWithinRoot,
   resolveRouterRoutesDirPath,
   subpathFromRoutesDirMarker,
 } from "../../src/utils/path.ts";
@@ -109,6 +114,71 @@ describe("路径工具 (path.ts)", () => {
       expect(
         isPathWithinProject(join(projectRoot, "a/b"), projectRoot),
       ).toBe(true);
+    });
+
+    it("符号链接逃出项目根应返回 false", async () => {
+      const link = join(projectRoot, "escape-link");
+      try {
+        await symlink(otherDir, link);
+      } catch {
+        if (platform() === "windows") return;
+        throw new Error("failed to create symlink for isPathWithinProject");
+      }
+      expect(isPathWithinProject(join(link, "file.ts"), projectRoot)).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("resolvePathWithinRoot()", () => {
+    it("根内文件应返回 canonical 路径", () => {
+      const child = join(projectRoot, "public/index.html");
+      const got = resolvePathWithinRoot(projectRoot, child);
+      expect(got).not.toBeNull();
+      expect(canonicalizePath(got!)).toBe(canonicalizePath(child));
+    });
+
+    it("相对 root 的安全子路径应通过（上传 key 形态）", () => {
+      const got = resolvePathWithinRoot(projectRoot, "uploads/a/b.bin");
+      expect(got).not.toBeNull();
+      expect(
+        resolvePathWithinRoot(projectRoot, got!),
+      ).not.toBeNull();
+    });
+
+    it("应拒绝 ../ 逃出 root", () => {
+      expect(resolvePathWithinRoot(projectRoot, "../secret")).toBeNull();
+      expect(
+        resolvePathWithinRoot(projectRoot, join(projectRoot, "..", "secret")),
+      ).toBeNull();
+      expect(resolvePathWithinRoot(projectRoot, otherDir)).toBeNull();
+    });
+
+    it("应拒绝前缀碰撞（root 与 root-evil）", () => {
+      const evild = projectRoot + "-evil";
+      expect(resolvePathWithinRoot(projectRoot, evild)).toBeNull();
+    });
+
+    it("含 NUL 的路径应返回 null", () => {
+      expect(resolvePathWithinRoot(projectRoot, "a\0b")).toBeNull();
+    });
+
+    it("符号链接逃出 root 应返回 null", async () => {
+      const publicDir = join(projectRoot, "static-root");
+      await ensureDir(publicDir);
+      const secret = join(otherDir, "secret.txt");
+      await writeTextFile(secret, "nope");
+      const link = join(publicDir, "escape");
+      try {
+        await symlink(otherDir, link);
+      } catch {
+        if (platform() === "windows") return;
+        throw new Error("failed to create symlink for path bound test");
+      }
+      expect(
+        resolvePathWithinRoot(publicDir, join(link, "secret.txt")),
+      ).toBeNull();
+      expect(resolvePathWithinRoot(publicDir, "inside.txt")).not.toBeNull();
     });
   });
 

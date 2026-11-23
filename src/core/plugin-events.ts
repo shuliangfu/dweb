@@ -10,12 +10,43 @@
  * @module
  */
 
-import type { SocketContext } from "@dreamer/plugin";
+import type { Plugin, SocketContext } from "@dreamer/plugin";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { getPluginManager } from "./plugin.ts";
+
+/** 已发布 @dreamer/plugin 未必有钩子索引；有则用，无则回退全表扫描。 */
+type HookIndexedManager = {
+  getActivePluginsWithHook?: (eventName: string) => Plugin[];
+  getRegisteredPlugins: () => string[];
+  getPlugin: (name: string) => Plugin | undefined;
+  getState: (name: string) => string | undefined;
+};
+
+/**
+ * 按注册顺序返回已激活且实现了 eventName 钩子的插件。
+ * 优先走 PluginManager 预建索引，避免每个请求遍历无该钩子的插件。
+ */
+function getActiveHookPlugins(
+  pluginManager: HookIndexedManager,
+  eventName: string,
+): Plugin[] {
+  const indexed = pluginManager.getActivePluginsWithHook;
+  if (typeof indexed === "function") {
+    return indexed.call(pluginManager, eventName);
+  }
+  const out: Plugin[] = [];
+  for (const pluginName of pluginManager.getRegisteredPlugins()) {
+    const plugin = pluginManager.getPlugin(pluginName);
+    if (!plugin) continue;
+    if (pluginManager.getState(pluginName) !== "active") continue;
+    const hook = (plugin as unknown as Record<string, unknown>)[eventName];
+    if (typeof hook === "function") out.push(plugin);
+  }
+  return out;
+}
 
 /**
  * 触发插件事件
@@ -33,33 +64,22 @@ export async function emitPluginEvent(
   ...args: unknown[]
 ): Promise<void> {
   const pluginManager = getPluginManager(container);
-  const plugins = pluginManager.getRegisteredPlugins();
-
-  for (const pluginName of plugins) {
-    const plugin = pluginManager.getPlugin(pluginName);
-    if (!plugin) continue;
-
-    const state = pluginManager.getState(pluginName);
-    if (state !== "active") continue; // 只触发已激活的插件
-
-    // 根据事件名称调用对应的钩子
+  for (const plugin of getActiveHookPlugins(pluginManager, eventName)) {
     const hook = (plugin as unknown as Record<string, unknown>)[eventName];
-    if (typeof hook === "function") {
-      try {
-        await hook(...args, container);
-      } catch (error) {
-        // 使用 logger 记录错误（如果 logger 已注册，使用 logger；否则使用 console 作为后备）
-        const msg = $tr("log.pluginHookFailed", {
-          pluginName,
-          eventName,
-        });
-        if (container.has("logger")) {
-          const logger = getLogger(container);
-          logger.error(`${msg}:`, error);
-        } else {
-          // logger 未初始化时，使用 console 作为后备
-          console.error(`${msg}:`, error);
-        }
+    if (typeof hook !== "function") continue;
+    try {
+      await hook(...args, container);
+    } catch (error) {
+      const pluginName = plugin.name;
+      const msg = $tr("log.pluginHookFailed", {
+        pluginName,
+        eventName,
+      });
+      if (container.has("logger")) {
+        const logger = getLogger(container);
+        logger.error(`${msg}:`, error);
+      } else {
+        console.error(`${msg}:`, error);
       }
     }
   }
@@ -89,15 +109,7 @@ export async function emitOnRequest(
   ctx: HttpContext,
 ): Promise<Response | undefined> {
   const pluginManager = getPluginManager(container);
-  const plugins = pluginManager.getRegisteredPlugins();
-
-  for (const pluginName of plugins) {
-    const plugin = pluginManager.getPlugin(pluginName);
-    if (!plugin) continue;
-
-    const state = pluginManager.getState(pluginName);
-    if (state !== "active") continue;
-
+  for (const plugin of getActiveHookPlugins(pluginManager, "onRequest")) {
     const hook = (plugin as unknown as Record<string, unknown>).onRequest;
     if (typeof hook !== "function") continue;
 
@@ -108,7 +120,7 @@ export async function emitOnRequest(
       }
     } catch (error) {
       const msg = $tr("log.pluginHookFailed", {
-        pluginName,
+        pluginName: plugin.name,
         eventName: "onRequest",
       });
       if (container.has("logger")) {
@@ -280,34 +292,24 @@ export async function emitOnError(
   ctx: HttpContext,
 ): Promise<Response | undefined> {
   const pluginManager = getPluginManager(container);
-  const plugins = pluginManager.getRegisteredPlugins();
-
-  for (const pluginName of plugins) {
-    const plugin = pluginManager.getPlugin(pluginName);
-    if (!plugin) continue;
-
-    const state = pluginManager.getState(pluginName);
-    if (state !== "active") continue;
-
+  for (const plugin of getActiveHookPlugins(pluginManager, "onError")) {
     const hook = (plugin as unknown as Record<string, unknown>)["onError"];
-    if (typeof hook === "function") {
-      try {
-        const response = await hook(error, ctx, container);
-        // 如果插件返回了 Response，则使用该响应
-        if (response instanceof Response) {
-          return response;
-        }
-      } catch (hookError) {
-        const msg = $tr("log.pluginHookFailed", {
-          pluginName,
-          eventName: "onError",
-        });
-        if (container.has("logger")) {
-          const logger = getLogger(container);
-          logger.error(`${msg}:`, hookError);
-        } else {
-          console.error(`${msg}:`, hookError);
-        }
+    if (typeof hook !== "function") continue;
+    try {
+      const response = await hook(error, ctx, container);
+      if (response instanceof Response) {
+        return response;
+      }
+    } catch (hookError) {
+      const msg = $tr("log.pluginHookFailed", {
+        pluginName: plugin.name,
+        eventName: "onError",
+      });
+      if (container.has("logger")) {
+        const logger = getLogger(container);
+        logger.error(`${msg}:`, hookError);
+      } else {
+        console.error(`${msg}:`, hookError);
       }
     }
   }
@@ -351,35 +353,26 @@ export async function emitOnRoute(
   routes: RouteDefinition[],
 ): Promise<RouteDefinition[]> {
   const pluginManager = getPluginManager(container);
-  const plugins = pluginManager.getRegisteredPlugins();
   let currentRoutes = [...routes];
 
-  for (const pluginName of plugins) {
-    const plugin = pluginManager.getPlugin(pluginName);
-    if (!plugin) continue;
-
-    const state = pluginManager.getState(pluginName);
-    if (state !== "active") continue;
-
+  for (const plugin of getActiveHookPlugins(pluginManager, "onRoute")) {
     const hook = (plugin as unknown as Record<string, unknown>)["onRoute"];
-    if (typeof hook === "function") {
-      try {
-        const modifiedRoutes = await hook(currentRoutes, container);
-        // 如果插件返回了路由列表，则使用修改后的路由
-        if (Array.isArray(modifiedRoutes)) {
-          currentRoutes = modifiedRoutes;
-        }
-      } catch (error) {
-        const msg = $tr("log.pluginHookFailed", {
-          pluginName,
-          eventName: "onRoute",
-        });
-        if (container.has("logger")) {
-          const logger = getLogger(container);
-          logger.error(`${msg}:`, error);
-        } else {
-          console.error(`${msg}:`, error);
-        }
+    if (typeof hook !== "function") continue;
+    try {
+      const modifiedRoutes = await hook(currentRoutes, container);
+      if (Array.isArray(modifiedRoutes)) {
+        currentRoutes = modifiedRoutes;
+      }
+    } catch (error) {
+      const msg = $tr("log.pluginHookFailed", {
+        pluginName: plugin.name,
+        eventName: "onRoute",
+      });
+      if (container.has("logger")) {
+        const logger = getLogger(container);
+        logger.error(`${msg}:`, error);
+      } else {
+        console.error(`${msg}:`, error);
       }
     }
   }
@@ -422,49 +415,39 @@ export async function emitOnHealthCheck(
   container: ServiceContainer,
 ): Promise<HealthStatus> {
   const pluginManager = getPluginManager(container);
-  const plugins = pluginManager.getRegisteredPlugins();
   const components: HealthStatus["components"] = {};
   let overallStatus: HealthStatus["status"] = "healthy";
 
-  for (const pluginName of plugins) {
-    const plugin = pluginManager.getPlugin(pluginName);
-    if (!plugin) continue;
-
-    const state = pluginManager.getState(pluginName);
-    if (state !== "active") continue;
-
+  for (const plugin of getActiveHookPlugins(pluginManager, "onHealthCheck")) {
+    const pluginName = plugin.name;
     const hook =
       (plugin as unknown as Record<string, unknown>)["onHealthCheck"];
-    if (typeof hook === "function") {
-      try {
-        const status = await hook(container);
-        if (status && typeof status === "object" && "status" in status) {
-          const pluginStatus = status as HealthStatus;
-          // 合并组件状态
-          if (pluginStatus.components) {
-            Object.assign(components, pluginStatus.components);
-          } else {
-            components[pluginName] = {
-              status: pluginStatus.status,
-            };
-          }
-          // 更新整体状态（降级）
-          if (pluginStatus.status === "unhealthy") {
-            overallStatus = "unhealthy";
-          } else if (
-            pluginStatus.status === "degraded" && overallStatus === "healthy"
-          ) {
-            overallStatus = "degraded";
-          }
+    if (typeof hook !== "function") continue;
+    try {
+      const status = await hook(container);
+      if (status && typeof status === "object" && "status" in status) {
+        const pluginStatus = status as HealthStatus;
+        if (pluginStatus.components) {
+          Object.assign(components, pluginStatus.components);
+        } else {
+          components[pluginName] = {
+            status: pluginStatus.status,
+          };
         }
-      } catch (error) {
-        // 健康检查失败，标记为不健康
-        components[pluginName] = {
-          status: "unhealthy",
-          message: error instanceof Error ? error.message : String(error),
-        };
-        overallStatus = "unhealthy";
+        if (pluginStatus.status === "unhealthy") {
+          overallStatus = "unhealthy";
+        } else if (
+          pluginStatus.status === "degraded" && overallStatus === "healthy"
+        ) {
+          overallStatus = "degraded";
+        }
       }
+    } catch (error) {
+      components[pluginName] = {
+        status: "unhealthy",
+        message: error instanceof Error ? error.message : String(error),
+      };
+      overallStatus = "unhealthy";
     }
   }
 

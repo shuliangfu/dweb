@@ -10,7 +10,7 @@
  */
 
 import { pathToFileURL } from "node:url";
-import { exists, join, realPath } from "@dreamer/runtime-adapter";
+import { exists, join } from "@dreamer/runtime-adapter";
 import type { ConsoleContext } from "./console-context.ts";
 import {
   type ConsoleAfterHook,
@@ -18,7 +18,7 @@ import {
   type ConsoleMiddleware,
   runConsolePipeline,
 } from "./console-middleware.ts";
-import { isPathWithinProject } from "../utils/path.ts";
+import { resolvePathWithinRoot } from "../utils/path.ts";
 
 /** 解析成功的路由绑定 */
 export interface ResolvedConsoleRoute {
@@ -58,23 +58,14 @@ export function splitConsoleRoute(routePath: string): string[] {
 }
 
 /**
- * 确认 filePath 落在 routesDir 内（用 realPath 防 symlink / ..）。
+ * 确认 filePath 落在 routesDir 内（realpath + 前缀，防 symlink / ..）。
  * 校验通过后仍返回原始 filePath，避免 macOS `/var`→`/private/var` 与 join 路径不一致。
  */
-async function assertWithinRoutesDir(
+function assertWithinRoutesDir(
   filePath: string,
   routesDir: string,
-): Promise<string> {
-  let resolvedFile: string;
-  let resolvedRoot: string;
-  try {
-    resolvedFile = await realPath(filePath);
-    resolvedRoot = await realPath(routesDir);
-  } catch {
-    resolvedFile = filePath;
-    resolvedRoot = routesDir;
-  }
-  if (!isPathWithinProject(resolvedFile, resolvedRoot)) {
+): string {
+  if (!resolvePathWithinRoot(routesDir, filePath)) {
     throw new ConsoleRouteNotFoundError(
       filePath,
       [filePath],
@@ -106,7 +97,7 @@ export async function resolveConsoleRoute(
   const exactFile = join(routesDir, ...segments) + ".ts";
   candidates.push(exactFile);
   if (await exists(exactFile)) {
-    const filePath = await assertWithinRoutesDir(exactFile, routesDir);
+    const filePath = assertWithinRoutesDir(exactFile, routesDir);
     return {
       filePath,
       action: null,
@@ -121,7 +112,7 @@ export async function resolveConsoleRoute(
     const method = segments[segments.length - 1]!;
     candidates.push(`${filePathRaw}#${method}`);
     if (await exists(filePathRaw)) {
-      const filePath = await assertWithinRoutesDir(filePathRaw, routesDir);
+      const filePath = assertWithinRoutesDir(filePathRaw, routesDir);
       return {
         filePath,
         action: method,
@@ -136,7 +127,7 @@ export async function resolveConsoleRoute(
     const filePathRaw = join(routesDir, segments[0]! + ".ts");
     candidates.push(filePathRaw);
     if (await exists(filePathRaw)) {
-      const filePath = await assertWithinRoutesDir(filePathRaw, routesDir);
+      const filePath = assertWithinRoutesDir(filePathRaw, routesDir);
       return {
         filePath,
         action: null,

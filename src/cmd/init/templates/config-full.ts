@@ -334,7 +334,7 @@ ${commentedBuildBuildBlock()}
   //   credentials: true,
   // },
   /** ${$tr("init.comments.csrfDesc")} */
-  // csrf: true,
+  // csrf: false, // opt out if session is on but you have a pure API
   /** ${$tr("init.comments.uploadDesc")} */
   // upload: {
   //   /** ${$tr("init.comments.uploadLocalDirDesc")} */
@@ -572,7 +572,7 @@ ${loggerFileBlock("runtime/logs/app.log")}
   //   max: 120,
   // },
   /** ${$tr("init.comments.csrfDesc")} */
-  // csrf: true,
+  // csrf: false, // opt out if session is on but you have a pure API
   /** ${$tr("init.comments.uploadDesc")} */
   // upload: {
   //   /** ${$tr("init.comments.uploadRequireAuthDesc")} */
@@ -667,9 +667,9 @@ ${loggerFileBlock("runtime/logs/app.log")}
   //     /** ${$tr("init.comments.sessionCookieHttpOnlyDesc")} */
   //     httpOnly: true,
   //     /** ${$tr("init.comments.sessionCookieSecureDesc")} */
-  //     secure: false,
+  //     secure: true,
   //     /** ${$tr("init.comments.sessionCookieSameSiteDesc")} */
-  //     sameSite: "lax",
+  //     sameSite: "strict",
   //   },
   //   /** ${$tr("init.comments.sessionAutoSaveDesc")} */
   //   autoSave: true,
@@ -897,7 +897,7 @@ ${loggerFileBlock("runtime/logs/app.log")}
   /** ${$tr("init.comments.rateLimitDesc")} */
   // rateLimit: true,
   /** ${$tr("init.comments.csrfDesc")} */
-  // csrf: true,
+  // csrf: false, // opt out if session is on but you have a pure API
   /** ${$tr("init.comments.uploadDesc")} */
   // upload: {
   //   /** ${$tr("init.comments.uploadRequireAuthDesc")} */
@@ -962,9 +962,9 @@ ${loggerFileBlock("runtime/logs/app.log")}
   //     /** ${$tr("init.comments.sessionCookieHttpOnlyDesc")} */
   //     httpOnly: true,
   //     /** ${$tr("init.comments.sessionCookieSecureDesc")} */
-  //     secure: false,
+  //     secure: true,
   //     /** ${$tr("init.comments.sessionCookieSameSiteDesc")} */
-  //     sameSite: "lax",
+  //     sameSite: "strict",
   //   },
   //   /** ${$tr("init.comments.sessionAutoSaveDesc")} */
   //   autoSave: true,

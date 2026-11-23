@@ -753,6 +753,27 @@ export const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
 ${routeLoaders}
 };
 
+/** 小写 key → 原始 key，供大小写不敏感查找 O(1)；同名不同大小写保留先注册的 key */
+const ROUTE_LOADER_KEY_BY_LOWER: Record<string, string> = {};
+/** 小写 key → loader */
+const ROUTE_LOADERS_BY_LOWER: Record<string, () => Promise<unknown>> = {};
+for (const _loaderKey of Object.keys(ROUTE_LOADERS)) {
+  const _lk = _loaderKey.toLowerCase();
+  if (ROUTE_LOADER_KEY_BY_LOWER[_lk] === undefined) {
+    ROUTE_LOADER_KEY_BY_LOWER[_lk] = _loaderKey;
+    ROUTE_LOADERS_BY_LOWER[_lk] = ROUTE_LOADERS[_loaderKey];
+  }
+}
+
+function setRouteLoader(key: string, loader: () => Promise<unknown>): void {
+  ROUTE_LOADERS[key] = loader;
+  const lk = key.toLowerCase();
+  ROUTE_LOADERS_BY_LOWER[lk] = loader;
+  if (ROUTE_LOADER_KEY_BY_LOWER[lk] === undefined) {
+    ROUTE_LOADER_KEY_BY_LOWER[lk] = key;
+  }
+}
+
 // 已加载的模块缓存（避免重复加载）
 export const MODULE_CACHE: Record<string, unknown> = {};
 
@@ -788,18 +809,18 @@ function findLoaderForPath(cleanPath: string): (() => Promise<unknown>) | undefi
   let loader = ROUTE_LOADERS[cleanPath];
   if (loader) return loader;
   // Windows 下路径大小写可能不一致，尝试不区分大小写匹配
-  const key = Object.keys(ROUTE_LOADERS).find(
-    (k) => k.toLowerCase() === cleanPath.toLowerCase(),
-  );
-  if (key) return ROUTE_LOADERS[key];
+  loader = ROUTE_LOADERS_BY_LOWER[cleanPath.toLowerCase()];
+  if (loader) return loader;
   // 兼容带 routes/ 前缀的路径（服务端与客户端路径格式差异）
   if (cleanPath.startsWith("routes/")) {
-    loader = ROUTE_LOADERS[cleanPath.slice(7)];
+    const sliced = cleanPath.slice(7);
+    loader = ROUTE_LOADERS[sliced] ?? ROUTE_LOADERS_BY_LOWER[sliced.toLowerCase()];
     if (loader) return loader;
   }
   // 兼容带 src/routes/ 前缀的路径（Windows 下路径格式可能不同）
   if (cleanPath.startsWith("src/routes/")) {
-    loader = ROUTE_LOADERS[cleanPath.slice(11)];
+    const sliced = cleanPath.slice(11);
+    loader = ROUTE_LOADERS[sliced] ?? ROUTE_LOADERS_BY_LOWER[sliced.toLowerCase()];
     if (loader) return loader;
   }
   // Host Windows paths like D:/project/src/routes/index.
@@ -813,12 +834,8 @@ function findLoaderForPath(cleanPath: string): (() => Promise<unknown>) | undefi
   const last = lower.lastIndexOf(needle);
   if (!isRemote && first >= 0 && first === last) {
     const afterRoutes = cleanPath.slice(first + needle.length);
-    loader = ROUTE_LOADERS[afterRoutes];
+    loader = ROUTE_LOADERS[afterRoutes] ?? ROUTE_LOADERS_BY_LOWER[afterRoutes.toLowerCase()];
     if (loader) return loader;
-    const keyAfter = Object.keys(ROUTE_LOADERS).find(
-      (k) => k.toLowerCase() === afterRoutes.toLowerCase(),
-    );
-    if (keyAfter) return ROUTE_LOADERS[keyAfter];
   }
   return undefined;
 }
@@ -1248,13 +1265,11 @@ export async function setupHydrationRouterAndHmr(opts: {
         const cleanPath = normalizeComponentPathForLookup(hmrMod.component);
         MODULE_CACHE[cleanPath] = mod;
         if (Object.prototype.hasOwnProperty.call(ROUTE_LOADERS, hmrMod.component)) {
-          ROUTE_LOADERS[hmrMod.component] = () => Promise.resolve(mod);
+          setRouteLoader(hmrMod.component, () => Promise.resolve(mod));
         } else {
-          const loaderKey = Object.keys(ROUTE_LOADERS).find(
-            (k) => k.toLowerCase() === cleanPath.toLowerCase(),
-          );
+          const loaderKey = ROUTE_LOADER_KEY_BY_LOWER[cleanPath.toLowerCase()];
           if (loaderKey) {
-            ROUTE_LOADERS[loaderKey] = () => Promise.resolve(mod);
+            setRouteLoader(loaderKey, () => Promise.resolve(mod));
           }
         }
       } catch (err) {

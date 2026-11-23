@@ -86,6 +86,11 @@ function getMiddlewareName(
  * );
  * ```
  */
+/** 阻止配置合并时的原型污染（JSON 自有 `__proto__` 等键）。 */
+function isUnsafeMergeKey(key: string): boolean {
+  return key === "__proto__" || key === "prototype" || key === "constructor";
+}
+
 export function deepMergeConfig(
   target: AppConfig,
   source: AppConfig,
@@ -93,6 +98,7 @@ export function deepMergeConfig(
   const result = { ...target };
 
   for (const key in source) {
+    if (isUnsafeMergeKey(key)) continue;
     if (!(key in source)) continue;
 
     const sourceValue = source[key];
@@ -204,6 +210,7 @@ export function deepMergeParams(
 ): Record<string, unknown> {
   const result = { ...target };
   for (const key in source) {
+    if (isUnsafeMergeKey(key)) continue;
     if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
     const sourceValue = source[key];
     const targetValue = result[key];

@@ -9,6 +9,35 @@
 
 ## [Unreleased]
 
+### 安全
+
+- **Session Cookie 签名**：生产环境启用 `session` 时必须配置
+  `cookie.secret`（不少于 32 个字符），并对 session Cookie 做 HMAC-SHA256
+  签名。开发环境可不设密钥。生产未显式配置时默认
+  `secure: true`、`sameSite: "strict"`，不覆盖已写的值。
+- **CSRF**：启用 `session` 时自动开启 CSRF（double-submit
+  cookie）；`csrf: false` 可显式关闭。未启用 session 的应用保持关闭。
+- **路径边界**：静态文件服务（preview、生产客户端资源、SSG HTML、console
+  路由）和上传 `localDir` 使用 realpath + 前缀校验，拒绝 `..`
+  与符号链接逃逸。`isPathWithinProject` 在所有平台做 canonical 比较。
+- **HTTP2Shell / 入站 Brotli**：默认拒绝请求 `Content-Encoding` 含
+  `br`（415）；`allowBrotliRequestEncoding: true` 可放行。响应压缩仍默认不用
+  Brotli。`dweb doctor` 检查 Node / Bun 修复线；`engines` 调整为
+  `node >=22.23.4`、`bun >=1.4.4`（此前为 `node >=22`、`bun >=1.3`）。
+- **限流信任代理**：默认不信任转发头，也不把 Host 当作客户端
+  IP。仅在受信反向代理后设置 `trustProxy: true`。
+- **其他**：同时出现 Content-Length 与 Transfer-Encoding 时返回 400；生产 HTTPS
+  默认 HSTS（HTTP 本地不写）；redirect / Cookie 拒绝 CR/LF；配置合并忽略
+  `__proto__` 等键。
+
+### 性能
+
+- 客户端 `ROUTE_LOADERS` 预建小写索引，页面 loader 查找从线性扫描改为 O(1)；HMR
+  更新同步维护该索引。安全响应头列表在中间件创建时预计算。
+- `emitOnRequest` 等事件优先使用
+  `PluginManager.getActivePluginsWithHook`（若运行时已提供），只遍历实现了该钩子的已激活插件；已发布但尚未提供该方法的
+  `@dreamer/plugin` 回退为全表扫描。
+
 ## [3.10.6] - 2026-11-21
 
 ### 修复

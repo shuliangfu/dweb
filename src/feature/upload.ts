@@ -15,6 +15,7 @@ import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig, UploadAppConfig } from "../types/app.ts";
 import { getLogger } from "../utils/logger.ts";
+import { canonicalizePath } from "../utils/path.ts";
 
 /** 容器中上传 handler 的 key */
 export const UPLOAD_HANDLER_KEY = "uploadHandler";
@@ -86,9 +87,15 @@ export async function registerUploadIntegration(
     throw new Error(msg, { cause: err });
   }
 
+  const localDirRaw = opts.localDir ?? "./uploads";
+  if (localDirRaw.includes("\0")) {
+    throw new Error("upload.localDir is invalid");
+  }
+  const localDir = canonicalizePath(localDirRaw);
+
   const storage = opts.storage ??
     createLocalCloudStorageAdapter({
-      baseDir: opts.localDir ?? "./uploads",
+      baseDir: localDir,
       publicFileBasePath: opts.publicFileBasePath ?? `${basePath}/file`,
     });
 

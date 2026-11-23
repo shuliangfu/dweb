@@ -51,10 +51,9 @@ const ORM_CONNECT_SMOKE_TABLE = "dweb_orm_connect_smoke";
 class OrmConnectSmokeModel extends SQLModel {
   static override tableName = ORM_CONNECT_SMOKE_TABLE;
   static override primaryKey = "id";
-  /** schema 非基类声明成员，不可用 override */
-  static schema = {
+  static override schema = {
     id: {
-      type: "integer" as const,
+      type: "number" as const,
       validate: {},
     },
     tag: {

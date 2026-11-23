@@ -14,7 +14,6 @@ import {
   getEnv,
   join,
   readTextFile,
-  resolve,
   stat,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
@@ -27,7 +26,7 @@ import {
 } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import { isPathWithinProject } from "../utils/path.ts";
+import { resolvePathWithinRoot } from "../utils/path.ts";
 import {
   buildClientScript,
   getCachedClientScript,
@@ -301,12 +300,15 @@ export function createClientScriptMiddleware(
       }
 
       const filePath = join(clientOutputPath, fileName);
-      const resolvedChunkPath = resolve(filePath);
-      if (!isPathWithinProject(resolvedChunkPath, clientOutputPath)) {
+      const boundedChunkPath = resolvePathWithinRoot(
+        clientOutputPath,
+        filePath,
+      );
+      if (!boundedChunkPath) {
         ctx.response = new Response("Not Found", { status: 404 });
         return;
       }
-      const content = await readProdClientFile(resolvedChunkPath, fileName);
+      const content = await readProdClientFile(boundedChunkPath, fileName);
       if (content != null) {
         ctx.response = new Response(content, {
           status: 200,

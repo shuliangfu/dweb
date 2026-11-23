@@ -129,7 +129,7 @@ export type LoadContext = Omit<HttpContext, "cookies" | "url" | "response"> & {
   search: string;
   /** 链路 ID（`x-request-id` / `x-correlation-id` 或新生成 UUID） */
   requestId: string;
-  /** 尽力从代理头推断的客户端地址 */
+  /** 客户端地址：仅 `trustProxy` 时采信转发头，否则为真实远端地址（没有则为空） */
   clientIp?: string;
   /** 当前匹配路由快照（CSR 等场景可能缺省） */
   matchedRoute?: MatchedRouteSnapshot;
@@ -246,6 +246,19 @@ export function requestFromHttpContext(ctx: HttpContext): Request {
  *
  * @param options url、params、query、req（可缺省，将按 url 合成）及可选 session、res、matchedRoute
  */
+
+/** 与限流一致：仅当配置明确打开 trustProxy 时才采信转发头。 */
+function trustProxyFromContainer(container: ServiceContainer): boolean {
+  if (!container.has("config")) return false;
+  const cfg = container.get("config") as {
+    trustProxy?: boolean;
+    rateLimit?: boolean | { trustProxy?: boolean };
+  };
+  return cfg?.trustProxy === true ||
+    (typeof cfg?.rateLimit === "object" &&
+      cfg.rateLimit?.trustProxy === true);
+}
+
 export function createLoadContext(options: {
   app: IApp;
   container: ServiceContainer;
@@ -263,7 +276,9 @@ export function createLoadContext(options: {
   const pathname = pathnameFromHref(options.url);
   const search = searchFromHref(options.url);
   const requestId = resolveRequestId(req.headers);
-  const clientIp = resolveClientIp(req.headers);
+  const clientIp = resolveClientIp(req.headers, {
+    trustProxy: trustProxyFromContainer(options.container),
+  });
   const cookiesRecord = parseCookies(req);
   /** 与 `pathname` 一致，作为 {@link HttpContext.path} 注入 */
   const pathForCtx = pathname;
@@ -336,6 +351,9 @@ const BINARY_HEADERS = new Headers({
 export function createServerResponse(): ServerResponse {
   return {
     redirect(url: string, status = 302): Response {
+      if (/[\r\n]/.test(url)) {
+        throw new TypeError("Location must not contain CR or LF");
+      }
       return new Response(null, {
         status,
         headers: new Headers({ Location: url }),

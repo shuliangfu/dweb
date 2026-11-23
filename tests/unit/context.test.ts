@@ -173,7 +173,7 @@ describe("context.ts", () => {
       expect(ctx.params).toEqual({ id: "x" });
     });
 
-    it("继承 x-request-id、解析 x-forwarded-for，并接纳 matchedRoute", () => {
+    it("默认不信任 x-forwarded-for，仍继承 x-request-id 并接纳 matchedRoute", () => {
       const req = new Request("https://example.com/page?x=1", {
         headers: {
           "x-request-id": "rid-test",
@@ -194,7 +194,7 @@ describe("context.ts", () => {
         },
       });
       expect(ctx.requestId).toBe("rid-test");
-      expect(ctx.clientIp).toBe("203.0.113.9");
+      expect(ctx.clientIp).toBeUndefined();
       expect(ctx.search).toBe("?x=1");
       expect(ctx.matchedRoute).toEqual({
         path: "/page",
@@ -202,6 +202,25 @@ describe("context.ts", () => {
         fullPath: "/proj/routes/page.tsx",
         isApi: false,
       });
+    });
+
+    it("trustProxy 时按 X-Forwarded-For 第一跳填充 clientIp", () => {
+      const { app, container } = createTestDwebContext();
+      container.registerSingleton("config", () => ({ trustProxy: true }));
+      const req = new Request("https://example.com/page?x=1", {
+        headers: {
+          "x-forwarded-for": "203.0.113.9, 10.0.0.1",
+        },
+      });
+      const ctx = createLoadContext({
+        app,
+        container,
+        req,
+        url: "https://example.com/page?x=1",
+        params: {},
+        query: { x: "1" },
+      });
+      expect(ctx.clientIp).toBe("203.0.113.9");
     });
 
     it("未传 req 时按 url 合成 Request，不抛错", () => {
@@ -233,6 +252,10 @@ describe("context.ts", () => {
         const r = res.redirect("/moved", 301);
         expect(r.status).toBe(301);
         expect(r.headers.get("Location")).toBe("/moved");
+      });
+
+      it("拒绝 Location 中的 CR/LF", () => {
+        expect(() => res.redirect("/ok\r\nSet-Cookie: x=1")).toThrow();
       });
     });
 
