@@ -243,6 +243,17 @@ export function envWithRuntime(
 }
 
 /**
+ * Inherit the current process env for a short-lived CLI child (seed scripts).
+ * Drop GITHUB_ACTIONS so Bun does not emit `::error` workflow commands;
+ * the parent already reports the child's exit status.
+ */
+export function envForCliChild(): Record<string, string> {
+  const env = { ...getInheritedEnvForSpawn() };
+  delete env.GITHUB_ACTIONS;
+  return env;
+}
+
+/**
  * 宿主测试运行时（与 `getRuntime()` 一致；供 `dweb-cli test --runtime` 覆盖）
  */
 export type HostTestRuntime = "deno" | "bun" | "node";

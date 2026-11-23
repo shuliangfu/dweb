@@ -31,7 +31,12 @@ import {
 import type { ParsedOptions } from "../feature/command.ts";
 import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getRunArgs, getRuntime, getTaskArgs } from "../utils/runtime.ts";
+import {
+  envForCliChild,
+  getRunArgs,
+  getRuntime,
+  getTaskArgs,
+} from "../utils/runtime.ts";
 
 /** SQL 迁移模板（符合 @dreamer/database Migration 接口） */
 function getSqlMigrationTemplate(name: string, className: string): string {
@@ -371,6 +376,7 @@ export async function seed(
   const cmd = createCommand(runtime, {
     args: getRunArgs(seedFile),
     cwd: projectRoot,
+    env: envForCliChild(),
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

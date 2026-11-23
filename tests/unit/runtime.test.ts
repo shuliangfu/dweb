@@ -9,6 +9,7 @@
  * - getFmtArgs 格式化参数
  * - getRunArgs 运行脚本参数
  * - envWithRuntime RUNTIME_ENV 注入
+ * - envForCliChild 去掉 GITHUB_ACTIONS
  * - isWindows 平台判断
  *
  * 注：不测试 @dreamer/runtime-adapter 的 IS_DENO/IS_BUN/IS_NODE，仅测试本框架对返回值的处理逻辑。
@@ -20,6 +21,7 @@ import {
   allowFreshDepsInDenoWrapper,
   configProfileFromRuntimeEnv,
   DENO_FRESH_DEP_ARG,
+  envForCliChild,
   envWithRuntime,
   getDenoRunArgsFromTaskString,
   getFmtArgs,
@@ -286,6 +288,24 @@ describe("运行时工具 (runtime.ts)", () => {
       expect(envWithRuntime("dev").RUNTIME_ENV).toBe("dev");
       expect(envWithRuntime("build").RUNTIME_ENV).toBe("build");
       expect(envWithRuntime("start").RUNTIME_ENV).toBe("start");
+    });
+  });
+
+  describe("envForCliChild()", () => {
+    it("应继承当前 env 但去掉 GITHUB_ACTIONS", () => {
+      const prev = getEnv("GITHUB_ACTIONS");
+      try {
+        setEnv("GITHUB_ACTIONS", "true");
+        const env = envForCliChild();
+        expect(env.GITHUB_ACTIONS).toBeUndefined();
+        expect(Object.keys(env).length).toBeGreaterThan(0);
+      } finally {
+        if (prev !== undefined) {
+          setEnv("GITHUB_ACTIONS", prev);
+        } else {
+          deleteEnv("GITHUB_ACTIONS");
+        }
+      }
     });
   });
 
