@@ -48,6 +48,28 @@ import {
 import { perfMark } from "../utils/perf-trace.ts";
 
 /**
+ * Turn a resolved lazy-module URL into an import specifier for the temporary
+ * server bundle wrapper.
+ *
+ * Local checkouts use `file:` URLs and become a path relative to `fromDir`.
+ * When the framework is loaded from JSR, `import.meta.url` is an `https:`
+ * (or other non-file) URL; those stay as fetchable absolute URLs. Never pass
+ * a non-file URL to `fileURLToPath`.
+ */
+export function toLazyModuleImportSpecifier(
+  moduleUrl: URL | string,
+  fromDir: string,
+): string {
+  const url = typeof moduleUrl === "string" ? new URL(moduleUrl) : moduleUrl;
+  if (url.protocol === "file:") {
+    let rel = relative(fromDir, fileURLToPath(url)).replaceAll("\\", "/");
+    if (!rel.startsWith(".")) rel = `./${rel}`;
+    return rel;
+  }
+  return url.href;
+}
+
+/**
  * 从 AppConfig 解析 esbuild BuildOptions。
  *
  * 规范路径为嵌套 `app.build.build.*`（BuildAppConfig 继承 BuilderConfig.build）。
@@ -359,22 +381,20 @@ export async function runBuildWithBuilder(
 
   // 在用户入口同目录写入临时打包入口：静态引入生产运行时需要的 lazy 模块。
   // 不把 build / esbuild / csr-client-builder 打进生产包。构建结束后删除。
-  const lazyCoreAbs = fileURLToPath(
-    new URL("../core/app-lazy-modules.ts", import.meta.url),
-  );
   const entryExt = absEntry.endsWith(".tsx")
     ? ".tsx"
     : absEntry.endsWith(".js") || absEntry.endsWith(".mjs")
     ? ".js"
     : ".ts";
   const wrapperPath = join(dirname(absEntry), `.dweb-bundle-entry${entryExt}`);
-  const toRelImport = (abs: string): string => {
-    let rel = relative(dirname(wrapperPath), abs).replaceAll("\\", "/");
-    if (!rel.startsWith(".")) rel = `./${rel}`;
-    return rel;
-  };
+  const wrapperDir = dirname(wrapperPath);
   const lazyImports: string[] = [
-    `import ${JSON.stringify(toRelImport(lazyCoreAbs))};`,
+    `import ${
+      JSON.stringify(toLazyModuleImportSpecifier(
+        new URL("../core/app-lazy-modules.ts", import.meta.url),
+        wrapperDir,
+      ))
+    };`,
   ];
   const optionalLazy: Array<[boolean, string]> = [
     [Boolean(config.database), "../core/app-lazy-modules-database.ts"],
@@ -393,8 +413,14 @@ export async function runBuildWithBuilder(
   ];
   for (const [enabled, relFromHere] of optionalLazy) {
     if (!enabled) continue;
-    const abs = fileURLToPath(new URL(relFromHere, import.meta.url));
-    lazyImports.push(`import ${JSON.stringify(toRelImport(abs))};`);
+    lazyImports.push(
+      `import ${
+        JSON.stringify(toLazyModuleImportSpecifier(
+          new URL(relFromHere, import.meta.url),
+          wrapperDir,
+        ))
+      };`,
+    );
   }
   const originalSource = await readTextFile(absEntry);
   await writeTextFile(

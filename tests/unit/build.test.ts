@@ -30,11 +30,13 @@ function fromFileUrl(url: string): string {
   return p;
 }
 import { initializeServiceContainer } from "../../src/core/service.ts";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   cleanBuildOutputDirs,
   getBuild,
   initializeBuild,
   resolveAppBuildOptions,
+  toLazyModuleImportSpecifier,
 } from "../../src/feature/build.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
@@ -539,4 +541,31 @@ describe("构建集成 (build.ts)", () => {
     },
     { sanitizeOps: false, sanitizeResources: false },
   );
+});
+
+describe("toLazyModuleImportSpecifier()", () => {
+  it("file: URL 转为相对 fromDir 的导入路径", () => {
+    const fromDir = fileURLToPath(pathToFileURL("/tmp/app/src"));
+    const moduleUrl = pathToFileURL("/tmp/pkg/src/core/app-lazy-modules.ts");
+    expect(toLazyModuleImportSpecifier(moduleUrl, fromDir)).toBe(
+      "../../pkg/src/core/app-lazy-modules.ts",
+    );
+  });
+
+  it("https://jsr.io 延迟模块 URL 保持可拉取地址，不调用 fileURLToPath", () => {
+    const jsrUrl =
+      "https://jsr.io/@dreamer/dweb/3.12.0/src/core/app-lazy-modules.ts";
+    expect(() => fileURLToPath(jsrUrl)).toThrow();
+    expect(toLazyModuleImportSpecifier(jsrUrl, "/tmp/app/src")).toBe(jsrUrl);
+    expect(
+      toLazyModuleImportSpecifier(
+        new URL(
+          "https://jsr.io/@dreamer/dweb/3.12.0/src/core/app-lazy-modules-websocket.ts",
+        ),
+        "/tmp/app/src",
+      ),
+    ).toBe(
+      "https://jsr.io/@dreamer/dweb/3.12.0/src/core/app-lazy-modules-websocket.ts",
+    );
+  });
 });
