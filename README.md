@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1513%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-1546%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
 
 ---
 
@@ -2109,13 +2109,12 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 
 See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
-**Summary** (local, 2026-11-23, Asia/Shanghai, v3.11.0): Deno **1513 passed**, 0
-failed, 10 ignored (6m56s). Bun and Node 22.23.5 / 24.22.3 / 26.13.1: **1282
-passed**, 10 skipped, 0 failed (unit 1159 / 4 skipped, integration 23, e2e 100 /
-6 skipped). Covers unit, e2e browser-render, and integration
-(CSR/SSR/SSG/Hybrid). Path and config-loader tests support Windows
-(pathToFileUrl, makeTempDir). Node 24 / 26 e2e used a local
-`@dreamer/runtime-adapter` stream fix; details are in the test report.
+**Summary** (local, 2026-11-27, Asia/Shanghai, v3.12.0): Deno **1546 passed**, 0
+failed, 10 ignored (7m2s). Bun and Node 22.23.5: **1313 passed**, 10 skipped, 0
+failed (unit 1190 / 4 skipped, integration 23, e2e 100 / 6 skipped). Covers
+unit, e2e browser-render, and integration (CSR/SSR/SSG/Hybrid). Path and
+config-loader tests support Windows (pathToFileUrl, makeTempDir). Official
+GitHub Actions CI on `dev` was also green.
 
 ---
 
@@ -2143,6 +2142,8 @@ not locks.
 ## 📋 Changelog
 
 ### [Unreleased]
+
+### [3.12.0] - 2026-11-27
 
 ### [3.11.0] - 2026-11-23
 

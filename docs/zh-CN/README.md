@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1513%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-1546%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -2166,12 +2166,12 @@ localStorage 键 `dweb:app-version`。`kind: "api"` / `"console"` 不生效。�
 
 详细结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**（本机，2026-11-23，Asia/Shanghai，v3.11.0）：Deno **1513 通过**，0
-失败，10 忽略（6m56s）。Bun 与 Node 22.23.5 / 24.22.3 / 26.13.1： **1282
-通过**，10 跳过，0 失败（单测 1159 / 4 跳过，集成 23，e2e 100 / 6
-跳过）。覆盖单元、e2e 浏览器渲染与集成构建（CSR/SSR/SSG/Hybrid）。路径与配置
-加载测试已支持 Windows（pathToFileUrl、makeTempDir）。Node 24 / 26 的 e2e
-使用了本地 `@dreamer/runtime-adapter` 流写入修复，细节见测试报告。
+**测试总结**（本机，2026-11-27，Asia/Shanghai，v3.12.0）：Deno **1546 通过**，0
+失败，10 忽略（7m2s）。Bun 与 Node 22.23.5： **1313 通过**，10 跳过，0
+失败（单测 1190 / 4 跳过，集成 23，e2e 100 / 6 跳过）。覆盖单元、e2e
+浏览器渲染与集成构建（CSR/SSR/SSG/Hybrid）。路径与配置加载测试已支持
+Windows（pathToFileUrl、makeTempDir）。`dev` 上的官方 GitHub Actions CI
+也已全绿。
 
 ---
 
@@ -2195,6 +2195,8 @@ localStorage 键 `dweb:app-version`。`kind: "api"` / `"console"` 不生效。�
 ## 📋 变更日志
 
 ### [Unreleased]
+
+### [3.12.0] - 2026-11-27
 
 ### [3.11.0] - 2026-11-23
 

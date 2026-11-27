@@ -10,6 +10,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-11-27
+
 ### Added
 
 - **Console is a real app**: `dweb-cli run` loads `console/main.ts` when it

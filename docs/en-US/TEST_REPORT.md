@@ -4,16 +4,27 @@
 
 ## 📋 Test Overview
 
-| Item             | Value                                                                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Framework        | 3.11.0                                                                                                                                 |
-| Test framework   | @dreamer/test@^1.2.5                                                                                                                   |
-| Test date        | 2026-11-23 (Asia/Shanghai)                                                                                                             |
-| Test environment | Local macOS; Deno, Bun, and Node 22.23.5 / 24.22.3 / 26.13.1 all green. Historical sections below keep earlier version and CI records. |
+| Item             | Value                                                                                                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework        | 3.12.0                                                                                                                                                                 |
+| Test framework   | @dreamer/test@^1.2.5                                                                                                                                                   |
+| Test date        | 2026-11-27 (Asia/Shanghai)                                                                                                                                             |
+| Test environment | Local macOS; Deno, Bun, and Node 22.23.5 all green. Official GitHub Actions CI on `dev` was also green. Historical sections below keep earlier version and CI records. |
 
 ---
 
 ## 📊 Test Results
+
+### v3.12.0 local full suite (2026-11-27)
+
+Ran unit + integration + e2e on Mac for Deno, Bun, and Node 22.23.5; all passed.
+Official GitHub Actions CI on `dev` (`be4ee3f7`) was also green.
+
+| Runtime      | Command                                                                  | Result                                                                                                                                                                   |
+| ------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Deno         | `deno test -A --no-check tests/unit tests/integration tests/e2e`         | **1546 passed**, 0 failed, 10 ignored (7m2s)                                                                                                                             |
+| Bun          | `bun test --max-concurrency=1` for unit, integration, then each e2e file | unit 1190 passed / 4 skipped, integration 23 passed, e2e 100 passed / 6 skipped; total **1313 passed**, 10 skipped, 0 failed (unit 4.84s, integration 11.04s, e2e ~6m1s) |
+| Node 22.23.5 | `npm run test:node` / `test:node:integration` / `test:node:e2e`          | unit 1190 passed / 4 skipped (112 files), integration 23 passed (18 files), e2e 100 passed / 6 skipped (16 files); total **1313 passed**, 10 skipped, 0 failed (~7m1s)   |
 
 ### v3.11.0 local full suite (2026-11-23)
 
