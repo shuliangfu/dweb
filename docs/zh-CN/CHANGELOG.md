@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+## [3.12.1] - 2026-11-27
+
+### 修复
+
+- **从 JSR 加载框架时的 `--build`**：生产打包入口不再对非 `file:`（`https:` /
+  JSR）的延迟模块 URL 调用 `fileURLToPath`。从 jsr.io 加载 `@dreamer/dweb` 时，
+  `import.meta.url` 是 `https:` 地址，`fileURLToPath` 会抛出
+  `The URL must be of scheme file`。本地 `file:` 仓库仍使用相对导入路径；远程
+  URL 保持为可拉取的绝对地址。
+
 ## [3.12.0] - 2026-11-27
 
 ### 新增

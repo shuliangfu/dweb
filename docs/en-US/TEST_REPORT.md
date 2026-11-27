@@ -6,7 +6,7 @@
 
 | Item             | Value                                                                                                                                                                  |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Framework        | 3.12.0                                                                                                                                                                 |
+| Framework        | 3.12.1                                                                                                                                                                 |
 | Test framework   | @dreamer/test@^1.2.5                                                                                                                                                   |
 | Test date        | 2026-11-27 (Asia/Shanghai)                                                                                                                                             |
 | Test environment | Local macOS; Deno, Bun, and Node 22.23.5 all green. Official GitHub Actions CI on `dev` was also green. Historical sections below keep earlier version and CI records. |
@@ -14,6 +14,14 @@
 ---
 
 ## 📊 Test Results
+
+### v3.12.1 official CI (2026-11-27)
+
+The `--build` JSR/https `fileURLToPath` fix was verified locally with
+`deno test -A tests/unit/build.test.ts` (29 passed, 0 failed, 20:29
+Asia/Shanghai). Official GitHub Actions CI on `dev` (`42a67470`) was also green
+(20:35–20:50, Asia/Shanghai). The local full-suite counts below are unchanged
+from v3.12.0; the full Deno/Bun/Node matrix was not re-run for this patch.
 
 ### v3.12.0 local full suite (2026-11-27)
 

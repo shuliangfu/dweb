@@ -10,6 +10,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.12.1] - 2026-11-27
+
+### Fixed
+
+- **`--build` with a JSR-loaded framework**: the production-bundle wrapper no
+  longer calls `fileURLToPath` on non-file (`https:` / JSR) lazy-module URLs.
+  Loading `@dreamer/dweb` from jsr.io made `import.meta.url` an `https:` URL,
+  and `fileURLToPath` threw `The URL must be of scheme file`. Local `file:`
+  checkouts still use a relative import path; remote URLs stay fetchable
+  absolute URLs.
+
 ## [3.12.0] - 2026-11-27
 
 ### Added

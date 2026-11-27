@@ -2196,6 +2196,8 @@ Windows（pathToFileUrl、makeTempDir）。`dev` 上的官方 GitHub Actions CI
 
 ### [Unreleased]
 
+### [3.12.1] - 2026-11-27
+
 ### [3.12.0] - 2026-11-27
 
 ### [3.11.0] - 2026-11-23
