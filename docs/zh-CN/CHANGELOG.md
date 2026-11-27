@@ -24,6 +24,14 @@
   `config.middlewares`；(3) `console/main.ts` 中的 `app.use()`； (4) 目录级
   `_middleware.ts`；(5) 路由模块 `before` → action → `after`。
 
+- **插件提供 console 命令**：在 `console/main.ts` 或 `console/config` 里配置的
+  插件可以为 `dweb-cli run` 提供命令。扫描 `console.routesDir`（默认
+  `"routes"`，可改；相对路径用 `console.baseDir` 解析）。可选 `console.basePath`
+  作为命令路径前缀。`console.command` 可让单个插件文件提供一条
+  命令。路由名冲突时宿主优先。实现只在 dweb 内，不升级 `@dreamer/plugin`，
+  也不复用 HTTP 的 `onRoute`。`dweb-cli run --list` 在能启动 Console App 时
+  会把它拉起来，以便列出插件命令。
+
 ### 修复
 
 - **Console 耗时日志**：全局中间件（如 `middlewares/timing.ts`）原本就会加载。
@@ -31,12 +39,40 @@
   `info`（常见默认值），日志会被 过滤。需要看见输出时请改用
   `ctx.log.info(...)`，或将 `logger.level` 设为 `"debug"`（例如写在
   `config/main.dev.ts`）。框架默认日志级别未改。
+- **Windows 配置加载**：以盘符开头的路径按绝对路径处理；`realPath` 失败时回退到
+  已解析路径。配置文件路径改用 `join` 拼接，不再用 `/` 直接拼接。
+- **生产 `--start` 关闭**：未加载过客户端构建器时（生产包路径），`shutdown()`
+  不再动态导入 `csr-client-builder`，避免相对路径解析到应用目录并报 Module not
+  found。
+- **官方多应用示例在 Bun 下的 JSX**：`examples/app-kinds/multi-web-api-console`
+  补上与 View 示例一致的 `tsconfig.json`（`jsxImportSource: "@dreamer/view"`）。
+  原先只有 `deno.json` 的 compilerOptions，Bun 加载 `.tsx` 路由时不会用 View 的
+  JSX 运行时，`GET /` 会因找不到挂载容器而返回 500。
 
 ### 性能
 
 - **`dweb-cli run` 启动**：第一个进程会在导入 `run.ts` / `App` 之前按项目 import
-  map 重跑，避免把 HTTP 渲染栈加载两遍。仅在真正执行命令时才导入 `App`， 因此
-  `dweb-cli run --list` 不再构造 App。
+  map 重跑，避免把 HTTP 渲染栈加载两遍。执行具体命令时才会导入 `App`。 `--list`
+  为了列出插件命令，在能启动 Console App 时也会构造 App。
+- **`--dev`**：官方示例的 web / api / console 入口改为从
+  `@dreamer/dweb/core/app` 导入 `App`，听口时的模块图更小。配合
+  `@dreamer/server@1.4.0`，开发工具和 HMR 在听口之后再加载，不再随
+  `import { Server }` 预加载。听口后的首次请求仍可能被 第一次客户端编译挡住。
+- **`--build`**：Web 客户端构建走 `@dreamer/esbuild/builder`，这条路径不再经过
+  esbuild 的主入口（插件 / CSS 工具链）。
+- **`--start`**：生产包使用精简入口和延迟模块，因此 `@dreamer/console`、
+  `@dreamer/esbuild` 和 `@dreamer/database` 不会进入 `--start` / 生产包路径。
+- **`--dev`
+  启动日志**：听口行（`开发服务器运行在 …`）保留，其下的构建工具初始化、
+  路由扫描、客户端构建等日志不再默认输出。听口后立即打印 Dev
+  启动耗时（从进程启动到 听口，不含听口后的首次客户端编译）。
+
+### 变更
+
+- **依赖**：`@dreamer/server` `^1.3.5` → `^1.4.0`；`@dreamer/esbuild` `^1.5.4` →
+  `^1.5.5`；`@dreamer/plugins` `^1.2.9` → `^1.2.10`；示例中的
+  `@dreamer/runtime-adapter` `^1.2.3` → `^1.2.4`；`postcss` `^8.5.33` →
+  `^8.5.34`；`chart.js` `4.6.1` → `4.6.2`。工作区和示例项目同步这些范围。
 
 ## [3.11.0] - 2026-11-23
 

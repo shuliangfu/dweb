@@ -20,152 +20,40 @@ import {
   execPath,
   exists,
   exit,
-  fromFileUrl,
   getEnv,
   getEnvAll,
   IS_BUN,
   IS_NODE,
-  isAbsolute,
   join,
   makeTempFile,
   readTextFile,
   remove,
-  resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { getPackageRoot, loadDwebDenoJson } from "./version.ts";
+import { perfDump, perfMark } from "./perf-trace.ts";
+import {
+  buildRuntimeDenoConfig,
+  importsFromConfig,
+  mergeProjectImports,
+  pathAliasesFromImports,
+  projectImportMapAlreadyActive,
+  resolvePathAlias,
+} from "./project-import-map-pure.ts";
 
 /** 子进程已带上项目 import map，避免再次重跑。 */
 export const PROJECT_CONFIG_ENV = "DWEB_CLI_WITH_PROJECT_CONFIG";
 
-export function resolveImportMapSpecifier(
-  spec: string,
-  fromDir: string,
-): string {
-  if (
-    spec.startsWith("npm:") ||
-    spec.startsWith("jsr:") ||
-    spec.startsWith("http://") ||
-    spec.startsWith("https://") ||
-    spec.startsWith("file:")
-  ) {
-    return spec;
-  }
-  if (spec.startsWith(".") || spec.startsWith("/")) {
-    const abs = resolve(fromDir, spec).replace(/\\/g, "/");
-    const url = abs.startsWith("/") ? `file://${abs}` : `file:///${abs}`;
-    return spec.endsWith("/") && !url.endsWith("/") ? `${url}/` : url;
-  }
-  return spec;
-}
-
-/**
- * 合并 import map：先放框架依赖，再覆盖项目别名（如 `@common/`）。
- * 配置写在临时目录，相对路径都改成 file://，以免离开项目根后解析失败。
- */
-export function mergeProjectImports(
-  projectImports: Record<string, string> | undefined,
-  projectDir: string | undefined,
-  cliImports: Record<string, string> | undefined,
-  cliDir: string | undefined,
-): Record<string, string> {
-  const out: Record<string, string> = {};
-  if (cliImports) {
-    for (const [key, val] of Object.entries(cliImports)) {
-      out[key] = cliDir ? resolveImportMapSpecifier(val, cliDir) : val;
-    }
-  }
-  if (projectImports) {
-    for (const [key, val] of Object.entries(projectImports)) {
-      out[key] = projectDir ? resolveImportMapSpecifier(val, projectDir) : val;
-    }
-  }
-  return out;
-}
-
-export function buildRuntimeDenoConfig(
-  project: Record<string, unknown>,
-  imports: Record<string, string>,
-): Record<string, unknown> {
-  const { workspace: _workspace, ...rest } = project;
-  return {
-    ...rest,
-    imports,
-    // 合并后可能多出框架侧未锁定的包，关闭 lock 避免无故失败。
-    lock: false,
-  };
-}
-
-/** Convert a file URL to a path. POSIX file URLs have no drive letter and
- *  `fromFileUrl` throws on Windows for those, so fall back to the pathname. */
-function pathFromFileUrl(target: string): string {
-  try {
-    return fromFileUrl(target);
-  } catch {
-    return decodeURIComponent(new URL(target).pathname);
-  }
-}
-
-/**
- * Collect filesystem path aliases from an import map (deno.json or package.json).
- * Remote specs (`jsr:` / `npm:` / http) are skipped. `@common/*` → `@common/` prefix.
- * Values are absolute directory or file paths, not file URLs.
- */
-export function pathAliasesFromImports(
-  imports: Record<string, string> | undefined,
-  fromDir: string,
-): Record<string, string> {
-  const out: Record<string, string> = {};
-  if (!imports) return out;
-  for (const [key, val] of Object.entries(imports)) {
-    if (typeof val !== "string") continue;
-    if (
-      val.startsWith("jsr:") ||
-      val.startsWith("npm:") ||
-      val.startsWith("http://") ||
-      val.startsWith("https://")
-    ) {
-      continue;
-    }
-    let prefix = key;
-    let target = val;
-    if (prefix.endsWith("/*")) {
-      prefix = `${prefix.slice(0, -1)}`;
-      if (target.endsWith("/*")) target = target.slice(0, -1);
-    }
-    let abs: string;
-    if (target.startsWith("file:")) {
-      abs = pathFromFileUrl(target);
-    } else if (
-      target.startsWith(".") || target.startsWith("/") || isAbsolute(target)
-    ) {
-      abs = resolve(fromDir, target);
-    } else {
-      continue;
-    }
-    out[prefix] = abs;
-  }
-  return out;
-}
-
-/** Resolve a specifier against path aliases. Longer keys win. */
-export function resolvePathAlias(
-  specifier: string,
-  aliases: Record<string, string>,
-): string | undefined {
-  const keys = Object.keys(aliases).sort((a, b) => b.length - a.length);
-  for (const key of keys) {
-    const target = aliases[key];
-    if (key.endsWith("/")) {
-      if (specifier.startsWith(key)) {
-        return resolve(target, specifier.slice(key.length));
-      }
-    } else if (specifier === key) {
-      return target;
-    }
-  }
-  return undefined;
-}
+export {
+  buildRuntimeDenoConfig,
+  importsFromConfig,
+  mergeProjectImports,
+  pathAliasesFromImports,
+  pathFromFileUrl,
+  projectImportMapAlreadyActive,
+  resolveImportMapSpecifier,
+  resolvePathAlias,
+} from "./project-import-map-pure.ts";
 
 async function readJsonObject(
   path: string,
@@ -179,20 +67,6 @@ async function readJsonObject(
     // ignore missing or invalid JSON
   }
   return undefined;
-}
-
-function importsFromConfig(
-  config: Record<string, unknown> | undefined,
-): Record<string, string> | undefined {
-  const imports = config?.imports;
-  if (!imports || typeof imports !== "object" || Array.isArray(imports)) {
-    return undefined;
-  }
-  const out: Record<string, string> = {};
-  for (const [key, val] of Object.entries(imports as Record<string, unknown>)) {
-    if (typeof val === "string") out[key] = val;
-  }
-  return out;
 }
 
 /**
@@ -336,13 +210,18 @@ function denoMainModule(): string | undefined {
 export async function reexecWithProjectImportMap(
   projectRoot: string,
 ): Promise<void> {
-  if (getEnv(PROJECT_CONFIG_ENV) === "1") return;
+  if (getEnv(PROJECT_CONFIG_ENV) === "1") {
+    perfMark("reexec_skipped");
+    return;
+  }
 
   if (IS_BUN || IS_NODE) {
+    perfMark("reexec_runtime_aliases");
     const aliases = await loadProjectPathAliases(projectRoot);
     if (Object.keys(aliases).length > 0) {
       await installRuntimeAliasResolver(aliases);
     }
+    perfMark("reexec_runtime_aliases_done");
     return;
   }
 
@@ -351,10 +230,17 @@ export async function reexecWithProjectImportMap(
     : (await exists(join(projectRoot, "deno.jsonc")))
     ? join(projectRoot, "deno.jsonc")
     : null;
-  if (!configPath) return;
+  if (!configPath) {
+    perfMark("reexec_no_project_config");
+    return;
+  }
 
   const main = denoMainModule();
-  if (!main) return;
+  if (!main) {
+    perfMark("reexec_no_main_module");
+    return;
+  }
+  perfMark("reexec_merge_config");
 
   let project: Record<string, unknown> = {};
   try {
@@ -389,6 +275,16 @@ export async function reexecWithProjectImportMap(
     (project.imports && typeof project.imports === "object")
       ? project.imports as Record<string, string>
       : undefined;
+  if (
+    projectImportMapAlreadyActive(
+      projectImports,
+      projectRoot,
+      (specifier) => import.meta.resolve(specifier),
+    )
+  ) {
+    perfMark("reexec_already_mapped");
+    return;
+  }
   const imports = mergeProjectImports(
     projectImports,
     projectRoot,
@@ -407,6 +303,7 @@ export async function reexecWithProjectImportMap(
 
   let code = 1;
   try {
+    perfMark("reexec_spawn");
     const child = createCommand(execPath(), {
       args: [
         "run",
@@ -418,12 +315,22 @@ export async function reexecWithProjectImportMap(
         ...args(),
       ],
       cwd: cwd(),
-      env: { ...getEnvAll(), [PROJECT_CONFIG_ENV]: "1" },
+      env: {
+        ...getEnvAll(),
+        [PROJECT_CONFIG_ENV]: "1",
+        ...(getEnv("DWEB_PERF")
+          ? {
+            DWEB_PERF_EPOCH: getEnv("DWEB_PERF_EPOCH") ?? String(Date.now()),
+          }
+          : {}),
+      },
       stdin: "inherit",
       stdout: "inherit",
       stderr: "inherit",
     }).spawn();
     const status = await child.status;
+    perfMark("reexec_child_done");
+    perfDump("cli-parent");
     try {
       child.unref();
     } catch {

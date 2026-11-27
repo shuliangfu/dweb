@@ -17,7 +17,9 @@
  * - 这样 esbuild 可以正确打包所有依赖
  */
 
-import { BuilderClient, type BuildPlugin } from "@dreamer/esbuild";
+import { BuilderClient } from "@dreamer/esbuild/client";
+import type { BuildPlugin } from "@dreamer/esbuild";
+
 import type { ServiceContainer } from "@dreamer/service";
 import {
   basename,
@@ -315,10 +317,6 @@ export async function buildClientScript(
         routesDirPath,
         engine,
       );
-    logger.debug($tr("log.routesScanned", {
-      count: String(components.length),
-    }));
-
     const hmrCssEntries = getHmrCssEntries(container);
     const clientDepPath = join(srcDir, CLIENT_DEP_FILENAME);
 
@@ -341,15 +339,10 @@ export async function buildClientScript(
       enableUpgradePrompt,
     );
     if (!skipWritingClientDep) {
-      const written = await writeTextFileIfChanged(
+      await writeTextFileIfChanged(
         clientDepPath,
         clientDepCode,
       );
-      if (written) {
-        logger.debug($tr("log.clientDepRefreshed", {
-          path: pathForLog(clientDepPath),
-        }));
-      }
     } else {
       logger.debug(
         $tr("log.hmrSkipClientDep", { filename: CLIENT_DEP_FILENAME }),
@@ -580,12 +573,6 @@ export async function buildClientScript(
       }
 
       const mainCodeDev = outputFilesDev.get(CLIENT_OUTPUT_MAIN_FILENAME) || "";
-      logger.debug(
-        $tr("log.clientBuildCompleteMemory", {
-          mainSize: (mainCodeDev.length / 1024).toFixed(1),
-          count: String(outputFilesDev.size),
-        }),
-      );
       // 调试：输出 chunk 列表及每个 chunk 的 content 大小，便于在 Windows 上对比依赖请求是否缺失
       // preact/react 等运行时通常 >10KB，__publicField 等辅助代码通常 <1KB，若 chunk-XXX 显示过小则可能内容错误
       if (buildDebug) {
@@ -678,7 +665,6 @@ export async function buildClientScript(
     // 缓存结果
     cachedClientScript = result;
 
-    logger.debug($tr("log.clientScriptBuildComplete"));
     return result;
   } catch (error) {
     logger.error($tr("log.clientBuildFailed") + ":", error);

@@ -2,11 +2,11 @@
 
 Minimal **AppKind** smoke example: one project with three apps.
 
-| App        | `kind`    | How to run                                                          |
-| ---------- | --------- | ------------------------------------------------------------------- |
-| `web/`     | `web`     | `deno task dev:web`                                                 |
-| `api/`     | `api`     | `deno task dev:api` → `GET /hello`                                  |
-| `console/` | `console` | `deno task run:hello` / `deno task run:team` / `deno task run:list` |
+| App        | `kind`    | How to run                                                                                                           |
+| ---------- | --------- | -------------------------------------------------------------------------------------------------------------------- |
+| `web/`     | `web`     | `deno task dev:web`                                                                                                  |
+| `api/`     | `api`     | `deno task dev:api` → `GET /hello`                                                                                   |
+| `console/` | `console` | `deno task run:hello` / `deno task run:team` / `deno task run:staff` / `deno task run:whoami` / `deno task run:list` |
 
 ## Console DX
 
@@ -58,6 +58,47 @@ Middleware order (outer to inner):
 
 `timing.ts` logs with `ctx.log.info`. Debug-level logs are hidden when
 `logger.level` is `info`.
+
+## Plugin console commands
+
+A plugin configured in `console/config` or `console/main.ts` can provide
+commands. This example does both, without changing `@dreamer/plugin`:
+
+- `staffPlugin` is registered in `console/config/main.ts` and scans `routes/`
+  under the plugin (the same directory name as host `console/routes`). The
+  command directory is passed at the call site and can be changed. Run
+  `deno task run:staff` or `deno task run:staff:list`.
+
+```ts
+// console/config/main.ts
+plugins: [
+  readyPlugin(),
+  staffPlugin({ routesDir: "routes", basePath: "staff" }),
+],
+  // or in console/main.ts
+  app.registerPlugin(staffPlugin({ routesDir: "routes", basePath: "staff" }));
+```
+
+- `whoamiPlugin()` is registered in `console/main.ts` and is a single plugin
+  file that provides one command. Run `deno task run:whoami`.
+
+```bash
+deno task run:staff
+# [plugin] console-ready
+# [config] staff/hello
+# [entry] staff/hello
+# 你好，张三！（staff 插件）
+
+deno task run:whoami
+# 当前用户：张三
+
+deno task run:list
+# includes staff/hello, staff/list, and whoami
+```
+
+Host routes still win if a plugin reuses the same route name. Directory
+`_middleware.ts` under the plugin command directory wraps those plugin commands
+the same way as host `routes/`.
 
 ## Notes
 

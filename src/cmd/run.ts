@@ -39,11 +39,18 @@ import {
   loadDirectoryConsoleMiddlewares,
 } from "../feature/console-middleware.ts";
 import {
+  collectPluginConsoleRouteRoots,
+  collectPluginInlineCommands,
+  listActiveAppPlugins,
+  listPluginConsoleCommands,
+  mergeConsoleCommandLists,
+  resolveConsoleRouteFromSources,
+} from "../feature/console-plugin-routes.ts";
+import {
   ConsoleActionNotFoundError,
   ConsoleModuleHelpError,
   ConsoleRouteNotFoundError,
   invokeConsoleAction,
-  resolveConsoleRoute,
 } from "../feature/console-router.ts";
 import { isConsoleKind } from "../types/app.ts";
 import { resolveConsoleRoot } from "../utils/console-root.ts";
@@ -55,6 +62,9 @@ import {
   parseTrailingCommandArgs,
   takeRunPassthrough,
 } from "../utils/run-passthrough.ts";
+import { perfDump, perfMark } from "../utils/perf-trace.ts";
+
+perfMark("run_module_evaluated");
 
 async function cleanupApp(app: App | null): Promise<void> {
   if (!app) return;
@@ -92,12 +102,34 @@ async function resolveRoutesDir(
   return join(consoleRoot, "routes");
 }
 
+async function startConsoleApp(
+  consoleRoot: string,
+  configDir: string,
+): Promise<App> {
+  perfMark("console_import_app");
+  const { App: AppClass } = await import("../core/app.ts");
+  perfMark("console_load_entry");
+  let app = await loadConsoleAppEntry(consoleRoot);
+  if (!app) {
+    perfMark("console_construct_app");
+    app = new AppClass(
+      { kind: "console", hotReload: false },
+      { mode: "console", configDirectories: [configDir] },
+    );
+  }
+  perfMark("console_app_start");
+  await app.start({ mode: "console" });
+  perfMark("console_app_ready");
+  return app;
+}
+
 async function runList(
   projectRoot: string,
   appName: string | undefined,
   filter: string | undefined,
 ): Promise<void> {
   await preloadProjectEnv({ projectRoot, app: appName });
+  perfMark("list_env_loaded");
   let consoleRoot: string;
   try {
     consoleRoot = await resolveConsoleRoot(projectRoot, { app: appName });
@@ -106,13 +138,47 @@ async function runList(
     exit(2);
     return;
   }
-  const routesDir = await resolveRoutesDir(projectRoot, consoleRoot);
-  const commands = await listConsoleCommands(routesDir, filter);
+  const configDir = join(consoleRoot, "config");
+  setConsoleConfigDirectoryOverride(configDir);
+  let routesDir = await resolveRoutesDir(projectRoot, consoleRoot);
+  let pluginCommands: Awaited<ReturnType<typeof listPluginConsoleCommands>> =
+    [];
+  let app: App | null = null;
+  try {
+    app = await startConsoleApp(consoleRoot, configDir);
+    const config = getConfig(app.container);
+    const routesDirRaw = (config.router as { routesDir?: string } | undefined)
+      ?.routesDir;
+    routesDir = routesDirRaw
+      ? resolve(projectRoot, routesDirRaw)
+      : join(consoleRoot, "routes");
+    const plugins = listActiveAppPlugins(app.container);
+    perfMark("list_plugin_scan");
+    pluginCommands = await listPluginConsoleCommands(
+      await collectPluginConsoleRouteRoots(plugins),
+      collectPluginInlineCommands(plugins),
+      filter,
+    );
+    perfMark("list_plugin_scan_done");
+  } catch {
+    // Host filesystem list still works if the App cannot start.
+    app = null;
+  }
+  perfMark("list_host_scan");
+  const commands = mergeConsoleCommandLists(
+    await listConsoleCommands(routesDir, filter),
+    pluginCommands,
+  );
+  perfMark("list_format");
   info($tr("run.listHeader"));
   console.log(formatConsoleCommandList(commands));
   if (commands.length > 0) {
     info($tr("run.listFooter"));
   }
+  perfMark("list_cleanup");
+  await cleanupApp(app);
+  perfMark("list_done");
+  perfDump("cli-run-list");
   exit(0);
 }
 
@@ -125,6 +191,7 @@ export async function main(
 ): Promise<void> {
   const projectRoot = await findProjectRoot(cwd());
   await reexecWithProjectImportMap(projectRoot);
+  perfMark("run_main_begin");
   const appOpt = options.app;
   const appName = typeof appOpt === "string" && appOpt.length > 0
     ? appOpt
@@ -174,15 +241,7 @@ export async function main(
   const trailing = parseTrailingCommandArgs(trailingRaw);
 
   try {
-    const { App: AppClass } = await import("../core/app.ts");
-    app = await loadConsoleAppEntry(consoleRoot);
-    if (!app) {
-      app = new AppClass(
-        { kind: "console", hotReload: false },
-        { mode: "console", configDirectories: [configDir] },
-      );
-    }
-    await app.start({ mode: "console" });
+    app = await startConsoleApp(consoleRoot, configDir);
 
     const config = getConfig(app.container);
     if (!isConsoleKind(config)) {
@@ -201,13 +260,27 @@ export async function main(
       ? resolve(projectRoot, routesDirRaw)
       : join(consoleRoot, "routes");
 
-    const resolved = await resolveConsoleRoute(routesDir, routePath);
+    perfMark("run_resolve_route");
+    const plugins = listActiveAppPlugins(app.container);
+    const pluginRoots = await collectPluginConsoleRouteRoots(plugins);
+    const inlineCommands = collectPluginInlineCommands(plugins);
+    const resolved = await resolveConsoleRouteFromSources(
+      routesDir,
+      routePath,
+      pluginRoots,
+      inlineCommands,
+    );
+    const directoryRoot = resolved.middlewareRoot ?? routesDir;
     // 外 → 内：全局 middlewares/ → config.middlewares → app.use() → 目录 _middleware.ts
+    const directoryMiddlewares = resolved.filePath
+      ? await loadDirectoryConsoleMiddlewares(directoryRoot, resolved.filePath)
+      : [];
+    perfMark("run_load_middlewares");
     const middlewares = [
       ...await loadConsoleMiddlewares(join(consoleRoot, "middlewares")),
       ...app.getConfigConsoleMiddlewares(),
       ...app.getEntryConsoleMiddlewares(),
-      ...await loadDirectoryConsoleMiddlewares(routesDir, resolved.filePath),
+      ...directoryMiddlewares,
     ];
     const ac = new AbortController();
     const ctx = createConsoleContext({
@@ -219,6 +292,7 @@ export async function main(
       signal: ac.signal,
     });
 
+    perfMark("run_invoke_command");
     const invokePromise = invokeConsoleAction(resolved, ctx, { middlewares });
     let code: number;
     if (timeoutMs != null) {
@@ -240,8 +314,11 @@ export async function main(
       code = await invokePromise;
     }
 
+    perfMark("run_command_done");
     await cleanupApp(app);
     app = null;
+    perfMark("run_cleanup_done");
+    perfDump("cli-run");
     exit(code);
   } catch (err) {
     await cleanupApp(app);

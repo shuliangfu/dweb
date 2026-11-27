@@ -26,6 +26,15 @@ and this project adheres to
   (2) `config.middlewares`; (3) `app.use()` in `console/main.ts`; (4) directory
   `_middleware.ts`; (5) route module `before` → action → `after`.
 
+- **Plugin-provided console commands**: a plugin configured in `console/main.ts`
+  or `console/config` can contribute commands to `dweb-cli run`. Scan
+  `console.routesDir` (default `"routes"`, overridable; resolve a relative path
+  with `console.baseDir`). Optional `console.basePath` namespaces the routes.
+  `console.command` exposes a single command from the plugin file itself. Host
+  routes win on name conflicts. This is implemented in dweb; `@dreamer/plugin`
+  is unchanged, and HTTP `onRoute` is not reused. `dweb-cli run --list` starts
+  the Console App when possible so plugin commands appear in the list.
+
 ### Fixed
 
 - **Console timing logs**: global middlewares such as `middlewares/timing.ts`
@@ -34,13 +43,49 @@ and this project adheres to
   `ctx.log.info(...)` to print at the default level, or set
   `logger.level: "debug"` (for example in `config/main.dev.ts`). Global log
   defaults are unchanged.
+- **Windows config loading**: paths that start with a drive letter are treated
+  as absolute. If `realPath` fails, loading falls back to the resolved path.
+  Config file paths are built with `join` instead of `/` concatenation.
+- **Production `--start` shutdown**: if the client builder was never loaded (the
+  production-bundle path), `shutdown()` no longer lazy-imports
+  `csr-client-builder`, which previously resolved next to `dist/server.js` and
+  failed with Module not found.
+- **Official multi-app example JSX on Bun**: added a `tsconfig.json` to
+  `examples/app-kinds/multi-web-api-console` with the same
+  `jsxImportSource: "@dreamer/view"` as the View examples. Only `deno.json`
+  compilerOptions was present before, so Bun did not use the View JSX runtime
+  when loading `.tsx` routes and `GET /` returned 500 (missing mount container).
 
 ### Performance
 
 - **`dweb-cli run` startup**: the first process now re-execs with the project
   import map _before_ importing `run.ts` / `App` (avoids loading the HTTP render
-  stack twice). `App` is imported only when a command is actually invoked, so
-  `dweb-cli run --list` no longer constructs an App.
+  stack twice). `App` is imported when a command is invoked. `--list` also
+  starts the Console App when possible, so plugin-provided commands appear in
+  the list.
+- **`--dev`**: official example web / api / console entries import `App` from
+  `@dreamer/dweb/core/app`, so the listen-time module graph is smaller. Together
+  with `@dreamer/server@1.4.0`, DevTools and HMR load after listen and are no
+  longer preloaded on `import { Server }`. The first request after listen can
+  still be held by the first client compile.
+- **`--build`**: the web client build goes through `@dreamer/esbuild/builder`,
+  avoiding the fat main esbuild entry (plugins / CSS toolchain) on that path.
+- **`--start`**: the production bundle uses a slim entry and lazy modules, so
+  `@dreamer/console`, `@dreamer/esbuild`, and `@dreamer/database` stay off the
+  `--start` / production-bundle path.
+- **`--dev` startup logs**: the listen line (`Dev server running at …`) is
+  unchanged. The post-listen build-tool, route-scan, and client-build lines are
+  no longer printed by default. A Dev startup duration is logged immediately
+  after listen (process start to listen, not including the first client compile
+  after listen).
+
+### Changed
+
+- **Dependencies**: `@dreamer/server` `^1.3.5` → `^1.4.0`; `@dreamer/esbuild`
+  `^1.5.4` → `^1.5.5`; `@dreamer/plugins` `^1.2.9` → `^1.2.10`; example
+  `@dreamer/runtime-adapter` `^1.2.3` → `^1.2.4`; `postcss` `^8.5.33` →
+  `^8.5.34`; `chart.js` `4.6.1` → `4.6.2`. Workspace and example projects follow
+  these bumps.
 
 ## [3.11.0] - 2026-11-23
 

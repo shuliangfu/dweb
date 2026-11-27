@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@dreamer/view"
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
+}

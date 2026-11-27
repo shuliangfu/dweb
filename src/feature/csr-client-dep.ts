@@ -1196,8 +1196,6 @@ export async function setupHydrationRouterAndHmr(opts: {
       RENDER_STATE.lastUnmount = null;
     }
   };
-  // 先启动路由器，确保链接点击拦截器尽早注册（避免 hydrate 失败时链接无法响应）
-  router.start();
   if (isHybridMode && !isHydratedRef.current) {
     const currentPath = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname.replace(/\\/$/, "") || "/" : "/";
     const dataPath = ((g.__DATA__?.pathname ?? g.__DATA__?.route) ?? "").replace(/\\/$/, "") || "/";
@@ -1407,15 +1405,22 @@ export async function setupHydrationRouterAndHmr(opts: {
       });
   };
 
-  // onRouteChange 注册时 router 会立即用当前路由触发一次。CSR 下若执行会导致先渲染一次（_navProps 可能无 data），再 renderCurrentRoute 用 __DATA__ 又渲染一次，出现双渲染；Hybrid 下该次会与 hydrate 冲突。故首轮均跳过，由 renderCurrentRoute（CSR）或 hydrate（Hybrid）负责首屏。
+  // onRouteChange 注册时 router 会立即用当前路由触发一次。CSR 下若执行会导致先渲染一次（_navProps 可能无 data），再 renderCurrentRoute 用 __DATA__ 又渲染一次，出现双渲染；Hybrid 下该次会与 hydrate 冲突。故仅当仍停在注册时的路径上时跳过该次；若路径已变则不能跳过，否则会停在旧的首屏 HTML。
+  const _routeChangeReadyPath = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname.replace(/\\/$/, "") || "/" : "/";
   let skipNextRouteChange = true;
   router.onRouteChange(async (match) => {
     if (!match) { unmountPrevious(); await renderNotFound(containerId); return; }
     if (skipNextRouteChange) {
       skipNextRouteChange = false;
-      return;
+      const _cbPath = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname.replace(/\\/$/, "") || "/" : "/";
+      if (_cbPath === _routeChangeReadyPath) return;
     }
-    if (isHybridMode && !isHydratedRef.current) { isHydratedRef.current = true; return; }
+    if (isHybridMode && !isHydratedRef.current) {
+      isHydratedRef.current = true;
+      const _hydPath = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname.replace(/\\/$/, "") || "/" : "/";
+      const _dataPath = ((g.__DATA__?.pathname ?? g.__DATA__?.route) ?? "").replace(/\\/$/, "") || "/";
+      if (_hydPath === _dataPath) return;
+    }
     try {
       ${deferredNavLoadModuleSnippet}
       if (!module) { unmountPrevious(); await renderNotFound(containerId); return; }
@@ -1466,6 +1471,10 @@ export async function setupHydrationRouterAndHmr(opts: {
       await renderError(containerId, error);
     }
   });
+  // 等 hydrate（或决定不 hydrate）以及 onRouteChange 就绪后再拦截链接。
+  // 若过早 start()，点击会被 preventDefault，但首轮 onRouteChange 可能被跳过，
+  // hybrid 会停在旧的首屏 HTML。就绪前的点击走浏览器默认整页跳转。
+  router.start();
 }
 
 /** 客户端应用实例，含 renderCurrentRoute 与 router（可在此注册 beforeRoute/afterRoute 做路由拦截） */
@@ -1492,8 +1501,8 @@ export async function initApp(): Promise<DwebApp> {
     // SSR/SSG 仅做当前页 hydrate、不做客户端路由，链接点击走浏览器默认整页跳转
     interceptLinks: _win.__DWEB_MODE__ !== "ssr" && _win.__DWEB_MODE__ !== "ssg",
   });
-  // 在首次 await 前注册链接点击拦截器（CSR/Hybrid）；SSR/SSG 时 interceptLinks 为 false，不拦截
-  router.start();
+  // 链接点击拦截在 setupHydrationRouterAndHmr 里、hydrate 与 onRouteChange 就绪后再 start()。
+  // 就绪前的点击走浏览器默认整页跳转，避免拦截后首轮回调被跳过而停在旧首屏。
 ${initAppLayoutsAndHydrateBody}
 
   /**

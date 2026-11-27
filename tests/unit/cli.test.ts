@@ -10,13 +10,15 @@ import "../setup.ts";
 import {
   chdir,
   cwd,
+  fromFileUrl,
   makeTempDir,
+  readTextFile,
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterEach, describe, expect, it } from "@dreamer/test";
 import { stubExit } from "../helpers/stub-exit.ts";
-import { createCLI } from "../../src/cli.ts";
+import { createCLI } from "../../src/cli-factory.ts";
 
 describe("CLI (cli.ts)", () => {
   describe("createCLI()", () => {
@@ -98,6 +100,19 @@ describe("CLI (cli.ts)", () => {
       } finally {
         stub.restore();
       }
+    });
+  });
+
+  describe("启动模块图", () => {
+    it("cli.ts 不含会把命令树预装进启动图的静态可分析 import", async () => {
+      const text = await readTextFile(
+        fromFileUrl(new URL("../../src/cli.ts", import.meta.url)),
+      );
+      expect(text.includes('import("@dreamer/runtime-adapter")')).toBe(false);
+      expect(text.includes('from "@dreamer/runtime-adapter"')).toBe(false);
+      expect(text.includes('import("./cli-factory.ts")')).toBe(false);
+      expect(text.includes('import("./utils/main-module.ts")')).toBe(false);
+      expect(text.includes('import("./utils/run-passthrough.ts")')).toBe(false);
     });
   });
 });

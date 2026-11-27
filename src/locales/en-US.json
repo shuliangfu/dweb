@@ -246,6 +246,7 @@
     "clientEntryExistsSkip": "Client entry exists, skipping generate: {path}",
     "clientScriptBuildComplete": "Client script build complete",
     "devServerRunning": "Dev server running at http://{host}:{port}",
+    "devServerStartedIn": "Dev started in {ms}ms",
     "prodServerRunning": "Production server running at http://{host}:{port}",
     "upgradePromptMissingVersion": "upgradePrompt is enabled, but AppConfig.version is missing, so the upgrade prompt was not activated"
   },

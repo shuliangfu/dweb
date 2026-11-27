@@ -4,7 +4,8 @@
  * 配置由框架自动加载 config/main.ts
  */
 
-import { App, getSocketIoServer } from "@dreamer/dweb";
+import { App } from "@dreamer/dweb";
+import { getSocketIoServer } from "@dreamer/dweb/feature/socket-io";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { unocssPlugin } from "@dreamer/plugins/unocss";
 

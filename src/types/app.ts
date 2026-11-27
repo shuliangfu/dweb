@@ -692,17 +692,54 @@ export type ConsoleAppMiddleware = (
 ) => Promise<number> | number;
 
 /**
+ * Console commands a plugin can provide (dweb-only; not part of
+ * `@dreamer/plugin`). Used by `dweb-cli run` after the plugin is configured
+ * in `console/main.ts` or `console/config`.
+ *
+ * This is not HTTP `onRoute`. Command modules follow the same file-route
+ * shape as host `routes/` (`run` / `default` / `main`, named actions, `meta`).
+ */
+export interface ConsolePluginConfig {
+  /**
+   * Directory of command modules, relative to {@link baseDir}.
+   * Default: `"routes"`. May also be an absolute path or a `file:` URL.
+   */
+  routesDir?: string | URL;
+  /**
+   * Directory used to resolve a relative `routesDir`. Pass
+   * `new URL(".", import.meta.url)` from the plugin module so the scan is
+   * next to the plugin, not the host app.
+   */
+  baseDir?: string | URL;
+  /**
+   * Optional command base path, e.g. `"staff"` so `hello.ts` is invoked as
+   * `dweb-cli run staff/hello`.
+   */
+  basePath?: string;
+  /**
+   * A single command from this plugin file. A string is the route name
+   * (`dweb-cli run whoami`); the plugin object may also export `run` /
+   * `default` / `main` and `meta` like a command module. Or pass
+   * `{ name, file }` to point at a command module file.
+   */
+  command?: string | { name: string; file?: string | URL };
+}
+
+/**
  * App 插件类型
  *
- * 与 @dreamer/plugin 的 Plugin 类型一致，需提供 name 及可选钩子（onInit、onRequest 等）。
+ * 基于 `@dreamer/plugin` 的 Plugin（`name`、`version`、可选钩子），dweb 另可
+ * 通过 {@link ConsolePluginConfig} 提供 console 命令。不必升级插件包。
  *
  * @example
  * ```ts
- * const plugin: AppPlugin = { name: "my-plugin", onInit: () => {} };
+ * const plugin: AppPlugin = { name: "my-plugin", version: "1.0.0", onInit: () => {} };
  * app.registerPlugin(plugin);
  * ```
  */
-export type AppPlugin = Plugin;
+export type AppPlugin = Plugin & {
+  console?: ConsolePluginConfig;
+};
 
 /**
  * App 类接口

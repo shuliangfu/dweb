@@ -48,6 +48,7 @@ export type {
   AppPlugin,
   AppStage,
   ConsoleAppConfig,
+  ConsolePluginConfig,
   DatabaseAppConfig,
   IApp,
   SocketConfig,
@@ -293,95 +294,17 @@ export {
 export type { HealthStatus, RouteDefinition } from "./core/plugin-events.ts";
 
 /**
- * 构建模块：
- * - getBuild: 获取构建器实例
- * - initializeBuild: 初始化构建功能
+ * HTTP / 渲染 / 构建 / 实时通道的运行时 API 已从根入口拆出，避免
+ * `import { App } from "@dreamer/dweb"` 在 console 或仅用 App 时
+ * 拉取 server / render / esbuild 图。
+ * 请从子路径按需导入：
+ * - `@dreamer/dweb/feature/server`
+ * - `@dreamer/dweb/feature/router`
+ * - `@dreamer/dweb/feature/render`
+ * - `@dreamer/dweb/feature/build`
+ * - `@dreamer/dweb/feature/socket-io`
+ * - `@dreamer/dweb/feature/websocket`
  */
-export { getBuild, initializeBuild } from "./feature/build.ts";
-
-/**
- * CSR 渲染：
- * - createRendererCSR: 创建 CSR 渲染器
- * - RenderCSROptions: CSR 渲染器选项类型
- */
-export { createRendererCSR } from "./feature/render-csr.ts";
-export type { RenderCSROptions } from "./feature/render-csr.ts";
-
-/**
- * Hybrid 渲染：
- * - createRendererHybrid: 创建 Hybrid 渲染器
- * - RenderHybridOptions: Hybrid 渲染器选项类型
- */
-export { createRendererHybrid } from "./feature/render-hybrid.ts";
-export type { RenderHybridOptions } from "./feature/render-hybrid.ts";
-
-/**
- * SSG 渲染：
- * - createRendererSSG: 创建 SSG 渲染器
- * - RenderSSGOptions: SSG 渲染器选项类型
- */
-export { createRendererSSG } from "./feature/render-ssg.ts";
-export type { RenderSSGOptions } from "./feature/render-ssg.ts";
-
-/**
- * SSR 渲染：
- * - createRendererSSR: 创建 SSR 渲染器
- */
-export { createRendererSSR } from "./feature/render-ssr.ts";
-
-/**
- * 渲染模块：
- * - getRender: 获取渲染器实例
- * - initializeRender: 初始化渲染功能
- */
-export { getRender, initializeRender } from "./feature/render.ts";
-
-/**
- * 路由模块：
- * - getRouter: 获取路由实例
- * - initializeRouter: 初始化路由
- */
-export { getRouter, initializeRouter } from "./feature/router.ts";
-
-/**
- * HTTP 服务器模块：
- * - getServer: 获取 HTTP 服务器实例
- * - initializeServer: 初始化 HTTP 服务器
- * - startServer: 启动 HTTP 服务器
- * - stopServer: 停止 HTTP 服务器
- */
-export {
-  getServer,
-  initializeServer,
-  startServer,
-  stopServer,
-} from "./feature/server.ts";
-
-/**
- * Socket.IO 模块：
- * - getSocketIoPath: 获取 Socket.IO 路径
- * - getSocketIoServer: 获取 Socket.IO 服务器实例
- * - initializeSocketIo: 初始化 Socket.IO
- */
-export {
-  getSocketIoPath,
-  getSocketIoServer,
-  initializeSocketIo,
-} from "./feature/socket-io.ts";
-
-/**
- * WebSocket 模块：
- * - getWebSocketPath: 获取 WebSocket 路径
- * - getWebSocketServer: 获取 WebSocket 服务器实例
- * - initializeWebSocket: 初始化 WebSocket
- * - registerWebSocketUpgrade: 在 HTTP 服务器上注册 Upgrade（主路径）
- */
-export {
-  getWebSocketPath,
-  getWebSocketServer,
-  initializeWebSocket,
-  registerWebSocketUpgrade,
-} from "./feature/websocket.ts";
 
 /**
  * CLI 工具（按需从 jsr:@dreamer/dweb/feature/command 导入）：

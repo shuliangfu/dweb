@@ -11,10 +11,17 @@
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { cwd, exists, getEnv, join } from "./runtime-adapter.ts";
-import {
-  buildClientScript,
-  ensureClientEntryFile,
-} from "../feature/csr-client-builder.ts";
+import { importLater } from "../utils/import-later.ts";
+
+/** 运行时拼接 specifier，避免把 esbuild/CSR 图预装进 HTTP 启动路径。 */
+function importCsrClientBuilder(): Promise<
+  typeof import("../feature/csr-client-builder.ts")
+> {
+  return importLater(
+    ["..", "feature", "csr-client-builder.ts"].join("/"),
+    import.meta.url,
+  );
+}
 import { createClientScriptMiddleware } from "../feature/csr-client-middleware.ts";
 import { createLoadDataMiddleware } from "../feature/load-data-middleware.ts";
 import { createNotFoundMiddleware } from "../feature/not-found-middleware.ts";
@@ -31,6 +38,7 @@ import {
 } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+import { perfMark } from "../utils/perf-trace.ts";
 
 /** 最小 server 面：setSSRRender + use（渲染器签名与 @dreamer/server 对齐，含 match 形参） */
 export interface RenderPipelineServer {
@@ -59,6 +67,8 @@ export interface RegisterAppRenderPipelineDeps {
   router: any;
   config: AppConfig;
   isBuildMode: () => boolean;
+  /** 只挂客户端脚本中间件，听口后再跑 ensureClientBuildForRender。 */
+  deferEnsureClientBuild?: boolean;
 }
 
 /**
@@ -75,20 +85,48 @@ export async function ensureClientBuildForRender(
 ): Promise<void> {
   const rt = getEnv("RUNTIME_ENV");
 
+  const csr = await importCsrClientBuilder();
   if (rt === "dev") {
-    await ensureClientEntryFile(container, config);
+    perfMark("render_client_entry");
+    await csr.ensureClientEntryFile(container, config);
     if (!isBuildMode()) {
-      await buildClientScript(container, config);
+      perfMark("render_client_build");
+      await csr.buildClientScript(container, config);
+      perfMark("render_client_build_done");
     }
   } else if (rt === "build" || rt === "start") {
     if (!hasPrebuiltClient && !isBuildMode()) {
-      await buildClientScript(container, config);
+      perfMark("render_client_build");
+      await csr.buildClientScript(container, config);
+      perfMark("render_client_build_done");
     }
   } else {
     if (!hasPrebuiltClient && !isBuildMode()) {
-      await buildClientScript(container, config);
+      perfMark("render_client_build");
+      await csr.buildClientScript(container, config);
+      perfMark("render_client_build_done");
     }
   }
+}
+
+/** 听口后再补跑 register 阶段推迟的客户端构建。 */
+export async function finishDeferredClientBuild(
+  deps: RegisterAppRenderPipelineDeps,
+): Promise<void> {
+  const { container, config, isBuildMode } = deps;
+  const clientOutputDir = getClientOutputDir(config);
+  const prebuiltClientPath = join(
+    cwd(),
+    clientOutputDir,
+    CLIENT_OUTPUT_MAIN_FILENAME,
+  );
+  const hasPrebuiltClient = await exists(prebuiltClientPath);
+  await ensureClientBuildForRender(
+    container,
+    config,
+    hasPrebuiltClient,
+    isBuildMode,
+  );
 }
 
 async function registerClientScriptAndMaybeBuild(
@@ -97,6 +135,10 @@ async function registerClientScriptAndMaybeBuild(
 ): Promise<void> {
   const { container, config, isBuildMode } = deps;
   server.use(createClientScriptMiddleware(container, config));
+
+  if (deps.deferEnsureClientBuild) {
+    return;
+  }
 
   const clientOutputDir = getClientOutputDir(config);
   const prebuiltClientPath = join(

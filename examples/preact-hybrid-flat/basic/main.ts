@@ -4,7 +4,9 @@
  * 配置由框架自动加载 config/main.ts（无 src 目录，扁平结构）
  */
 
-import { App, getSocketIoServer, getWebSocketServer } from "@dreamer/dweb";
+import { App } from "@dreamer/dweb";
+import { getSocketIoServer } from "@dreamer/dweb/feature/socket-io";
+import { getWebSocketServer } from "@dreamer/dweb/feature/websocket";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
 

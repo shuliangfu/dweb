@@ -233,6 +233,7 @@
     "clientEntryExistsSkip": "클라이언트 엔트리 존재, 생성 건너뜀: {path}",
     "clientScriptBuildComplete": "클라이언트 스크립트 빌드 완료",
     "devServerRunning": "개발 서버 실행 중 http://{host}:{port}",
+    "devServerStartedIn": "Dev 시작 소요 {ms}ms",
     "prodServerRunning": "프로덕션 서버 실행 중 http://{host}:{port}",
     "upgradePromptMissingVersion": "upgradePrompt가 켜져 있지만 AppConfig.version이 없어 업그레이드 안내가 활성화되지 않았습니다"
   },

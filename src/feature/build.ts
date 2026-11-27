@@ -9,25 +9,28 @@
  * @module
  */
 
-import {
-  Builder,
-  type BuilderConfig,
-  type BuildOptions,
-  type ClientConfig,
-  type ServerConfig,
+import { Builder } from "@dreamer/esbuild/builder";
+import type {
+  BuilderConfig,
+  BuildOptions,
+  ClientConfig,
+  ServerConfig,
 } from "@dreamer/esbuild";
 import type { ServiceContainer } from "@dreamer/service";
+import { fileURLToPath } from "node:url";
 import {
-  args,
   cwd,
+  dirname,
   exists,
   getEnv,
   join,
   mkdir,
+  readTextFile,
   relative,
   remove,
+  writeTextFile,
 } from "../core/runtime-adapter.ts";
-import { type AppConfig, isApiKind } from "../types/app.ts";
+import { type AppConfig, isApiKind, isSocketIOAdapter } from "../types/app.ts";
 import {
   getClientOutputDir,
   getInferredBuildOutputDirs,
@@ -42,6 +45,7 @@ import {
   createDwebClientBundlePlugins,
   prepareClientBuildEntry,
 } from "./csr-client-builder.ts";
+import { perfMark } from "../utils/perf-trace.ts";
 
 /**
  * 从 AppConfig 解析 esbuild BuildOptions。
@@ -170,6 +174,7 @@ export function initializeBuild(
   container: ServiceContainer,
   config: AppConfig,
 ): Builder {
+  perfMark("build_initialize");
   // 从配置中获取构建选项（嵌套 build.build.*，兼容扁平）
   const buildConfig = (config.build || {}) as Record<string, unknown>;
   const resolvedBuildOpts = resolveAppBuildOptions(config);
@@ -256,15 +261,12 @@ export function initializeBuild(
   };
 
   // 创建 Builder 实例
+  perfMark("build_builder_construct");
   const builder = new Builder(builderConfig);
+  perfMark("build_builder_ready");
 
   // 将构建器注册到服务容器
   container.registerSingleton("build", () => builder);
-
-  // 开发态构建器就绪为诊断信息，用 debug 避免默认 info 刷屏
-  if (!args().includes("--build")) {
-    logger.debug($tr("log.buildToolReady"));
-  }
 
   return builder;
 }
@@ -355,6 +357,56 @@ export async function runBuildWithBuilder(
     });
   }
 
+  // 在用户入口同目录写入临时打包入口：静态引入生产运行时需要的 lazy 模块。
+  // 不把 build / esbuild / csr-client-builder 打进生产包。构建结束后删除。
+  const lazyCoreAbs = fileURLToPath(
+    new URL("../core/app-lazy-modules.ts", import.meta.url),
+  );
+  const entryExt = absEntry.endsWith(".tsx")
+    ? ".tsx"
+    : absEntry.endsWith(".js") || absEntry.endsWith(".mjs")
+    ? ".js"
+    : ".ts";
+  const wrapperPath = join(dirname(absEntry), `.dweb-bundle-entry${entryExt}`);
+  const toRelImport = (abs: string): string => {
+    let rel = relative(dirname(wrapperPath), abs).replaceAll("\\", "/");
+    if (!rel.startsWith(".")) rel = `./${rel}`;
+    return rel;
+  };
+  const lazyImports: string[] = [
+    `import ${JSON.stringify(toRelImport(lazyCoreAbs))};`,
+  ];
+  const optionalLazy: Array<[boolean, string]> = [
+    [Boolean(config.database), "../core/app-lazy-modules-database.ts"],
+    [
+      isSocketIOAdapter(
+        (config.socket as { adapter?: string } | undefined)?.adapter,
+      ),
+      "../core/app-lazy-modules-socket-io.ts",
+    ],
+    [
+      (config.socket as { adapter?: string } | undefined)?.adapter ===
+        "websocket",
+      "../core/app-lazy-modules-websocket.ts",
+    ],
+    [Boolean(config.upload), "../core/app-lazy-modules-upload.ts"],
+  ];
+  for (const [enabled, relFromHere] of optionalLazy) {
+    if (!enabled) continue;
+    const abs = fileURLToPath(new URL(relFromHere, import.meta.url));
+    lazyImports.push(`import ${JSON.stringify(toRelImport(abs))};`);
+  }
+  const originalSource = await readTextFile(absEntry);
+  await writeTextFile(
+    wrapperPath,
+    `${lazyImports.join("\n")}\n${originalSource}`,
+  );
+  const relWrapper = relative(cwdPath, wrapperPath);
+  serverEntry = relWrapper.startsWith(".") || relWrapper.startsWith("/")
+    ? relWrapper
+    : join(".", relWrapper);
+  absEntry = wrapperPath;
+
   const useNativeCompile = serverConfig.useNativeCompile === true;
   const serverOutputDir = serverConfig.output ??
     getInferredBuildOutputDirs().server;
@@ -417,25 +469,35 @@ export async function runBuildWithBuilder(
       : undefined,
   };
 
-  const builder = new Builder(builderConfig);
-  await builder.build();
+  try {
+    const builder = new Builder(builderConfig);
+    perfMark("build_esbuild_run");
+    await builder.build();
+    perfMark("build_esbuild_done");
 
-  // 向服务端产物注入 __DWEB_VERSION__，使生产运行时 getDwebVersion() 能拿到正确版本（否则 import.meta.url 指向 dist 会读到示例目录 deno.json 而回退到 3.0.0）
-  if (!useNativeCompile) {
-    const { getDwebVersion } = await import("../utils/version.ts");
-    const version = await getDwebVersion();
-    const serverJsPath = join(cwdPath, serverOutputDir, "server.js");
-    const { readTextFile, writeTextFile } = await import(
-      "../core/runtime-adapter.ts"
-    );
-    if (await exists(serverJsPath)) {
-      const content = await readTextFile(serverJsPath);
-      // 将 jsr:/npm:/@jsr/ external 改成裸包名，Bun/Node 才能解析（Deno import map 同样认裸名）
-      const rewritten = rewriteServerExternalSpecifiers(content);
-      const versionBanner = `globalThis.__DWEB_VERSION__ = ${
-        JSON.stringify(version)
-      };\n`;
-      await writeTextFile(serverJsPath, versionBanner + rewritten);
+    // 向服务端产物注入 __DWEB_VERSION__，使生产运行时 getDwebVersion() 能拿到正确版本（否则 import.meta.url 指向 dist 会读到示例目录 deno.json 而回退到 3.0.0）
+    if (!useNativeCompile) {
+      const { getDwebVersion } = await import("../utils/version.ts");
+      const version = await getDwebVersion();
+      const serverJsPath = join(cwdPath, serverOutputDir, "server.js");
+      const { readTextFile, writeTextFile } = await import(
+        "../core/runtime-adapter.ts"
+      );
+      if (await exists(serverJsPath)) {
+        const content = await readTextFile(serverJsPath);
+        // 将 jsr:/npm:/@jsr/ external 改成裸包名，Bun/Node 才能解析（Deno import map 同样认裸名）
+        const rewritten = rewriteServerExternalSpecifiers(content);
+        const versionBanner = `globalThis.__DWEB_VERSION__ = ${
+          JSON.stringify(version)
+        };\n`;
+        await writeTextFile(serverJsPath, versionBanner + rewritten);
+      }
+    }
+  } finally {
+    try {
+      await remove(wrapperPath);
+    } catch {
+      // 临时打包入口清理失败不影响构建结果
     }
   }
 }

@@ -233,6 +233,7 @@
     "clientEntryExistsSkip": "Client-Entry existiert, Überspringe Generieren: {path}",
     "clientScriptBuildComplete": "Client-Skript-Build abgeschlossen",
     "devServerRunning": "Dev-Server läuft unter http://{host}:{port}",
+    "devServerStartedIn": "Dev gestartet in {ms}ms",
     "prodServerRunning": "Produktionsserver läuft unter http://{host}:{port}",
     "upgradePromptMissingVersion": "upgradePrompt ist aktiviert, aber AppConfig.version fehlt, daher wurde der Update-Hinweis nicht aktiviert"
   },

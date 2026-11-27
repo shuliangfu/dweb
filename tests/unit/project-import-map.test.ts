@@ -19,6 +19,7 @@ import {
   mergeProjectImports,
   pathAliasesFromImports,
   PROJECT_CONFIG_ENV,
+  projectImportMapAlreadyActive,
   reexecWithProjectImportMap,
   resolveImportMapSpecifier,
   resolvePathAlias,
@@ -205,6 +206,49 @@ describe("project-import-map", () => {
 
   it("installRuntimeAliasResolver 在没有别名时直接返回", async () => {
     await installRuntimeAliasResolver({});
+  });
+
+  it("projectImportMapAlreadyActive 在别名已解析到项目目标时为 true，缺别名或指到别处时为 false", () => {
+    const dir = resolve("/apps/admin");
+    const imports = {
+      "@common/": "./src/common/",
+      "@dreamer/dweb": "../dweb/src/mod.ts",
+      "@dreamer/config": "jsr:@dreamer/config@^1.1.1",
+    };
+    const resolved: Record<string, string> = {
+      "@common/__dweb_reexec_probe": resolveImportMapSpecifier(
+        "./src/common/__dweb_reexec_probe",
+        dir,
+      ),
+      "@dreamer/dweb": resolveImportMapSpecifier("../dweb/src/mod.ts", dir),
+      "@dreamer/config": "jsr:@dreamer/config@^1.1.1",
+    };
+    expect(projectImportMapAlreadyActive(imports, dir, (s) => {
+      if (!(s in resolved)) throw new Error(`unmapped ${s}`);
+      return resolved[s]!;
+    })).toBe(true);
+
+    expect(projectImportMapAlreadyActive(imports, dir, (s) => {
+      if (s.startsWith("@common/")) throw new Error("unmapped");
+      if (!(s in resolved)) throw new Error(`unmapped ${s}`);
+      return resolved[s]!;
+    })).toBe(false);
+
+    expect(projectImportMapAlreadyActive(imports, dir, (s) => {
+      if (s.startsWith("@common/")) {
+        return resolveImportMapSpecifier(
+          "./other/common/__dweb_reexec_probe",
+          dir,
+        );
+      }
+      if (!(s in resolved)) throw new Error(`unmapped ${s}`);
+      return resolved[s]!;
+    })).toBe(false);
+
+    expect(projectImportMapAlreadyActive({}, dir, () => "x")).toBe(false);
+    expect(projectImportMapAlreadyActive(undefined, dir, () => "x")).toBe(
+      false,
+    );
   });
 
   it("reexecWithProjectImportMap 在环境变量已设置或没有配置文件时直接返回", async () => {

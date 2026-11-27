@@ -15,6 +15,7 @@ import {
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterEach, beforeEach, describe, expect, it } from "@dreamer/test";
+import { getRepoRoot } from "../setup.ts";
 import { App } from "../../src/core/app.ts";
 import { setConsoleConfigDirectoryOverride } from "../../src/core/config.ts";
 import {
@@ -113,7 +114,18 @@ describe("console App config + entry middleware/plugins", () => {
   let prevRuntime: string | undefined;
 
   beforeEach(async () => {
-    tmp = await makeTempDir({ prefix: "dweb-console-appcfg-" });
+    // Config loading only imports files inside the project
+    // (isPathWithinProject). OS temp dirs fail that check on Windows
+    // when cwd is not the temp folder, so keep fixtures under tests/data.
+    tmp = join(
+      getRepoRoot(),
+      "tests",
+      "data",
+      `dweb-console-appcfg-${Date.now()}-${
+        Math.random().toString(16).slice(2)
+      }`,
+    );
+    await ensureDir(tmp);
     originalCwd = cwd();
     prevRuntime = getEnv("RUNTIME_ENV") ?? undefined;
     setEnv("RUNTIME_ENV", "dev");

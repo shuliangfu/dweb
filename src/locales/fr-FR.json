@@ -233,6 +233,7 @@
     "clientEntryExistsSkip": "Entrée client existe, génération ignorée : {path}",
     "clientScriptBuildComplete": "Build script client terminé",
     "devServerRunning": "Serveur dev à http://{host}:{port}",
+    "devServerStartedIn": "Démarrage Dev en {ms}ms",
     "prodServerRunning": "Serveur de production à http://{host}:{port}",
     "upgradePromptMissingVersion": "upgradePrompt est activé, mais AppConfig.version est absent, l'invite de mise à jour n'a donc pas été activée"
   },

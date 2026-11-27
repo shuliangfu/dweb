@@ -35,35 +35,6 @@ import {
   writeTextFile,
 } from "./runtime-adapter.ts";
 
-import { AssetsProcessor } from "@dreamer/esbuild";
-import { expandDynamicRoute, filePathToRoute } from "@dreamer/render";
-import {
-  cleanBuildOutputDirs,
-  initializeBuild,
-  resolveAppBuildOptions,
-  runBuildWithBuilder,
-} from "../feature/build.ts";
-import { clearClientScriptCache } from "../feature/csr-client-builder.ts";
-import { createNestedRoutesMiddleware } from "../feature/routes-middleware.ts";
-import { loadRouteModule } from "../feature/load-route-module.ts";
-import {
-  collectClientRoutes,
-  hasContainerElementInHtml,
-  wrapInlineClientBootstrapScript,
-} from "../feature/render-utils.ts";
-import { getRender, initializeRender } from "../feature/render.ts";
-import { getRouter, initializeRouter } from "../feature/router.ts";
-import { getServer, initializeServer, startServer } from "../feature/server.ts";
-import {
-  createSocketIoMiddleware,
-  getSocketIoPath,
-  initializeSocketIo,
-} from "../feature/socket-io.ts";
-import {
-  getWebSocketPath,
-  initializeWebSocket,
-  registerWebSocketUpgrade,
-} from "../feature/websocket.ts";
 import {
   type AppConfig,
   type AppConstructOptions,
@@ -78,8 +49,6 @@ import {
 } from "../types/app.ts";
 import { getClientOutputDir } from "../utils/build-dirs.ts";
 import { setCacheOptions } from "../utils/constants.ts";
-import { registerAppRenderPipeline } from "./app-render-pipeline.ts";
-import { registerUploadIntegration } from "../feature/upload.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
@@ -99,13 +68,7 @@ import {
   initializeConfigManager,
   validateConfig,
 } from "./config.ts";
-import {
-  connectDatabases,
-  disconnectDatabases,
-  initializeDatabase,
-} from "./database.ts";
 import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
-import { registerFrameworkHttpMiddlewares } from "./app-http-middlewares.ts";
 import {
   removeAppSignalHandlers,
   setupAppSignalHandlers,
@@ -124,6 +87,111 @@ import {
 } from "./plugin.ts";
 import { initializeServiceContainer } from "./service.ts";
 import { resolveConfigConsoleMiddlewares } from "../feature/console-middleware.ts";
+import { importLater } from "../utils/import-later.ts";
+import { perfDump, perfMark } from "../utils/perf-trace.ts";
+
+type WebHttp =
+  & typeof import("../feature/render.ts")
+  & typeof import("../feature/router.ts")
+  & typeof import("../feature/server.ts")
+  & typeof import("./app-render-pipeline.ts")
+  & typeof import("./app-http-middlewares.ts");
+
+type WebSsg =
+  & typeof import("@dreamer/render")
+  & typeof import("@dreamer/esbuild")
+  & typeof import("../feature/render-utils.ts")
+  & typeof import("../feature/load-route-module.ts")
+  & typeof import("../feature/render.ts")
+  & typeof import("../feature/router.ts");
+
+type WebBuild = typeof import("../feature/build.ts");
+
+/** HTTP / 渲染 / 实时通道：仅 web/api 启动路径加载，console 不进入此图。 */
+async function loadWebHttp(): Promise<WebHttp> {
+  const [
+    renderMod,
+    routerMod,
+    serverMod,
+    pipelineMod,
+    httpMwMod,
+  ] = await Promise.all([
+    importLater<typeof import("../feature/render.ts")>(
+      ["..", "feature", "render.ts"].join("/"),
+      import.meta.url,
+    ),
+    importLater<typeof import("../feature/router.ts")>(
+      ["..", "feature", "router.ts"].join("/"),
+      import.meta.url,
+    ),
+    importLater<typeof import("../feature/server.ts")>(
+      ["..", "feature", "server.ts"].join("/"),
+      import.meta.url,
+    ),
+    importLater<typeof import("./app-render-pipeline.ts")>(
+      [".", "app-render-pipeline.ts"].join("/"),
+      import.meta.url,
+    ),
+    importLater<typeof import("./app-http-middlewares.ts")>(
+      [".", "app-http-middlewares.ts"].join("/"),
+      import.meta.url,
+    ),
+  ]);
+  return {
+    ...renderMod,
+    ...routerMod,
+    ...serverMod,
+    ...pipelineMod,
+    ...httpMwMod,
+  };
+}
+
+/** build() 与 SSG 预渲染用到的重模块，按需加载。 */
+async function loadWebBuild(): Promise<WebBuild> {
+  return await importLater<typeof import("../feature/build.ts")>(
+    ["..", "feature", "build.ts"].join("/"),
+    import.meta.url,
+  );
+}
+
+/** SSG 预渲染才需要的 render/router 图，--build 的 CSR/SSR 打包路径不预装。 */
+async function loadWebSsg(): Promise<WebSsg> {
+  const [renderPkg, esbuildMod, renderUtils, loadRoute, renderMod, routerMod] =
+    await Promise.all([
+      importLater<typeof import("@dreamer/render")>(
+        ["@dreamer", "render"].join("/"),
+        import.meta.url,
+      ),
+      importLater<typeof import("@dreamer/esbuild")>(
+        ["@dreamer", "esbuild"].join("/"),
+        import.meta.url,
+      ),
+      importLater<typeof import("../feature/render-utils.ts")>(
+        ["..", "feature", "render-utils.ts"].join("/"),
+        import.meta.url,
+      ),
+      importLater<typeof import("../feature/load-route-module.ts")>(
+        ["..", "feature", "load-route-module.ts"].join("/"),
+        import.meta.url,
+      ),
+      importLater<typeof import("../feature/render.ts")>(
+        ["..", "feature", "render.ts"].join("/"),
+        import.meta.url,
+      ),
+      importLater<typeof import("../feature/router.ts")>(
+        ["..", "feature", "router.ts"].join("/"),
+        import.meta.url,
+      ),
+    ]);
+  return {
+    ...renderPkg,
+    ...esbuildMod,
+    ...renderUtils,
+    ...loadRoute,
+    ...renderMod,
+    ...routerMod,
+  };
+}
 
 /**
  * App 类
@@ -187,6 +255,8 @@ export class App extends EventEmitter implements IApp {
   private _configDirectories?: string[];
   /** 是否以 console 模式运行（不 listen / 强制关闭 hotReload） */
   private _consoleMode = false;
+  /** 本进程是否已加载客户端构建器（仅 dev 听口后）。生产 --start 为 false。 */
+  private _clientBuilderLoaded = false;
   /** console.slim / DWEB_CONSOLE_SLIM：跳过 banner 与 HTTP 中间件管理器 */
   private _consoleSlim = false;
   /** 来自已合并 config.middlewares 的 Console 中间件 */
@@ -215,6 +285,7 @@ export class App extends EventEmitter implements IApp {
   constructor(config: AppConfig = {}, options?: AppConstructOptions) {
     // 调用 EventEmitter 构造函数
     super();
+    perfMark("app_construct");
 
     this._configDirectories = options?.configDirectories;
     if (options?.mode === "console" || isConsoleKind(config)) {
@@ -299,6 +370,7 @@ export class App extends EventEmitter implements IApp {
    * @param config 应用配置（或覆盖项）
    */
   private async _initializeConfig(config: AppConfig): Promise<void> {
+    perfMark("app_config_start");
     // 配置目录：显式传入（dweb-cli run）优先；否则从入口路径推断；再失败用默认
     let directories: string[] | undefined = this._configDirectories;
     if (!directories) {
@@ -368,6 +440,15 @@ export class App extends EventEmitter implements IApp {
     this.container.registerSingleton("config", () => mergedConfig);
 
     // 初始化日志服务（依赖配置）
+    perfMark("app_config_merged");
+    // 与后续插件/路由中间件初始化并行装 HTTP 图，缩短听口前的串行等待
+    let webHttpGraph: Promise<WebHttp> | undefined;
+    if (
+      mergedConfig.server && !this._consoleMode && !this._isBuildMode()
+    ) {
+      perfMark("app_http_graph_start");
+      webHttpGraph = loadWebHttp();
+    }
     initializeLogger(this.container, mergedConfig);
 
     if (!this._consoleSlim) {
@@ -389,27 +470,38 @@ export class App extends EventEmitter implements IApp {
     // 数据库是插件和实时通道的基础：先创建管理器并立即连接。
     // 构建模式跳过连库，避免打包时要求活库。
     if (mergedConfig.database) {
-      initializeDatabase(this.container, mergedConfig);
+      // 无数据库配置时不要把 @dreamer/database（含驱动）装进启动图
+      const db = await importLater<typeof import("./database.ts")>(
+        [".", "database.ts"].join("/"),
+        import.meta.url,
+      );
+      db.initializeDatabase(this.container, mergedConfig);
       if (!this._isBuildMode()) {
-        await connectDatabases(this.container, mergedConfig);
+        await db.connectDatabases(this.container, mergedConfig);
       }
 
       const lifecycleManager = getLifecycleManager(this.container);
       const dbStoppingHook: LifecycleHook = async () => {
+        const { disconnectDatabases } = await importLater<
+          typeof import("./database.ts")
+        >([".", "database.ts"].join("/"), import.meta.url);
         await disconnectDatabases(this.container);
       };
       lifecycleManager.on("stopping", dbStoppingHook);
       this.lifecycleListeners.push({ stage: "stopping", hook: dbStoppingHook });
     }
 
-    // Socket 在插件之前初始化（此时尚未 listen；HTTP 挂载仍在 server 就绪后）
-    if (mergedConfig.server && !this._consoleMode) {
-      this._initializeRealtime(mergedConfig);
+    // Socket 在插件之前初始化（此时尚未 listen；HTTP 挂载仍在 server 就绪后）。
+    // --build 不听口，不必装实时通道。
+    if (mergedConfig.server && !this._consoleMode && !this._isBuildMode()) {
+      await this._initializeRealtime(mergedConfig);
     }
 
     // 再按配置顺序注册插件并触发 onInit，之后才初始化服务器/构建 client
     // （以便 getHmrCssEntries 等能读到 tailwindConfig 等）
+    perfMark("app_plugins_register");
     await this._registerPluginsFromConfig(mergedConfig);
+    perfMark("app_plugins_ready");
     if (this._consoleMode) {
       // kind=console：config.middlewares 走命令管道，不注册到 HTTP 中间件管理器
       this._configConsoleMiddlewares = await resolveConfigConsoleMiddlewares(
@@ -420,7 +512,7 @@ export class App extends EventEmitter implements IApp {
     }
     // console 无 HTTP：跳过 routes 嵌套中间件（避免无 router 时的无用注册）
     if (!this._consoleMode) {
-      this._registerRoutesMiddleware(mergedConfig);
+      await this._registerRoutesMiddleware(mergedConfig);
     }
     this._initialized = true;
     if (this._consoleMode) {
@@ -447,19 +539,27 @@ export class App extends EventEmitter implements IApp {
     this._pendingHooks = [];
     await pluginEvents.emitOnInit(this.container);
     this.emit("init");
+    perfMark("app_init_emitted");
 
-    // 初始化服务器（依赖配置和日志）；console 模式不 listen
-    if (mergedConfig.server && !this._consoleMode) {
+    // 初始化服务器（依赖配置和日志）；console 模式不 listen。
+    // --build 只打包，不听口、不跑 dev 渲染管道，避免再装 HTTP/socket 图。
+    if (
+      mergedConfig.server && !this._consoleMode && !this._isBuildMode()
+    ) {
+      const web = await (webHttpGraph ?? loadWebHttp());
       const apiApp = isApiKind(mergedConfig);
+      perfMark("app_http_init");
       // 路由始终需要；纯 API 跳过渲染引擎（无 HTML 壳 / 无客户端包）
       if (!apiApp) {
-        initializeRender(this.container, mergedConfig);
+        web.initializeRender(this.container, mergedConfig);
+        perfMark("app_render_ready");
       }
-      await initializeRouter(this.container, mergedConfig);
-      initializeBuild(this.container, mergedConfig);
+      await web.initializeRouter(this.container, mergedConfig);
+      perfMark("app_router_ready");
 
       // 初始化服务器
-      initializeServer(this.container, mergedConfig);
+      web.initializeServer(this.container, mergedConfig);
+      perfMark("app_server_ready");
 
       // 注册客户端资源目录（多应用时为 dist/<appDir>/client/assets），供 Tailwind 等插件在生产模式解析带 hash 的 CSS 路径
       if (!apiApp) {
@@ -477,8 +577,8 @@ export class App extends EventEmitter implements IApp {
         }
       }
 
-      const server = getServer(this.container);
-      const router = getRouter(this.container);
+      const server = web.getServer(this.container);
+      const router = web.getRouter(this.container);
 
       const serverCfgForLog = (mergedConfig.server || {}) as { mode?: string };
       /** 仅 RUNTIME_ENV=dev 视为本地开发请求（禁用缓存等）；build/start 或 unset 均不走 dev 缓存策略 */
@@ -490,37 +590,65 @@ export class App extends EventEmitter implements IApp {
         rt === "build";
 
       // 框架默认 HTTP 中间件栈（dev 禁用缓存、安全头、可选 cors/压缩/限流、requestId、session、/health）
-      registerFrameworkHttpMiddlewares(server, mergedConfig, this.container, {
-        isRuntimeDev,
-        useDetailedRequestLog,
-      });
+      perfMark("app_http_middlewares");
+      web.registerFrameworkHttpMiddlewares(
+        server,
+        mergedConfig,
+        this.container,
+        {
+          isRuntimeDev,
+          useDetailedRequestLog,
+        },
+      );
+      perfMark("app_http_middlewares_done");
 
-      // 可选 @dreamer/upload@^2（AppConfig.upload）；动态 import，未配置不加载
-      await registerUploadIntegration(server, this.container, mergedConfig);
-
-      // socket.adapter 为 socketio 时：路径前缀匹配委托给 Socket.IO 处理
-      const socketIoPath = getSocketIoPath(this.container);
-      if (socketIoPath) {
-        server.use(
-          createSocketIoMiddleware(this.container),
-          socketIoPath,
-          "socket-io",
+      // 可选 @dreamer/upload@^2（AppConfig.upload）；未配置不装 upload 图
+      if (mergedConfig.upload) {
+        const upload = await importLater<typeof import("../feature/upload.ts")>(
+          ["..", "feature", "upload.ts"].join("/"),
+          import.meta.url,
         );
-        if (!this._isBuildMode()) {
-          getLogger(this.container).debug(
-            $tr("log.socketIoMounted", { path: socketIoPath }),
-          );
-        }
+        await upload.registerUploadIntegration(
+          server,
+          this.container,
+          mergedConfig,
+        );
       }
+      perfMark("app_upload_done");
 
-      // socket.adapter 为 websocket 时：经 onWebSocket 同步升级（不可走 await 中间件，否则 Deno 会挂死 HTTP）
-      const websocketPath = getWebSocketPath(this.container);
-      if (websocketPath) {
-        registerWebSocketUpgrade(this.container, server);
-        if (!this._isBuildMode()) {
-          getLogger(this.container).debug(
-            $tr("log.websocketMounted", { path: websocketPath }),
+      // socket 图仅在配置了 adapter 时加载（官方示例无实时通道）
+      const socketAdapter =
+        (mergedConfig.socket as { adapter?: string } | undefined)?.adapter;
+      if (isSocketIOAdapter(socketAdapter)) {
+        const socket = await importLater<
+          typeof import("../feature/socket-io.ts")
+        >(["..", "feature", "socket-io.ts"].join("/"), import.meta.url);
+        const socketIoPath = socket.getSocketIoPath(this.container);
+        if (socketIoPath) {
+          server.use(
+            socket.createSocketIoMiddleware(this.container),
+            socketIoPath,
+            "socket-io",
           );
+          if (!this._isBuildMode()) {
+            getLogger(this.container).debug(
+              $tr("log.socketIoMounted", { path: socketIoPath }),
+            );
+          }
+        }
+      } else if (socketAdapter === "websocket") {
+        const ws = await importLater<typeof import("../feature/websocket.ts")>(
+          ["..", "feature", "websocket.ts"].join("/"),
+          import.meta.url,
+        );
+        const websocketPath = ws.getWebSocketPath(this.container);
+        if (websocketPath) {
+          ws.registerWebSocketUpgrade(this.container, server);
+          if (!this._isBuildMode()) {
+            getLogger(this.container).debug(
+              $tr("log.websocketMounted", { path: websocketPath }),
+            );
+          }
         }
       }
 
@@ -554,25 +682,50 @@ export class App extends EventEmitter implements IApp {
 
       // 纯 API：不挂 HTML 渲染器、不构建/托管客户端脚本
       if (!apiApp) {
-        await registerAppRenderPipeline(server, {
+        perfMark("app_render_pipeline");
+        await web.registerAppRenderPipeline(server, {
           container: this.container,
           router,
           config: mergedConfig,
           isBuildMode: () => this._isBuildMode(),
+          deferEnsureClientBuild: true,
         });
+        perfMark("app_render_pipeline_done");
       }
 
       // 注册生命周期钩子，在启动阶段启动服务器
       const lifecycleManager = getLifecycleManager(this.container);
       const serverStartedHook: LifecycleHook = async () => {
-        await startServer(this.container);
+        perfMark("app_listen");
+        await web.startServer(this.container);
+        perfMark("app_listen_done");
+        // 仅 dev 在听口后初始化 Builder / 客户端包；生产 --start 使用已构建资源，不再装 esbuild。
+        if (getEnv("RUNTIME_ENV") === "dev") {
+          const { initializeBuild } = await importLater<
+            typeof import("../feature/build.ts")
+          >(["..", "feature", "build.ts"].join("/"), import.meta.url);
+          initializeBuild(this.container, mergedConfig);
+          this._clientBuilderLoaded = true;
+          perfMark("app_build_service_ready");
+          if (!apiApp) {
+            await web.finishDeferredClientBuild({
+              container: this.container,
+              router,
+              config: mergedConfig,
+              isBuildMode: () => this._isBuildMode(),
+            });
+            perfMark("app_client_build_done");
+          }
+        }
       };
       lifecycleManager.on("started", serverStartedHook);
       this.lifecycleListeners.push({
         stage: "started",
         hook: serverStartedHook,
       });
+      perfMark("app_http_hooks_ready");
     }
+    perfMark("app_config_done");
   }
 
   /**
@@ -582,7 +735,10 @@ export class App extends EventEmitter implements IApp {
    *
    * @param _config 应用配置（保留参数以兼容调用方）
    */
-  private _registerRoutesMiddleware(_config: AppConfig): void {
+  private async _registerRoutesMiddleware(_config: AppConfig): Promise<void> {
+    const { createNestedRoutesMiddleware } = await importLater<
+      typeof import("../feature/routes-middleware.ts")
+    >(["..", "feature", "routes-middleware.ts"].join("/"), import.meta.url);
     registerMiddleware(
       this.container,
       createNestedRoutesMiddleware(this.container) as Middleware<
@@ -602,7 +758,7 @@ export class App extends EventEmitter implements IApp {
    * 按 config.socket.adapter 初始化实时通信（socketio | websocket）。
    * 只创建服务实例并写入容器，不 listen；插件 onInit 之后再挂到 HTTP 服务器。
    */
-  private _initializeRealtime(config: AppConfig): void {
+  private async _initializeRealtime(config: AppConfig): Promise<void> {
     const socketConfig = config.socket as { adapter?: string } | undefined;
     const socketPluginHandlers = {
       onConnection: (ctx: SocketContext) =>
@@ -611,8 +767,14 @@ export class App extends EventEmitter implements IApp {
         pluginEvents.emitOnSocketClose(this.container, ctx),
     };
     if (isSocketIOAdapter(socketConfig?.adapter)) {
+      const { initializeSocketIo } = await importLater<
+        typeof import("../feature/socket-io.ts")
+      >(["..", "feature", "socket-io.ts"].join("/"), import.meta.url);
       initializeSocketIo(this.container, config, socketPluginHandlers);
     } else if (socketConfig?.adapter === "websocket") {
+      const { initializeWebSocket } = await importLater<
+        typeof import("../feature/websocket.ts")
+      >(["..", "feature", "websocket.ts"].join("/"), import.meta.url);
       initializeWebSocket(this.container, config, socketPluginHandlers);
     }
   }
@@ -906,6 +1068,7 @@ export class App extends EventEmitter implements IApp {
    * @param options `mode: "console"` 时跳过 HTTP；结束后调用方须 shutdown
    */
   async start(options?: AppStartOptions): Promise<void> {
+    perfMark("app_start");
     if (options?.mode === "console") {
       this._consoleMode = true;
     }
@@ -919,6 +1082,7 @@ export class App extends EventEmitter implements IApp {
 
     // 等待初始化完成（框架版本与应用名称已在 _initializeConfig 中首先打印）
     await this._initPromise;
+    perfMark("app_start_init_waited");
 
     // 若配置最终解析为 console，与显式 mode 对齐
     try {
@@ -938,6 +1102,7 @@ export class App extends EventEmitter implements IApp {
 
     // 初始化应用
     await lifecycleManager.initialize();
+    perfMark("app_lifecycle_initialized");
 
     // 信号监听：slim console 由 run.ts 显式 stop/shutdown，跳过装饰性注册
     if (!this._consoleSlim) {
@@ -949,10 +1114,15 @@ export class App extends EventEmitter implements IApp {
 
     // 触发 EventEmitter 事件
     this.emit("start");
+    perfMark("app_on_start_emitted");
 
     // 启动应用（HTTP listen 仅在非 console 且已挂 server hook 时发生）
     await lifecycleManager.start();
     this._started = true;
+    perfMark("app_started");
+    if (!this._consoleMode) {
+      perfDump("app-start");
+    }
   }
 
   /** 是否以 console（CLI）模式运行 */
@@ -985,8 +1155,13 @@ export class App extends EventEmitter implements IApp {
    * 不会启动服务器，构建完成后自动退出
    */
   async build(): Promise<void> {
+    perfMark("app_build_start");
+    perfMark("app_build_web_graph");
+    const build = await loadWebBuild();
+    perfMark("app_build_web_graph_done");
     // 等待初始化完成（框架版本与应用名称已在 _initializeConfig 中首先打印）
     await this._initPromise;
+    perfMark("app_build_init_waited");
 
     const logger = this._getLogger();
     const config = getConfig(this.container);
@@ -1007,38 +1182,52 @@ export class App extends EventEmitter implements IApp {
 
     try {
       const apiApp = isApiKind(config);
-      const resolvedBuildOpts = resolveAppBuildOptions(config);
+      const resolvedBuildOpts = build.resolveAppBuildOptions(config);
 
       // 先清理输出目录，再跑 onBuild：避免 Tailwind 写入 CSS 后被 Builder.clean 删掉
       if (resolvedBuildOpts.clean) {
         logger.info($tr("clean.running"));
-        const removed = await cleanBuildOutputDirs(config, logger);
+        perfMark("app_build_clean");
+        const removed = await build.cleanBuildOutputDirs(config, logger);
         if (removed.length === 0) {
           logger.info($tr("clean.nothingToClean"));
         }
       }
 
       // 触发插件的 onBuild 钩子（Tailwind/UnoCSS 等会直接写入各自的 output 目录）
+      perfMark("app_build_plugins");
       await pluginEvents.emitOnBuild(this.container, {
         mode: "prod",
         target: apiApp ? "server" : "client",
       });
       logger.info($tr("log.pluginBuildComplete"));
+      perfMark("app_build_plugins_done");
 
       const renderMode = (config.render as { mode?: string })?.mode ?? "ssr";
       // 使用 @dreamer/esbuild 的 Builder 统一构建（服务端 + 客户端 + 资源）
       // SSR/SSG 也构建客户端，以便静态 HTML 可做客户端激活（事件响应）
       // 纯 API：只构建服务端，跳过客户端包
       // clean:false — 已在 onBuild 前清理，避免再次清空插件产物
-      await runBuildWithBuilder(this.container, config, {
+      perfMark("app_build_esbuild");
+      await build.runBuildWithBuilder(this.container, config, {
         skipClient: apiApp,
         clean: false,
       });
+      perfMark("app_build_esbuild_done");
 
       // SSG 模式：预渲染静态 HTML 到 client 目录（与其它前端产物一致），start 时从该目录读取（在服务端构建之后执行，确保不被覆盖）
       if (!apiApp && renderMode === "ssg") {
-        const router = getRouter(this.container);
-        const renderService = getRender(this.container);
+        const ssg = await loadWebSsg();
+        const web = { ...build, ...ssg };
+        // --build 跳过了 HTTP init 时，补上预渲染所需的 router/render
+        if (!this.container.has("render")) {
+          web.initializeRender(this.container, config);
+        }
+        if (!this.container.has("router")) {
+          await web.initializeRouter(this.container, config);
+        }
+        const router = web.getRouter(this.container);
+        const renderService = web.getRender(this.container);
         const renderCfg = config.render as {
           debug?: boolean;
           engine?: "react" | "preact" | "view";
@@ -1069,7 +1258,7 @@ export class App extends EventEmitter implements IApp {
         // 展开 dynamicRoutes（如 { "/user/[id]": ["1","2","3"] }）
         const dynamicRoutes = renderCfg.ssg?.dynamicRoutes ?? {};
         for (const [pattern, params] of Object.entries(dynamicRoutes)) {
-          const expanded = expandDynamicRoute(pattern, params);
+          const expanded = web.expandDynamicRoute(pattern, params);
           for (const p of expanded) {
             if (!routePaths.includes(p)) routePaths.push(p);
           }
@@ -1091,7 +1280,7 @@ export class App extends EventEmitter implements IApp {
           const absOutputDir = join(cwd(), ssgOutputDir);
           /** 按路径加载模块（支持 .ts/.tsx，用于 loadRouteComponent、loadRouteLayouts） */
           const loadModuleByPath = async (fullPath: string) => {
-            const mod = await loadRouteModule(fullPath, {
+            const mod = await web.loadRouteModule(fullPath, {
               logger: this.container.has("logger")
                 ? getLogger(this.container)
                 : undefined,
@@ -1149,7 +1338,7 @@ export class App extends EventEmitter implements IApp {
               routesDirPath: ssgRoutesDirPath,
             };
             const layoutModules = await Promise.all(
-              layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
+              layoutPaths.map((p) => web.loadRouteModule(p, loadOpts)),
             );
             const inheritBreakIndex = layoutModules.findIndex(
               (m) =>
@@ -1208,7 +1397,7 @@ export class App extends EventEmitter implements IApp {
               cwd(),
               routerConfig.routesDir ?? "./src/routes",
             );
-            const clientRoutes = collectClientRoutes(router, routesDirPath);
+            const clientRoutes = web.collectClientRoutes(router, routesDirPath);
             const containerId = "app";
             const clientScript = "/_client.js";
             /** 递归收集目录下所有 .html 文件路径 */
@@ -1231,7 +1420,7 @@ export class App extends EventEmitter implements IApp {
                 /\\/g,
                 "/",
               );
-              const route = filePathToRoute(relPath);
+              const route = web.filePathToRoute(relPath);
               const { pathname } = parseRoutePath(route);
               const match = await router.match(pathname);
               if (!match || match.isApi) continue;
@@ -1280,14 +1469,14 @@ export class App extends EventEmitter implements IApp {
               );
               bootstrapStatements.push(`globalThis.__DWEB_MODE__ = "ssg";`);
               // SSG 产物始终按生产紧凑输出（无开发注释／换行）
-              const bootstrapScript = wrapInlineClientBootstrapScript(
+              const bootstrapScript = web.wrapInlineClientBootstrapScript(
                 bootstrapStatements,
                 { isDev: false },
               );
               const clientConfigScript =
                 `${bootstrapScript}<script type="module" src="${clientScript}"></script>`;
               let html = await readTextFile(filePath);
-              if (!hasContainerElementInHtml(html, containerId)) {
+              if (!web.hasContainerElementInHtml(html, containerId)) {
                 logger.warn(
                   `[dweb] SSG 文件 ${relPath} 未找到挂载容器，跳过 hydration 注入`,
                 );
@@ -1305,8 +1494,10 @@ export class App extends EventEmitter implements IApp {
           // SSG 模式：对输出目录运行资源处理（复制、压缩、hash、更新 HTML 中的路径）
           const assetsConfig = (config.build as { assets?: unknown })?.assets;
           if (assetsConfig && typeof assetsConfig === "object") {
-            const processor = new AssetsProcessor(
-              assetsConfig as ConstructorParameters<typeof AssetsProcessor>[0],
+            const processor = new web.AssetsProcessor(
+              assetsConfig as ConstructorParameters<
+                typeof web.AssetsProcessor
+              >[0],
               absOutputDir,
             );
             await processor.processAssets();
@@ -1315,6 +1506,8 @@ export class App extends EventEmitter implements IApp {
       }
 
       logger.info($tr("log.buildComplete"));
+      perfMark("app_build_complete");
+      perfDump("app-build");
 
       // 触发 onBuildComplete 插件事件（构建全部完成后）
       await pluginEvents.emitOnBuildComplete(this.container, {});
@@ -1326,7 +1519,13 @@ export class App extends EventEmitter implements IApp {
     }
 
     // 清理客户端脚本缓存（build 模式未使用增量 context，无需 disposeBuilder）
-    await clearClientScriptCache();
+    await (await importLater<
+      typeof import("../feature/csr-client-builder.ts")
+    >(
+      ["..", "feature", "csr-client-builder.ts"].join("/"),
+      import.meta.url,
+    ))
+      .clearClientScriptCache();
 
     // 清理生命周期监听器（防止内存泄漏）
     this._removeLifecycleListeners();
@@ -1439,8 +1638,21 @@ export class App extends EventEmitter implements IApp {
     // 停止 ConfigManager 的文件监听（hotReload 时创建，防止内存泄漏）
     this._stopConfigWatching();
 
-    // 清理客户端脚本缓存并释放增量构建 context（防止内存泄漏）
-    await clearClientScriptCache({ disposeBuilder: true });
+    // 清理客户端脚本缓存并释放增量构建 context（防止内存泄漏）。
+    // 仅当本进程确实加载过客户端构建器时才 import：console 与生产
+    // --start 都不会装该图。否则 importLater 会按 import.meta.url 解析到
+    // dist/server.js 旁边，变成应用目录下的 feature/csr-client-builder.ts。
+    if (this._clientBuilderLoaded) {
+      await (await importLater<
+        typeof import("../feature/csr-client-builder.ts")
+      >(
+        ["..", "feature", "csr-client-builder.ts"].join("/"),
+        import.meta.url,
+      ))
+        .clearClientScriptCache({
+          disposeBuilder: true,
+        });
+    }
 
     const lifecycleManager = getLifecycleManager(this.container);
     await lifecycleManager.shutdown();

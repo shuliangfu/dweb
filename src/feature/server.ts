@@ -22,15 +22,26 @@ import { createCoalescedAsyncRunner } from "../utils/coalesce-async.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { resolveRouterRoutesDirPath } from "../utils/path.ts";
-import {
-  buildClientScript,
-  clearClientScriptCache,
-} from "./csr-client-builder.ts";
+import { importLater } from "../utils/import-later.ts";
 import {
   clearCssRouteCacheForPath,
   clearViewSsrBundleCacheForPath,
 } from "./load-route-module.ts";
 import { invalidateModule } from "./module-cache.ts";
+import {
+  getDevStartElapsedMs,
+  perfDump,
+  perfMark,
+} from "../utils/perf-trace.ts";
+
+function importCsrClientBuilder(): Promise<
+  typeof import("./csr-client-builder.ts")
+> {
+  return importLater(
+    [".", "csr-client-builder.ts"].join("/"),
+    import.meta.url,
+  );
+}
 
 /**
  * 初始化 HTTP 服务器
@@ -51,6 +62,7 @@ export function initializeServer(
   container: ServiceContainer,
   config: AppConfig,
 ): Server {
+  perfMark("server_initialize");
   // 从配置中获取服务器选项
   const serverConfig = (config.server || {}) as ServerOptions;
 
@@ -142,8 +154,9 @@ export function initializeServer(
           return { outputFiles: [] };
         }
         // 必须传入 options.changedPath 以命中 chunk 级 HMR（buildClientScript 据此计算 chunkUrl）
-        await clearClientScriptCache();
-        const result = await buildClientScript(container, config, options);
+        const csr = await importCsrClientBuilder();
+        await csr.clearClientScriptCache();
+        const result = await csr.buildClientScript(container, config, options);
         await pluginEvents.emitOnHotReload(
           container,
           options?.changedPath ? [options.changedPath] : [],
@@ -177,10 +190,19 @@ export function initializeServer(
   // 默认 onListen：使用 $t 输出国际化日志；用户配置的 onListen 优先
   // 将 ::1、0.0.0.0 等统一显示为 127.0.0.1，便于用户复制访问（不同系统/运行时可能返回不同格式）
   const defaultOnListen = ({ port }: { port: number }) => {
+    perfMark("server_listen");
+    perfDump("server-listen");
     const key = mode === "dev"
       ? "log.devServerRunning"
       : "log.prodServerRunning";
     logger.info($tr(key, { host, port: String(port) }));
+    // Dev startup duration: process start → listen. The first client compile
+    // after listen is not included (it can still hold the first request).
+    if (mode === "dev") {
+      logger.info($tr("log.devServerStartedIn", {
+        ms: String(getDevStartElapsedMs()),
+      }));
+    }
   };
   const onListen = serverConfig.onListen ?? defaultOnListen;
 
@@ -228,6 +250,7 @@ export function initializeServer(
 
   // 将服务器注册到服务容器
   container.registerSingleton("server", () => server);
+  perfMark("server_initialize_done");
 
   return server;
 }
@@ -260,8 +283,10 @@ export function getServer(container: ServiceContainer): Server {
  * ```
  */
 export async function startServer(container: ServiceContainer): Promise<void> {
+  perfMark("server_start");
   const server = getServer(container);
   await server.start();
+  perfMark("server_started");
 }
 
 /**

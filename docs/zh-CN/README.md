@@ -515,6 +515,15 @@ export default app;
 `info`，则不会打印该行。 请改用 `ctx.log.info(...)`，或将 `logger.level` 设为
 `"debug"`。
 
+已配置的 console 插件也可以提供命令。通过 `console.routesDir` 指定命令目录
+（默认 `"routes"`，可改；相对路径用 `console.baseDir` 解析，一般为
+`new URL(".", import.meta.url)`）。命令模块的写法和宿主 `routes/` 一样（`run` /
+`default` / `main`）。可选 `console.basePath` 作为命令路径前缀（例如
+`staff/hello`）。 也可以用 `console.command`
+让单个插件文件提供一条命令。路由名冲突时宿主优先。 这是 dweb console
+的能力，不走 HTTP 的 `onRoute`，也不需要升级 `@dreamer/plugin`。参见
+`examples/app-kinds/multi-web-api-console`。
+
 `dweb-cli init` 可选 Web / API / Console；多应用下每个 app 各自选 `kind`，共用
 `common/`。**一项目最多一个** `api`、**最多一个** `console`。这两个目录名固定为
 `api` 和 `console`，init 不再询问名称。

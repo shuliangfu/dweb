@@ -233,6 +233,7 @@
     "clientEntryExistsSkip": "用戶端入口已存在，跳过生成: {path}",
     "clientScriptBuildComplete": "用戶端脚本构建完成",
     "devServerRunning": "開發伺服器运行在 http://{host}:{port}",
+    "devServerStartedIn": "Dev 啟動耗時 {ms}ms",
     "prodServerRunning": "生产伺服器运行在 http://{host}:{port}",
     "upgradePromptMissingVersion": "已開啟 upgradePrompt，但 AppConfig.version 未填寫，升級提示未啟用"
   },

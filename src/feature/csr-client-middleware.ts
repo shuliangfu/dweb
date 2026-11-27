@@ -32,10 +32,16 @@ import {
   normalizePathForCompare,
   resolvePathWithinRoot,
 } from "../utils/path.ts";
-import {
-  buildClientScript,
-  getCachedClientScript,
-} from "./csr-client-builder.ts";
+import { importLater } from "../utils/import-later.ts";
+
+function importCsrClientBuilder(): Promise<
+  typeof import("./csr-client-builder.ts")
+> {
+  return importLater(
+    [".", "csr-client-builder.ts"].join("/"),
+    import.meta.url,
+  );
+}
 import { findChunkContent, isClientChunkFile } from "./csr-client-chunk.ts";
 
 /** 生产态静态文件内存缓存上限（按绝对路径） */
@@ -162,10 +168,11 @@ export function createClientScriptMiddleware(
       try {
         const isMap = pathname === "/_client.js.map";
         if (!isProd) {
-          let script = getCachedClientScript();
+          const csr = await importCsrClientBuilder();
+          let script = csr.getCachedClientScript();
           if (!script) {
             logger.debug($tr("log.clientBuildFirst"));
-            script = await buildClientScript(container, config);
+            script = await csr.buildClientScript(container, config);
           }
           if (isMap) {
             const mapContent = script?.outputFiles?.get("_client.js.map");
@@ -294,7 +301,8 @@ export function createClientScriptMiddleware(
       const isSourceMap = fileName.endsWith(".map");
 
       if (!isProd) {
-        const script = getCachedClientScript();
+        const csr = await importCsrClientBuilder();
+        const script = csr.getCachedClientScript();
         const content = findChunkContent(
           script?.outputFiles,
           fileName,

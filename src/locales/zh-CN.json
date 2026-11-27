@@ -246,6 +246,7 @@
     "clientEntryExistsSkip": "客户端入口已存在，跳过生成: {path}",
     "clientScriptBuildComplete": "客户端脚本构建完成",
     "devServerRunning": "开发服务器运行在 http://{host}:{port}",
+    "devServerStartedIn": "Dev 启动耗时 {ms}ms",
     "prodServerRunning": "生产服务器运行在 http://{host}:{port}",
     "upgradePromptMissingVersion": "已开启 upgradePrompt，但 AppConfig.version 未填写，升级提示未启用"
   },

@@ -30,6 +30,10 @@ export interface ResolvedConsoleRoute {
   routeName: string;
   /** 尝试过的候选路径（调试 / 错误信息） */
   candidates: string[];
+  /** Preloaded module (inline single-file plugin command). */
+  module?: Record<string, unknown>;
+  /** Routes root used for directory `_middleware.ts` (host or plugin). */
+  middlewareRoot?: string;
 }
 
 const ACTION_FALLBACKS = ["default", "run", "main"] as const;
@@ -200,10 +204,11 @@ export async function invokeConsoleAction(
   ctx: ConsoleContext,
   options: InvokeConsoleActionOptions = {},
 ): Promise<number> {
-  const mod = await import(pathToFileURL(resolved.filePath).href) as Record<
-    string,
-    unknown
-  >;
+  const mod = resolved.module ??
+    await import(pathToFileURL(resolved.filePath).href) as Record<
+      string,
+      unknown
+    >;
 
   const named = listModuleActionNames(mod);
   const meta = mod.meta as {

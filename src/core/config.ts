@@ -20,7 +20,7 @@ import { pathToFileURL } from "node:url";
 import type { AppConfig } from "../types/app.ts";
 import { isPathWithinProject } from "../utils/path.ts";
 import { configProfileFromRuntimeEnv } from "../utils/runtime.ts";
-import { cwd, realPath, resolve, stat } from "./runtime-adapter.ts";
+import { cwd, join, realPath, resolve, stat } from "./runtime-adapter.ts";
 import { deepMergeConfig, deepMergeParams } from "./config-merge.ts";
 import { validateConfig } from "./config-validate.ts";
 import { preloadProjectEnvSync } from "../utils/env-loader.ts";
@@ -43,10 +43,17 @@ async function loadModuleConfig(
   filePath: string,
 ): Promise<Record<string, unknown> | null> {
   try {
-    const absPath = filePath.startsWith("/")
-      ? filePath
-      : resolve(cwd(), filePath);
-    const resolvedPath = await realPath(absPath);
+    // Windows: a path starting with a drive letter is already absolute.
+    const isAbsolute = filePath.startsWith("/") ||
+      /^[A-Za-z]:[\\/]/.test(filePath);
+    const absPath = isAbsolute ? filePath : resolve(cwd(), filePath);
+    // realPath can fail on Windows CI (symlinks / 8.3); fall back to absPath.
+    let resolvedPath: string;
+    try {
+      resolvedPath = await realPath(absPath);
+    } catch {
+      resolvedPath = absPath;
+    }
     // 热重载时仅加载项目目录内的配置，防止加载任意路径
     if (!isPathWithinProject(resolvedPath)) {
       return null;
@@ -87,7 +94,7 @@ async function loadMainConfig(
   let config: AppConfig = {};
 
   // 1. 加载 main.ts（基础框架配置）
-  const mainPath = `${directory}/main.ts`;
+  const mainPath = join(directory, "main.ts");
   if (await fileExists(mainPath)) {
     const mainConfig = await loadModuleConfig(mainPath);
     if (mainConfig) {
@@ -97,7 +104,7 @@ async function loadMainConfig(
 
   // 2. build / start：先合并 main.prod（与仅维护 main.prod 的约定兼容），再由 main.build / main.start 覆盖
   if (env === "build" || env === "start") {
-    const prodPath = `${directory}/main.prod.ts`;
+    const prodPath = join(directory, "main.prod.ts");
     if (await fileExists(prodPath)) {
       const prodConfig = await loadModuleConfig(prodPath);
       if (prodConfig) {
@@ -107,7 +114,7 @@ async function loadMainConfig(
   }
 
   // 3. 加载 main.{env}.ts
-  const envMainPath = `${directory}/main.${env}.ts`;
+  const envMainPath = join(directory, `main.${env}.ts`);
   if (await fileExists(envMainPath)) {
     const envConfig = await loadModuleConfig(envMainPath);
     if (envConfig) {
@@ -131,7 +138,7 @@ async function loadParamsConfig(
   env: string,
 ): Promise<Record<string, unknown>> {
   let params: Record<string, unknown> = {};
-  const paramsPath = `${directory}/params.ts`;
+  const paramsPath = join(directory, "params.ts");
   if (await fileExists(paramsPath)) {
     const baseParams = await loadModuleConfig(paramsPath);
     if (baseParams && typeof baseParams === "object") {
@@ -139,7 +146,7 @@ async function loadParamsConfig(
     }
   }
   if (env === "build" || env === "start") {
-    const prodPath = `${directory}/params.prod.ts`;
+    const prodPath = join(directory, "params.prod.ts");
     if (await fileExists(prodPath)) {
       const prodParams = await loadModuleConfig(prodPath);
       if (prodParams && typeof prodParams === "object") {
@@ -147,7 +154,7 @@ async function loadParamsConfig(
       }
     }
   }
-  const envParamsPath = `${directory}/params.${env}.ts`;
+  const envParamsPath = join(directory, `params.${env}.ts`);
   if (await fileExists(envParamsPath)) {
     const envParams = await loadModuleConfig(envParamsPath);
     if (envParams && typeof envParams === "object") {

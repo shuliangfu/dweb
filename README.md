@@ -526,6 +526,16 @@ If a timing middleware uses `ctx.log.debug(...)` and `logger.level` is `info`,
 the line will not appear. Use `ctx.log.info(...)` or set
 `logger.level: "debug"`.
 
+Configured console plugins can also provide commands. Set `console.routesDir`
+(default `"routes"`, overridable; resolve a relative path with
+`console.baseDir`, usually `new URL(".", import.meta.url)`). Command modules use
+the same `run` / `default` / `main` shape as host routes. An optional
+`console.basePath` namespaces them (for example `staff/hello`). A plugin may
+instead set `console.command` to expose a single command from the plugin file
+itself. Host routes win when the name already exists. This is a dweb console
+feature; it does not use HTTP `onRoute`, and `@dreamer/plugin` does not need an
+upgrade. See `examples/app-kinds/multi-web-api-console`.
+
 `dweb-cli init` can scaffold Web / API / Console. In multi-app mode each app
 picks its own `kind` and shares `common/`. **At most one** `api` and **at most
 one** `console` per project. Their directories are fixed as `api` and `console`;

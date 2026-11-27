@@ -12,6 +12,7 @@
 import "../setup.ts";
 import { closeDatabase, isDatabaseInitialized } from "@dreamer/database";
 import type { Plugin } from "@dreamer/plugin";
+import { fromFileUrl, readTextFile } from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import { App } from "../../src/core/app.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -298,6 +299,30 @@ describe("App 类 (app.ts)", () => {
         "customService",
       );
       expect(customService.value).toBe(42);
+    });
+  });
+
+  describe("启动模块图", () => {
+    it("app.ts 不含会把 Web/esbuild 预装进启动图的静态可分析 import", async () => {
+      const text = await readTextFile(
+        fromFileUrl(new URL("../../src/core/app.ts", import.meta.url)),
+      );
+      // typeof import("...") 是类型位置，不会把模块预装进启动图
+      const hasRuntimeImport = (specifier: string) =>
+        new RegExp(
+          String.raw`(?<!typeof )import\("${
+            specifier.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              String.raw`\$&`,
+            )
+          }"\)`,
+        ).test(text);
+      expect(hasRuntimeImport("../feature/render.ts")).toBe(false);
+      expect(hasRuntimeImport("../feature/server.ts")).toBe(false);
+      expect(hasRuntimeImport("../feature/build.ts")).toBe(false);
+      expect(hasRuntimeImport("../feature/csr-client-builder.ts")).toBe(false);
+      expect(hasRuntimeImport("@dreamer/esbuild")).toBe(false);
+      expect(hasRuntimeImport("@dreamer/render")).toBe(false);
     });
   });
 }, { sanitizeOps: false, sanitizeResources: false });

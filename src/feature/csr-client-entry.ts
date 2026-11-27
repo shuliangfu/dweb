@@ -250,10 +250,6 @@ export async function ensureClientEntryFile(
     enableUpgradePrompt,
   );
   await writeTextFile(clientDepPath, clientDepCode);
-  logger.debug($tr("log.clientDepGenerated", {
-    path: pathForLog(clientDepPath),
-  }));
-
   const clientEntryCode = generateStaticClientEntry(
     engine,
     components,
@@ -319,8 +315,6 @@ export async function prepareClientBuildEntry(
       routesDirPath,
       engine,
     );
-  logger.debug($tr("log.routesScanned", { count: String(components.length) }));
-
   const hmrCssEntries = getHmrCssEntries(container);
   const clientDepPath = join(resolve(srcDir), CLIENT_DEP_FILENAME);
 
@@ -347,10 +341,6 @@ export async function prepareClientBuildEntry(
     enableUpgradePrompt,
   );
   await writeTextFile(clientDepPath, clientDepCode);
-  logger.debug(
-    $tr("log.clientDepRefreshed", { path: pathForLog(clientDepPath) }),
-  );
-
   // _client.tsx 不存在时生成（确保父目录存在）
   if (!(await exists(tempClientEntryPath))) {
     await ensureDir(dirname(tempClientEntryPath));

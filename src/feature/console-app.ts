@@ -13,6 +13,7 @@
 import { pathToFileURL } from "node:url";
 import { exists, join, readTextFile } from "@dreamer/runtime-adapter";
 import type { App } from "../core/app.ts";
+import { perfMark } from "../utils/perf-trace.ts";
 
 /** 鸭子类型判断，避免静态导入 App 拖入 HTTP/渲染依赖 */
 export function isConsoleAppInstance(value: unknown): value is App {
@@ -70,10 +71,12 @@ export async function loadConsoleAppEntry(
     if (!looksLikeConsoleAppEntry(source)) {
       return null;
     }
+    perfMark("console_entry_import");
     const mod = await import(pathToFileURL(full).href) as Record<
       string,
       unknown
     >;
+    perfMark("console_entry_imported");
     return await resolveExportedApp(mod);
   }
   return null;

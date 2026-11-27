@@ -6,613 +6,107 @@
  * 提供项目初始化、代码生成、数据库迁移、开发/构建/启动等 CLI 命令。
  * 通过 `deno run -A jsr:@dreamer/dweb/setup` 安装为全局命令 `dweb-cli` 后使用。
  *
+ * 本文件及其静态可分析依赖必须保持极小：Deno 会把可静态分析的
+ * `import()` 一并装进启动模块图。真正的命令树在 `cli-boot.ts`，
+ * 用运行期拼出的说明符加载，这样第一个进程才能几乎立刻按项目
+ * import map 转交（Deno 无法在同一进程里中途更换 import map）。
+ *
  * @module
  */
 
-import {
-  colorize,
-  Command,
-  error,
-  type ParsedOptions,
-} from "./feature/command.ts";
-import { $tr } from "./utils/i18n.ts";
-import { isMainModule } from "./utils/main-module.ts";
-import { preloadProjectEnvSync } from "./utils/env-loader.ts";
-import {
-  preprocessCliArgsForRun,
-  RunDoubleDashError,
-} from "./utils/run-passthrough.ts";
-import { getDwebVersion } from "./utils/version.ts";
-import { args as getArgs, exit } from "@dreamer/runtime-adapter";
+/** Time from isolate start to this module body. */
+const jsEntryMs = performance.now();
 
-/**
- * 构建 CLI 版本展示字符串
- */
-function buildVersionStr(version: string): string {
-  return `\n${colorize("dweb-cli", "cyan", true)}
-${colorize($tr("cli.versionLabel"), "cyan", true)} ${
-    colorize(version, "yellow")
-  }
-
-${colorize($tr("cli.versionTitle"), "gray")}
-${colorize($tr("cli.versionDesc"), "gray")} \n`;
-}
-
-/**
- * 创建 dweb-cli 命令实例
- *
- * 注册 init、dev、build、start、generate、db 等子命令，供 CLI 入口调用。
- *
- * @param version 框架版本号（由 getDwebVersion() 获取）
- * @returns 配置完成的 Command 实例
- */
-export function createCLI(version: string): Command {
-  // 预加载当前项目及各分层 .env 配置
-  preloadProjectEnvSync();
-
-  const cli = new Command("dweb-cli", $tr("cliDesc.toolName"))
-    .setVersion(buildVersionStr(version))
-    .option({
-      name: "verbose",
-      alias: "v",
-      description: $tr("cliDesc.verbose"),
-      type: "boolean",
-    });
-
-  // ================================================================================
-  // init 初始化项目
-  // ================================================================================
-  cli
-    .command("init", $tr("cliDesc.init"))
-    .option({
-      name: "beta",
-      description: $tr("cliDesc.betaOption"),
-      type: "boolean",
-      defaultValue: false,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: initMain } = await import("./cmd/init.ts");
-        await initMain(args, { beta: options?.beta === true });
-      } catch (err) {
-        error(
-          $tr("cli.initFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // dev 开发服务器
-  // ================================================================================
-  const devCmd = cli.command("dev", $tr("cliDesc.dev"));
-  devCmd
-    .option({
-      name: "app",
-      alias: "a",
-      description: $tr("cliDesc.appRequired"),
-      type: "string",
-      requiresValue: true,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: devMain } = await import("./cmd/dev.ts");
-        await devMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.devFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // build 构建
-  // ================================================================================
-  const buildCmd = cli.command("build", $tr("cliDesc.build"));
-  buildCmd
-    .option({
-      name: "app",
-      alias: "a",
-      description: $tr("cliDesc.appOptionalBuild"),
-      type: "string",
-      requiresValue: true,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: buildMain } = await import("./cmd/build.ts");
-        await buildMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.buildFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // start 生产启动
-  // ================================================================================
-  const startCmd = cli.command("start", $tr("cliDesc.start"));
-  startCmd
-    .option({
-      name: "app",
-      alias: "a",
-      description: $tr("cliDesc.appRequired"),
-      type: "string",
-      requiresValue: true,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: startMain } = await import("./cmd/start.ts");
-        await startMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.startFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // preview 预览构建结果
-  // ================================================================================
-  const previewCmd = cli.command("preview", $tr("cliDesc.preview"));
-  previewCmd.keepAlive();
-  previewCmd
-    .option({
-      name: "port",
-      alias: "p",
-      description: $tr("cliDesc.portOption"),
-      type: "number",
-      requiresValue: true,
-    })
-    .option({
-      name: "app",
-      alias: "a",
-      description: $tr("cliDesc.appOptional"),
-      type: "string",
-      requiresValue: true,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: previewMain } = await import("./cmd/preview.ts");
-        await previewMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.previewFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // run Console 命令路由（kind=console）
-  // ================================================================================
-  const runCmd = cli.command("run", $tr("cliDesc.run"));
-  runCmd
-    .option({
-      name: "app",
-      alias: "a",
-      description: $tr("cliDesc.appOptionalRun"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "list",
-      alias: "l",
-      description: $tr("cliDesc.runList"),
-      type: "boolean",
-    })
-    .option({
-      name: "timeout",
-      description: $tr("cliDesc.runTimeout"),
-      type: "number",
-      requiresValue: true,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        // 先按项目 import map 重跑，避免第一个进程加载 run.ts / App（HTTP 渲染栈）
-        const { cwd } = await import("@dreamer/runtime-adapter");
-        const { findProjectRoot } = await import("./utils/project.ts");
-        const { reexecWithProjectImportMap } = await import(
-          "./utils/project-import-map.ts"
-        );
-        const projectRoot = await findProjectRoot(cwd());
-        await reexecWithProjectImportMap(projectRoot);
-        const { main: runMain } = await import("./cmd/run.ts");
-        await runMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.runFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-        throw err;
-      }
-    });
-
-  // ================================================================================
-  // generate 代码生成（别名 g）
-  // ================================================================================
-  const generateCmd = cli.command("generate", $tr("cliDesc.generate"));
-  generateCmd.alias("g");
-  generateCmd
-    .option({
-      name: "type",
-      alias: "t",
-      description: $tr("cliDesc.generateTypeOption"),
-      type: "string",
-      required: true,
-      requiresValue: true,
-    })
-    .option({
-      name: "name",
-      alias: "n",
-      description: $tr("cliDesc.nameOption"),
-      type: "string",
-      required: true,
-      requiresValue: true,
-    })
-    .option({
-      name: "app",
-      alias: "a",
-      description: $tr("cliDesc.appOptionalGenerate"),
-      type: "string",
-      requiresValue: true,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: generateMain } = await import("./cmd/generate.ts");
-        await generateMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.generateFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // test 运行测试（产品 launcher：路径 / 分层 / filter / coverage / runtime）
-  // ================================================================================
-  const testCmd = cli.command("test", $tr("cliDesc.test"));
-  testCmd
-    .option({
-      name: "app",
-      alias: "a",
-      description: $tr("cliDesc.appOptionalTest"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "unit",
-      description: $tr("cliDesc.testUnit"),
-      type: "boolean",
-    })
-    .option({
-      name: "integration",
-      description: $tr("cliDesc.testIntegration"),
-      type: "boolean",
-    })
-    .option({
-      name: "e2e",
-      description: $tr("cliDesc.testE2e"),
-      type: "boolean",
-    })
-    .option({
-      name: "filter",
-      alias: "f",
-      description: $tr("cliDesc.testFilter"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "coverage",
-      description: $tr("cliDesc.testCoverage"),
-      type: "boolean",
-    })
-    .option({
-      name: "runtime",
-      description: $tr("cliDesc.testRuntime"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "reporter",
-      description: $tr("cliDesc.testReporter"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "report-out",
-      description: $tr("cliDesc.testReportOut"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "junit-path",
-      description: $tr("cliDesc.testJunitPath"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "report",
-      description: $tr("cliDesc.testProductReport"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "report-dir",
-      description: $tr("cliDesc.testReportDir"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "verbose",
-      description: $tr("cliDesc.testVerbose"),
-      type: "boolean",
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: testMain } = await import("./cmd/test.ts");
-        await testMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.testFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-        throw err;
-      }
-    });
-
-  // ================================================================================
-  // lint 代码检查
-  // ================================================================================
-  cli
-    .command("lint", $tr("cliDesc.lint"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: lintMain } = await import("./cmd/lint.ts");
-        const code = await lintMain(args, options);
-        if (code !== 0) exit(code);
-      } catch (err) {
-        error(
-          $tr("cli.lintFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // fmt 代码格式化
-  // ================================================================================
-  cli
-    .command("fmt", $tr("cliDesc.fmt"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: fmtMain } = await import("./cmd/fmt.ts");
-        const code = await fmtMain(args, options);
-        if (code !== 0) exit(code);
-      } catch (err) {
-        error(
-          $tr("cli.fmtFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // clean 清理构建产物
-  // ================================================================================
-  cli
-    .command("clean", $tr("cliDesc.clean"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: cleanMain } = await import("./cmd/clean.ts");
-        await cleanMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.cleanFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // update 更新依赖与 lockfile
-  // ================================================================================
-  cli
-    .command("update", $tr("cliDesc.update"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: updateMain } = await import("./cmd/update.ts");
-        await updateMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.updateFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // db 数据库相关（含 migrate 子命令）
-  // ================================================================================
-  const dbCmd = cli.command("db", $tr("cliDesc.db"));
-  const migrateCmd = dbCmd.command("migrate", $tr("cliDesc.dbMigrate"));
-  migrateCmd.alias("m");
-  migrateCmd
-    .option({
-      name: "action",
-      alias: "a",
-      description: $tr("cliDesc.migrateActionOption"),
-      type: "string",
-      defaultValue: "up",
-      requiresValue: true,
-    })
-    .option({
-      name: "name",
-      alias: "n",
-      description: $tr("cliDesc.migrateNameOption"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "db-type",
-      description: $tr("cliDesc.dbTypeOption"),
-      type: "string",
-      requiresValue: true,
-    })
-    .option({
-      name: "count",
-      alias: "c",
-      description: $tr("cliDesc.dbCountOption"),
-      type: "string",
-      requiresValue: true,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { migrate } = await import("./cmd/db.ts");
-        await migrate(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.dbMigrateFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  dbCmd
-    .command("seed", $tr("cliDesc.dbSeed"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { seed } = await import("./cmd/db.ts");
-        await seed(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.dbSeedFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  dbCmd
-    .command("status", $tr("cliDesc.dbStatus"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { status } = await import("./cmd/db.ts");
-        await status(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.dbStatusFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // upgrade 升级 dweb
-  // ================================================================================
-  cli
-    .command("upgrade", $tr("cliDesc.upgrade"))
-    .option({
-      name: "beta",
-      description: $tr("cliDesc.upgradeBetaOption"),
-      type: "boolean",
-      defaultValue: false,
-    })
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: upgradeMain } = await import("./cmd/upgrade.ts");
-        await upgradeMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.upgradeFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      }
-    });
-
-  // ================================================================================
-  // doctor / info / version（加法诊断）
-  // ================================================================================
-  cli
-    .command("doctor", $tr("cliDesc.doctor"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: doctorMain } = await import("./cmd/doctor.ts");
-        await doctorMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.doctorFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-        exit(1);
-      }
-    });
-
-  cli
-    .command("info", $tr("cliDesc.info"))
-    .action(async (args: string[], options: ParsedOptions) => {
-      try {
-        const { main: infoMain } = await import("./cmd/info.ts");
-        await infoMain(args, options);
-      } catch (err) {
-        error(
-          $tr("cli.infoFailedWithMessage", {
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-        exit(1);
-      }
-    });
-
-  cli
-    .command("version", $tr("cliDesc.versionCmd"))
-    .action(() => {
-      // 独立 version 子命令（与 -V/--version 并存）；直接打印纯版本号便于脚本解析
-      console.log(version);
-    });
-
-  return cli;
-}
-
-/**
- * 执行 CLI 命令
- * 如果直接运行此文件，则执行 CLI（兼容 Deno、Bun 和 Node）
- */
-if (isMainModule(import.meta)) {
-  const version = await getDwebVersion();
-  const cli = createCLI(version);
-  // 摘出 run 的业务选项；裸 `--` 已移除，直接报错
-  let argv: string[];
+function envGet(name: string): string | undefined {
   try {
-    argv = preprocessCliArgsForRun(getArgs());
-  } catch (err) {
-    if (err instanceof RunDoubleDashError) {
-      error($tr("run.doubleDashRemoved"));
-      exit(2);
-    }
-    throw err;
+    const deno = (globalThis as {
+      Deno?: { env?: { get?: (key: string) => string | undefined } };
+    }).Deno;
+    const value = deno?.env?.get?.(name);
+    if (typeof value === "string") return value;
+  } catch {
+    // Permission denied or Deno.env unavailable
   }
-  await cli.execute(argv);
-  // 正常执行完成退出进程，防止外部异步句柄阻止进程自然退出
-  exit(0);
+  try {
+    const proc = (globalThis as {
+      process?: { env?: Record<string, string | undefined> };
+    }).process;
+    return proc?.env?.[name];
+  } catch {
+    return undefined;
+  }
 }
+
+function isPerfOn(): boolean {
+  const value = (envGet("DWEB_PERF") ?? "").trim().toLowerCase();
+  return value === "1" || value === "true" || value === "yes" ||
+    value === "on";
+}
+
+function isDenoRuntime(): boolean {
+  const g = globalThis as { Deno?: unknown; Bun?: unknown };
+  return typeof g.Deno !== "undefined" && typeof g.Bun === "undefined";
+}
+
+/** Main-module check without importing main-module.ts (that pulls runtime-adapter). */
+function isMain(): boolean {
+  if (typeof import.meta.main === "boolean") return import.meta.main;
+  const proc = (globalThis as { process?: { argv?: string[] } }).process;
+  const entry = proc?.argv?.[1];
+  if (!entry || !import.meta.url) return false;
+  let currentPath: string;
+  try {
+    currentPath = new URL(import.meta.url).pathname;
+    if (/^\/[A-Za-z]:/.test(currentPath)) currentPath = currentPath.slice(1);
+  } catch {
+    return false;
+  }
+  const normEntry = entry.replace(/\\/g, "/");
+  return currentPath === normEntry ||
+    currentPath.endsWith(normEntry) ||
+    normEntry.endsWith(currentPath);
+}
+
+/**
+ * Load the real CLI without a statically-analyzable specifier, so Deno
+ * does not put the command tree into this entry's module graph.
+ */
+async function loadCliBoot(): Promise<{ bootCli: () => Promise<void> }> {
+  const specifier = `./cli-${"boot"}.ts`;
+  return await import(specifier);
+}
+
+async function boot(): Promise<void> {
+  if (!isMain()) return;
+
+  if (isPerfOn()) {
+    const { perfMark } = await import("./utils/perf-trace.ts");
+    console.error(
+      `[dweb-perf] cli  stage=cli_isolate_to_js  t=${jsEntryMs.toFixed(1)}ms`,
+    );
+    perfMark("cli_module_evaluated");
+  }
+
+  if (isDenoRuntime()) {
+    const deno = (globalThis as {
+      Deno: {
+        args: string[];
+        env: { get: (key: string) => string | undefined };
+      };
+    }).Deno;
+    if (
+      deno.env.get("DWEB_CLI_WITH_PROJECT_CONFIG") !== "1" &&
+      deno.args[0] === "run"
+    ) {
+      const { reexecWithProjectImportMapDeno } = await import(
+        "./utils/deno-cli-reexec.ts"
+      );
+      await reexecWithProjectImportMapDeno({ jsEntryMs });
+    }
+  }
+
+  const { bootCli } = await loadCliBoot();
+  await bootCli();
+}
+
+await boot();

@@ -233,6 +233,7 @@
     "clientEntryExistsSkip": "クライアントエントリが存在、生成スキップ: {path}",
     "clientScriptBuildComplete": "クライアントスクリプトビルド完了",
     "devServerRunning": "開発サーバー起動中 http://{host}:{port}",
+    "devServerStartedIn": "Dev 起動時間 {ms}ms",
     "prodServerRunning": "本番サーバー起動中 http://{host}:{port}",
     "upgradePromptMissingVersion": "upgradePrompt は有効ですが、AppConfig.version が未設定のため、アップグレード通知は有効化されませんでした"
   },

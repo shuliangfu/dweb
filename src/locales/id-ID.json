@@ -233,6 +233,7 @@
     "clientEntryExistsSkip": "Entry klien ada, lewati buat: {path}",
     "clientScriptBuildComplete": "Build script klien selesai",
     "devServerRunning": "Server dev berjalan di http://{host}:{port}",
+    "devServerStartedIn": "Dev dimulai dalam {ms}ms",
     "prodServerRunning": "Server produksi berjalan di http://{host}:{port}",
     "upgradePromptMissingVersion": "upgradePrompt diaktifkan, tetapi AppConfig.version tidak diisi, jadi prompt peningkatan tidak diaktifkan"
   },
