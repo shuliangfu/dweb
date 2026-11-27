@@ -268,6 +268,9 @@ export interface ConsoleAppConfig {
   /**
    * 冷启动精简（默认 false）。跳过 banner、HTTP 中间件管理器等装饰性初始化；
    * 仍加载 config / logger / plugins+onInit 与可选 DB。可用 `DWEB_CONSOLE_SLIM=1` 覆盖。
+   *
+   * 中间件与插件请用顶层 `middlewares` / `plugins`（与 HTTP 应用相同字段）；
+   * `kind: "console"` 时 `middlewares` 按 Console 中间件执行。
    */
   slim?: boolean;
 }
@@ -381,12 +384,21 @@ export interface AppConfig extends Record<string, unknown> {
   build?: BuildAppConfig;
   /** 插件列表（用于注册插件） */
   plugins?: Array<Plugin | string>;
-  /** 中间件列表（用于注册中间件） */
+  /**
+   * 中间件列表（用于注册中间件）。
+   * - `kind: "web" | "api"`：HTTP 中间件（与原先一致）。
+   * - `kind: "console"`：Console 中间件（与 `app.use()` 相同签名），由
+   *   `dweb-cli run` 编入命令管道，而不是 HTTP 链。
+   */
   middlewares?: Array<
     | Middleware<MiddlewareContext>
+    | ConsoleAppMiddleware
     | string
     | {
-      middleware: Middleware<MiddlewareContext> | string;
+      middleware:
+        | Middleware<MiddlewareContext>
+        | ConsoleAppMiddleware
+        | string;
       condition?: MiddlewareCondition;
       name?: string;
     }
@@ -670,6 +682,16 @@ export type AppLifecycleHook = () => void | Promise<void>;
 export type AppMiddleware = Middleware;
 
 /**
+ * Console 中间件（`kind: "console"` 时用于 `AppConfig.middlewares` 与 `app.use()`）。
+ * 使用结构类型，避免 types → console-context → App 循环依赖。
+ * 运行时 ctx 为 {@link import("../feature/console-context.ts").ConsoleContext}。
+ */
+export type ConsoleAppMiddleware = (
+  ctx: any,
+  next: () => Promise<number>,
+) => Promise<number> | number;
+
+/**
  * App 插件类型
  *
  * 与 @dreamer/plugin 的 Plugin 类型一致，需提供 name 及可选钩子（onInit、onRequest 等）。
@@ -709,7 +731,7 @@ export interface IApp {
    * 注册中间件
    */
   use(
-    middleware: AppMiddleware,
+    middleware: AppMiddleware | ConsoleAppMiddleware,
     condition?: unknown,
     name?: string,
   ): void;

@@ -516,7 +516,7 @@
       "consoleCrondComment": "Example console command: crond",
       "consoleCrondStart": "crond start (example)",
       "consoleCrondStop": "crond stop (example)",
-      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
+      "consoleMainHint": "Console app entry loaded by `dweb-cli run`. Export default App; do not call start() here; the CLI starts the app."
     },
     "comments": {
       "serverEntry": "Server-Einstieg",
@@ -679,8 +679,8 @@
       "middlewareNameDesc": "Middleware-Name für Logs und Reihenfolge.",
       "middlewareConditionDesc": "Bedingung: (req) => boolean; Middleware nur ausführen, wenn true.",
       "kindDesc": "App-Art：web | api | console",
-      "consoleEntryHint": "Console-App：dweb-cli run <route>/<action> nutzen；HTTP nicht aus main.ts starten",
-      "consoleConfigHint": "Console-App-Konfiguration（kein server.listen）",
+      "consoleEntryHint": "Loaded by dweb-cli run (no HTTP). Export default app; configure middleware/plugins here or in config/. Do not call start(); the CLI starts the app.",
+      "consoleConfigHint": "Console app config (no server.listen). plugins and middlewares declared here take effect for dweb-cli run.",
       "apiConfigHint": "Reine API-App-Konfiguration（ohne _app／Seiten-Engine）",
       "dockerConsoleOnly": "Reine Console-Projekte haben keinen HTTP-Dienst；leeres Compose",
       "buildServerCompileMinifyDesc": "Server-Ausgabe minifizieren。",
@@ -804,7 +804,8 @@
       "sectionPlugins": "Plugins（optional）",
       "sectionMiddlewares": "Middlewares（optional）",
       "uploadDemoOnlyHint": "nur Demo；in Produktion authentifizieren",
-      "commonProductionSecurityHint": "Produktion: securityHeaders/rateLimit standardmäßig an; session erfordert cookie.secret — siehe SECURITY.md und PRODUCTION_CHECKLIST. cors-Allowlist bevorzugen (cors: true ⇒ origin \"*\")."
+      "commonProductionSecurityHint": "Produktion: securityHeaders/rateLimit standardmäßig an; session erfordert cookie.secret — siehe SECURITY.md und PRODUCTION_CHECKLIST. cors-Allowlist bevorzugen (cors: true ⇒ origin \"*\").",
+      "consoleMiddlewaresDesc": "Console middlewares (kind=console): functions or file paths. Combined with app.use() in main.ts and directory _middleware.ts."
     },
     "appKind": "App kind",
     "appKindWeb": "Web (pages)",

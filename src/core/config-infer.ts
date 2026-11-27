@@ -29,6 +29,26 @@ const RE_PROD_MULTI = /^\/([^/]+)\/([^/]+)\/server\.js$/i;
 let configDirCache: { key: string; value: string } | null = null;
 
 /**
+ * dweb-cli run 在加载 console/main.ts 之前设置，使 `new App({ kind: "console" })`
+ * 能像 HTTP 入口一样自动加载 `<consoleRoot>/config`（含 main.dev.ts / main.prod.ts）。
+ * 进程入口是 CLI 而不是 main.ts，否则 inferConfigDirectoryFromEntry 会推断失败。
+ */
+let consoleConfigDirectoryOverride: string | undefined;
+
+/** 为随后构造的 App 指定 console 配置目录（绝对或相对 cwd） */
+export function setConsoleConfigDirectoryOverride(
+  dir: string | undefined,
+): void {
+  consoleConfigDirectoryOverride = dir;
+  configDirCache = null;
+}
+
+/** 当前 console 配置目录覆盖（测试 / 调试） */
+export function getConsoleConfigDirectoryOverride(): string | undefined {
+  return consoleConfigDirectoryOverride;
+}
+
+/**
  * 从归一化入口路径推断 config 目录（内部使用预编译正则）
  *
  * @param normalized 已去掉 cwd 的路径（相对根）
@@ -75,6 +95,9 @@ function matchConfigDirFromNormalizedPath(
  * @throws 无法推断时抛出 ENTRY_PATH_INVALID 异常
  */
 export function inferConfigDirectoryFromEntry(): string {
+  if (consoleConfigDirectoryOverride) {
+    return consoleConfigDirectoryOverride;
+  }
   try {
     const deno = (globalThis as { Deno?: { mainModule?: string } }).Deno;
     const getPath = (): string | null => {

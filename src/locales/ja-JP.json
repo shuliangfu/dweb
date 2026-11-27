@@ -516,7 +516,7 @@
       "consoleCrondComment": "Example console command: crond",
       "consoleCrondStart": "crond start (example)",
       "consoleCrondStop": "crond stop (example)",
-      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
+      "consoleMainHint": "Console app entry loaded by `dweb-cli run`. Export default App; do not call start() here; the CLI starts the app."
     },
     "comments": {
       "serverEntry": "サーバーエントリ",
@@ -679,8 +679,8 @@
       "middlewareNameDesc": "ログと順序付け用のミドルウェア名。",
       "middlewareConditionDesc": "条件: (req) => boolean；true のときのみこのミドルウェアを実行。",
       "kindDesc": "アプリ種別：web | api | console",
-      "consoleEntryHint": "Console アプリ：dweb-cli run <route>/<action> を使い、main.ts から HTTP を起動しない",
-      "consoleConfigHint": "Console アプリ設定（server.listen なし）",
+      "consoleEntryHint": "Loaded by dweb-cli run (no HTTP). Export default app; configure middleware/plugins here or in config/. Do not call start(); the CLI starts the app.",
+      "consoleConfigHint": "Console app config (no server.listen). plugins and middlewares declared here take effect for dweb-cli run.",
       "apiConfigHint": "純 API アプリ設定（_app／ページエンジンなし）",
       "dockerConsoleOnly": "Console 専用プロジェクトに HTTP サービスは無い；compose は空",
       "buildServerCompileMinifyDesc": "サーバ出力を圧縮するか。",
@@ -804,7 +804,8 @@
       "sectionPlugins": "プラグイン（任意）",
       "sectionMiddlewares": "ミドルウェア（任意）",
       "uploadDemoOnlyHint": "デモのみ；本番は認証すること",
-      "commonProductionSecurityHint": "本番: securityHeaders／rateLimit は既定でオン。session 利用時は cookie.secret が必要 — SECURITY.md と PRODUCTION_CHECKLIST を参照。cors は許可リストを優先（cors: true ⇒ origin \"*\"）。"
+      "commonProductionSecurityHint": "本番: securityHeaders／rateLimit は既定でオン。session 利用時は cookie.secret が必要 — SECURITY.md と PRODUCTION_CHECKLIST を参照。cors は許可リストを優先（cors: true ⇒ origin \"*\"）。",
+      "consoleMiddlewaresDesc": "Console middlewares (kind=console): functions or file paths. Combined with app.use() in main.ts and directory _middleware.ts."
     },
     "appKind": "App kind",
     "appKindWeb": "Web (pages)",

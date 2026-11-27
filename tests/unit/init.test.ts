@@ -263,7 +263,7 @@ describe("init (cmd/init.ts)", () => {
       expect(configTs).toContain('kind: "console"');
 
       const mainTs = await readTextFile(join(testDir, "src", "main.ts"));
-      expect(mainTs).not.toContain("app.start()");
+      expect(mainTs).not.toMatch(/^\s*app\.start\(\);?/m);
       expect(mainTs).toContain("dweb-cli run");
 
       const denoJson = await readTextFile(join(testDir, "deno.json"));

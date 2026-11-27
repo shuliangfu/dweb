@@ -10,6 +10,38 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- **Console is a real app**: `dweb-cli run` loads `console/main.ts` when it
+  exports an `App` (configure middleware with `app.use()` / `middlewares`, and
+  plugins with `app.registerPlugin()` / `plugins`). `console/config` (`main.ts`,
+  `main.dev.ts`, `main.prod.ts`) uses the same top-level `plugins` and
+  `middlewares` fields as HTTP apps, and those settings take effect.
+- **Directory-level `_middleware.ts` for console commands**, same idea as HTTP
+  file routes: from the `routes/` root to the command directory, outer to inner.
+  A layer can wrap `next()` or return an exit code without calling `next()` to
+  block the command. Commands with no directory middleware still run.
+
+  Order (outer → inner): (1) global `console/middlewares/*.ts` (filename sort);
+  (2) `config.middlewares`; (3) `app.use()` in `console/main.ts`; (4) directory
+  `_middleware.ts`; (5) route module `before` → action → `after`.
+
+### Fixed
+
+- **Console timing logs**: global middlewares such as `middlewares/timing.ts`
+  were already loaded. If the middleware uses `ctx.log.debug(...)` while
+  `logger.level` is `info` (the usual default), the line is hidden. Use
+  `ctx.log.info(...)` to print at the default level, or set
+  `logger.level: "debug"` (for example in `config/main.dev.ts`). Global log
+  defaults are unchanged.
+
+### Performance
+
+- **`dweb-cli run` startup**: the first process now re-execs with the project
+  import map _before_ importing `run.ts` / `App` (avoids loading the HTTP render
+  stack twice). `App` is imported only when a command is actually invoked, so
+  `dweb-cli run --list` no longer constructs an App.
+
 ## [3.11.0] - 2026-11-23
 
 ### Security

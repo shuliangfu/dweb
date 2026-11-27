@@ -93,10 +93,12 @@ export async function resolveConsoleRoute(
     throw new ConsoleRouteNotFoundError(routePath, candidates);
   }
 
-  // 1) 精确文件：routes/a/b.ts
+  // 1) 精确文件：routes/a/b.ts（跳过 _middleware 等特殊文件）
   const exactFile = join(routesDir, ...segments) + ".ts";
   candidates.push(exactFile);
-  if (await exists(exactFile)) {
+  if (
+    await exists(exactFile) && !segments[segments.length - 1]!.startsWith("_")
+  ) {
     const filePath = assertWithinRoutesDir(exactFile, routesDir);
     return {
       filePath,

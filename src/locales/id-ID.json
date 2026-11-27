@@ -516,7 +516,7 @@
       "consoleCrondComment": "Example console command: crond",
       "consoleCrondStart": "crond start (example)",
       "consoleCrondStop": "crond stop (example)",
-      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
+      "consoleMainHint": "Console app entry loaded by `dweb-cli run`. Export default App; do not call start() here; the CLI starts the app."
     },
     "comments": {
       "serverEntry": "Entri server",
@@ -679,8 +679,8 @@
       "middlewareNameDesc": "Nama middleware untuk log dan urutan.",
       "middlewareConditionDesc": "Kondisi: (req) => boolean; jalankan middleware hanya jika true.",
       "kindDesc": "Jenis app：web | api | console",
-      "consoleEntryHint": "App Console：gunakan dweb-cli run <route>/<action>；jangan start HTTP dari main.ts",
-      "consoleConfigHint": "Konfigurasi app Console（tanpa server.listen）",
+      "consoleEntryHint": "Loaded by dweb-cli run (no HTTP). Export default app; configure middleware/plugins here or in config/. Do not call start(); the CLI starts the app.",
+      "consoleConfigHint": "Console app config (no server.listen). plugins and middlewares declared here take effect for dweb-cli run.",
       "apiConfigHint": "Konfigurasi app API murni（tanpa _app／mesin halaman）",
       "dockerConsoleOnly": "Proyek Console saja tidak punya layanan HTTP；compose kosong",
       "buildServerCompileMinifyDesc": "Minifikasi keluaran server。",
@@ -804,7 +804,8 @@
       "sectionPlugins": "Plugin（opsional）",
       "sectionMiddlewares": "Middleware（opsional）",
       "uploadDemoOnlyHint": "hanya demo；autentikasi di produksi",
-      "commonProductionSecurityHint": "Produksi: securityHeaders/rateLimit default aktif; session wajib cookie.secret — lihat SECURITY.md dan PRODUCTION_CHECKLIST. Utamakan daftar cors (cors: true ⇒ origin \"*\")."
+      "commonProductionSecurityHint": "Produksi: securityHeaders/rateLimit default aktif; session wajib cookie.secret — lihat SECURITY.md dan PRODUCTION_CHECKLIST. Utamakan daftar cors (cors: true ⇒ origin \"*\").",
+      "consoleMiddlewaresDesc": "Console middlewares (kind=console): functions or file paths. Combined with app.use() in main.ts and directory _middleware.ts."
     },
     "appKind": "App kind",
     "appKindWeb": "Web (pages)",

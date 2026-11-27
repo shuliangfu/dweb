@@ -472,6 +472,49 @@ export async function stop(ctx: ConsoleContext): Promise<void> {
 
 参见 `examples/app-kinds/multi-web-api-console`。
 
+`dweb-cli run` 会加载导出 `App` 的 `console/main.ts`。可在入口配置中间件和插件，
+也可在 `console/config` 里用与 HTTP 应用相同的顶层 `plugins`、`middlewares`
+字段声明，两者都会生效。请不要在入口调用 `app.start()`，由 CLI 负责启动。
+
+```ts
+// console/main.ts
+import { App } from "@dreamer/dweb";
+import type { ConsoleMiddleware } from "@dreamer/dweb";
+
+const app = new App({
+  kind: "console",
+  // plugins: [myPlugin],
+  // middlewares: [myMiddleware],
+});
+
+const tag: ConsoleMiddleware = async (ctx, next) => {
+  ctx.log.info(`running ${ctx.name}`);
+  return await next();
+};
+app.use(tag);
+// await app.registerPlugin(myPlugin);
+
+export default app;
+```
+
+`routes/` 下的目录级 `_middleware.ts`
+会作用于该目录及其子目录中的命令（从根到叶）， 写法与 HTTP
+路由中间件相同。中间件可以包裹 `next()`，或不调用 `next()`
+直接返回退出码以拦截命令。
+
+执行顺序（外 → 内）：
+
+1. 全局 `console/middlewares/*.ts`（按文件名排序）
+2. `config.middlewares`（`main.ts` + `main.dev.ts` / `main.prod.ts` + 入口传入的
+   config）
+3. `console/main.ts` 中的 `app.use()`
+4. `routes/` 下的目录级 `_middleware.ts`（从根到命令所在目录）
+5. 路由模块 `before` → action → `after`
+
+若耗时中间件使用 `ctx.log.debug(...)`，而 `logger.level` 为
+`info`，则不会打印该行。 请改用 `ctx.log.info(...)`，或将 `logger.level` 设为
+`"debug"`。
+
 `dweb-cli init` 可选 Web / API / Console；多应用下每个 app 各自选 `kind`，共用
 `common/`。**一项目最多一个** `api`、**最多一个** `console`。这两个目录名固定为
 `api` 和 `console`，init 不再询问名称。

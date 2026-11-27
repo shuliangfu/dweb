@@ -483,6 +483,49 @@ export async function stop(ctx: ConsoleContext): Promise<void> {
 
 See also `examples/app-kinds/multi-web-api-console`.
 
+`dweb-cli run` loads `console/main.ts` when it exports an `App`. Configure
+middleware and plugins there, and/or in `console/config` with the same top-level
+`plugins` and `middlewares` fields used by HTTP apps. Do not call `app.start()`
+in the entry — the CLI starts the app.
+
+```ts
+// console/main.ts
+import { App } from "@dreamer/dweb";
+import type { ConsoleMiddleware } from "@dreamer/dweb";
+
+const app = new App({
+  kind: "console",
+  // plugins: [myPlugin],
+  // middlewares: [myMiddleware],
+});
+
+const tag: ConsoleMiddleware = async (ctx, next) => {
+  ctx.log.info(`running ${ctx.name}`);
+  return await next();
+};
+app.use(tag);
+// await app.registerPlugin(myPlugin);
+
+export default app;
+```
+
+Directory-level `_middleware.ts` files under `routes/` apply to commands in that
+folder and below (root to leaf), just like HTTP. A middleware can wrap `next()`
+or return an exit code without calling `next()` to block the command.
+
+Order (outer → inner):
+
+1. Global `console/middlewares/*.ts` (filename sort)
+2. `config.middlewares` (`main.ts` + `main.dev.ts` / `main.prod.ts` + entry
+   config)
+3. `app.use()` in `console/main.ts`
+4. Directory `_middleware.ts` under `routes/` (root to the command directory)
+5. Route module `before` → action → `after`
+
+If a timing middleware uses `ctx.log.debug(...)` and `logger.level` is `info`,
+the line will not appear. Use `ctx.log.info(...)` or set
+`logger.level: "debug"`.
+
 `dweb-cli init` can scaffold Web / API / Console. In multi-app mode each app
 picks its own `kind` and shares `common/`. **At most one** `api` and **at most
 one** `console` per project. Their directories are fixed as `api` and `console`;

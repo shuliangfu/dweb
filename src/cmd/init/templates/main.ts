@@ -32,9 +32,27 @@ function buildMainTsBody(opts: InitOptions, appName?: string): string {
     return `/**
 ${commentLine}
  * ${$tr("init.comments.consoleEntryHint")}
+ *
+ * Middleware order (outer → inner):
+ * 1. console/middlewares/*.ts (filename sort)
+ * 2. config.middlewares (main.ts + main.dev.ts / main.prod.ts + entry config)
+ * 3. app.use() in this file
+ * 4. routes/…/_middleware.ts (root → command directory)
+ * 5. route module before → action → after
  */
 
-console.log(${JSON.stringify($tr("init.template.consoleMainHint"))});
+import { App } from "@dreamer/dweb";
+
+const app = new App({
+  kind: "console",
+  // plugins: [myPlugin],
+  // middlewares: [myMiddleware],
+});
+
+// app.use(myMiddleware);
+// await app.registerPlugin(myPlugin);
+
+export default app;
 `;
   }
 

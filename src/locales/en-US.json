@@ -532,7 +532,7 @@
       "consoleCrondComment": "Example console command: crond",
       "consoleCrondStart": "crond start (example)",
       "consoleCrondStop": "crond stop (example)",
-      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
+      "consoleMainHint": "Console app entry loaded by `dweb-cli run`. Export default App; do not call start() here; the CLI starts the app."
     },
     "comments": {
       "serverEntry": "Server entry",
@@ -695,8 +695,8 @@
       "middlewareNameDesc": "Middleware name for logs and ordering.",
       "middlewareConditionDesc": "Condition: (req) => boolean; run middleware only when true.",
       "kindDesc": "App kind: web | api | console",
-      "consoleEntryHint": "Console app: use dweb-cli run <route>/<action>; do not start HTTP from main.ts",
-      "consoleConfigHint": "Console app config (no server.listen)",
+      "consoleEntryHint": "Loaded by dweb-cli run (no HTTP). Export default app; configure middleware/plugins here or in config/. Do not call start(); the CLI starts the app.",
+      "consoleConfigHint": "Console app config (no server.listen). plugins and middlewares declared here take effect for dweb-cli run.",
       "apiConfigHint": "Pure API app config (no _app / page engine)",
       "dockerConsoleOnly": "Console-only project has no HTTP service; empty compose",
       "buildServerCompileMinifyDesc": "Minify server output.",
@@ -820,7 +820,8 @@
       "sectionPlugins": "Plugins (optional)",
       "sectionMiddlewares": "Middlewares (optional)",
       "uploadDemoOnlyHint": "demo only; authenticate in production",
-      "commonProductionSecurityHint": "Production: securityHeaders/rateLimit on by default; session requires cookie.secret — see SECURITY.md and PRODUCTION_CHECKLIST. Prefer cors allowlist (cors: true ⇒ origin \"*\")."
+      "commonProductionSecurityHint": "Production: securityHeaders/rateLimit on by default; session requires cookie.secret — see SECURITY.md and PRODUCTION_CHECKLIST. Prefer cors allowlist (cors: true ⇒ origin \"*\").",
+      "consoleMiddlewaresDesc": "Console middlewares (kind=console): functions or file paths. Combined with app.use() in main.ts and directory _middleware.ts."
     },
     "appKind": "App kind",
     "appKindWeb": "Web (pages)",

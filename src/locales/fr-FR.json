@@ -516,7 +516,7 @@
       "consoleCrondComment": "Example console command: crond",
       "consoleCrondStart": "crond start (example)",
       "consoleCrondStop": "crond stop (example)",
-      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
+      "consoleMainHint": "Console app entry loaded by `dweb-cli run`. Export default App; do not call start() here; the CLI starts the app."
     },
     "comments": {
       "serverEntry": "Point d'entrée serveur",
@@ -679,8 +679,8 @@
       "middlewareNameDesc": "Nom du middleware pour les journaux et l'ordonnancement.",
       "middlewareConditionDesc": "Condition : (req) => boolean ; n'exécuter le middleware que lorsque c'est true.",
       "kindDesc": "Type d'app：web | api | console",
-      "consoleEntryHint": "App Console：utiliser dweb-cli run <route>/<action>；ne pas démarrer HTTP depuis main.ts",
-      "consoleConfigHint": "Config d'app Console（pas de server.listen）",
+      "consoleEntryHint": "Loaded by dweb-cli run (no HTTP). Export default app; configure middleware/plugins here or in config/. Do not call start(); the CLI starts the app.",
+      "consoleConfigHint": "Console app config (no server.listen). plugins and middlewares declared here take effect for dweb-cli run.",
       "apiConfigHint": "Config d'app API pure（sans _app／moteur de pages）",
       "dockerConsoleOnly": "Projet Console seul：pas de service HTTP；compose vide",
       "buildServerCompileMinifyDesc": "Minifier la sortie serveur。",
@@ -804,7 +804,8 @@
       "sectionPlugins": "Plugins（optionnel）",
       "sectionMiddlewares": "Middlewares（optionnel）",
       "uploadDemoOnlyHint": "démo seulement；authentifier en production",
-      "commonProductionSecurityHint": "Production : securityHeaders/rateLimit activés par défaut ; session exige cookie.secret — voir SECURITY.md et PRODUCTION_CHECKLIST. Préférez une liste cors (cors: true ⇒ origin \"*\")."
+      "commonProductionSecurityHint": "Production : securityHeaders/rateLimit activés par défaut ; session exige cookie.secret — voir SECURITY.md et PRODUCTION_CHECKLIST. Préférez une liste cors (cors: true ⇒ origin \"*\").",
+      "consoleMiddlewaresDesc": "Console middlewares (kind=console): functions or file paths. Combined with app.use() in main.ts and directory _middleware.ts."
     },
     "appKind": "App kind",
     "appKindWeb": "Web (pages)",

@@ -516,7 +516,7 @@
       "consoleCrondComment": "Example console command: crond",
       "consoleCrondStart": "crond start (example)",
       "consoleCrondStop": "crond stop (example)",
-      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
+      "consoleMainHint": "Console app entry loaded by `dweb-cli run`. Export default App; do not call start() here; the CLI starts the app."
     },
     "comments": {
       "serverEntry": "Entrada do servidor",
@@ -679,8 +679,8 @@
       "middlewareNameDesc": "Nome do middleware para logs e ordenação.",
       "middlewareConditionDesc": "Condição: (req) => boolean; executa o middleware apenas quando true.",
       "kindDesc": "Tipo de app：web | api | console",
-      "consoleEntryHint": "App Console：use dweb-cli run <route>/<action>；não inicie HTTP a partir de main.ts",
-      "consoleConfigHint": "Config de app Console（sem server.listen）",
+      "consoleEntryHint": "Loaded by dweb-cli run (no HTTP). Export default app; configure middleware/plugins here or in config/. Do not call start(); the CLI starts the app.",
+      "consoleConfigHint": "Console app config (no server.listen). plugins and middlewares declared here take effect for dweb-cli run.",
       "apiConfigHint": "Config de app API pura（sem _app／motor de páginas）",
       "dockerConsoleOnly": "Projeto só Console não tem serviço HTTP；compose vazio",
       "buildServerCompileMinifyDesc": "Minificar saída do servidor。",
@@ -804,7 +804,8 @@
       "sectionPlugins": "Plugins（opcional）",
       "sectionMiddlewares": "Middlewares（opcional）",
       "uploadDemoOnlyHint": "somente demo；autenticar em produção",
-      "commonProductionSecurityHint": "Produção: securityHeaders/rateLimit ligados por padrão; session exige cookie.secret — veja SECURITY.md e PRODUCTION_CHECKLIST. Prefira lista cors (cors: true ⇒ origin \"*\")."
+      "commonProductionSecurityHint": "Produção: securityHeaders/rateLimit ligados por padrão; session exige cookie.secret — veja SECURITY.md e PRODUCTION_CHECKLIST. Prefira lista cors (cors: true ⇒ origin \"*\").",
+      "consoleMiddlewaresDesc": "Console middlewares (kind=console): functions or file paths. Combined with app.use() in main.ts and directory _middleware.ts."
     },
     "appKind": "App kind",
     "appKindWeb": "Web (pages)",

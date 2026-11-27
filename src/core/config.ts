@@ -25,7 +25,11 @@ import { deepMergeConfig, deepMergeParams } from "./config-merge.ts";
 import { validateConfig } from "./config-validate.ts";
 import { preloadProjectEnvSync } from "../utils/env-loader.ts";
 
-export { inferConfigDirectoryFromEntry } from "./config-infer.ts";
+export {
+  getConsoleConfigDirectoryOverride,
+  inferConfigDirectoryFromEntry,
+  setConsoleConfigDirectoryOverride,
+} from "./config-infer.ts";
 export { deepMergeConfig } from "./config-merge.ts";
 export { validateConfig } from "./config-validate.ts";
 

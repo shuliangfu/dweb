@@ -532,7 +532,7 @@
       "consoleCrondComment": "示例 Console 命令：crond",
       "consoleCrondStart": "crond start (example)",
       "consoleCrondStop": "crond stop (example)",
-      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
+      "consoleMainHint": "Console 入口由 `dweb-cli run` 加载。请 export default App，不要在此调用 start()，由 CLI 负责启动。"
     },
     "comments": {
       "serverEntry": "服务端入口",
@@ -695,8 +695,8 @@
       "middlewareNameDesc": "中间件名称，用于日志与排序。",
       "middlewareConditionDesc": "条件：(req) => boolean；仅当为 true 时执行该中间件。",
       "kindDesc": "应用种类：web | api | console",
-      "consoleEntryHint": "控制台应用：请使用 dweb-cli run <route>/<action>，不要用 main.ts 起 HTTP",
-      "consoleConfigHint": "Console 应用配置（无 server.listen）",
+      "consoleEntryHint": "由 dweb-cli run 加载（不启动 HTTP）。请 export default app；中间件和插件可在此或 config/ 中配置。不要调用 start()，由 CLI 负责启动。",
+      "consoleConfigHint": "Console 应用配置（无 server.listen）。此处声明的 plugins 与 middlewares 会对 dweb-cli run 生效。",
       "apiConfigHint": "纯 API 应用配置（无 _app / 页面引擎）",
       "dockerConsoleOnly": "纯 Console 项目无 HTTP 服务；docker-compose 为空",
       "buildServerCompileMinifyDesc": "是否压缩服务端产物。",
@@ -820,7 +820,8 @@
       "sectionPlugins": "插件（可选）",
       "sectionMiddlewares": "中间件（可选）",
       "uploadDemoOnlyHint": "仅演示；生产请鉴权",
-      "commonProductionSecurityHint": "生产：securityHeaders／rateLimit 默认开；启用 session 须 cookie.secret — 见 SECURITY.md 与 PRODUCTION_CHECKLIST。优先 cors 白名单（cors: true ⇒ origin \"*\"）。"
+      "commonProductionSecurityHint": "生产：securityHeaders／rateLimit 默认开；启用 session 须 cookie.secret — 见 SECURITY.md 与 PRODUCTION_CHECKLIST。优先 cors 白名单（cors: true ⇒ origin \"*\"）。",
+      "consoleMiddlewaresDesc": "Console 中间件（kind=console）：函数或文件路径。与 main.ts 的 app.use() 以及目录级 _middleware.ts 一起执行。"
     },
     "appKind": "应用类型",
     "appKindWeb": "Web（页面应用）",

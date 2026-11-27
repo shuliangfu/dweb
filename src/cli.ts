@@ -217,6 +217,14 @@ export function createCLI(version: string): Command {
     })
     .action(async (args: string[], options: ParsedOptions) => {
       try {
+        // 先按项目 import map 重跑，避免第一个进程加载 run.ts / App（HTTP 渲染栈）
+        const { cwd } = await import("@dreamer/runtime-adapter");
+        const { findProjectRoot } = await import("./utils/project.ts");
+        const { reexecWithProjectImportMap } = await import(
+          "./utils/project-import-map.ts"
+        );
+        const projectRoot = await findProjectRoot(cwd());
+        await reexecWithProjectImportMap(projectRoot);
         const { main: runMain } = await import("./cmd/run.ts");
         await runMain(args, options);
       } catch (err) {

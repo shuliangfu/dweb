@@ -68,6 +68,29 @@ describe("console-router", () => {
       expect(r.action).toBe("start");
     });
 
+    it("不应把目录级 _middleware.ts 解析为命令", async () => {
+      await ensureDir(join(routesDir, "init"));
+      await writeTextFile(
+        join(routesDir, "init", "_middleware.ts"),
+        `export default async function (_ctx, next) { return await next(); }
+`,
+      );
+      await writeTextFile(
+        join(routesDir, "init", "test.ts"),
+        `export async function run() { return 0; }
+`,
+      );
+      let hiddenErr: unknown;
+      try {
+        await resolveConsoleRoute(routesDir, "init/_middleware");
+      } catch (e) {
+        hiddenErr = e;
+      }
+      expect(hiddenErr).toBeInstanceOf(ConsoleRouteNotFoundError);
+      const r = await resolveConsoleRoute(routesDir, "init/test");
+      expect(r.filePath).toBe(join(routesDir, "init", "test.ts"));
+    });
+
     it("精确文件：cache/clear.ts → default/run/main", async () => {
       await ensureDir(join(routesDir, "cache"));
       await writeTextFile(

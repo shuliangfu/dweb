@@ -72,6 +72,7 @@ import {
   type AppPlugin,
   type AppStage,
   type AppStartOptions,
+  type ConsoleAppMiddleware,
   type IApp,
   isSocketIOAdapter,
 } from "../types/app.ts";
@@ -122,6 +123,7 @@ import {
   registerPlugin,
 } from "./plugin.ts";
 import { initializeServiceContainer } from "./service.ts";
+import { resolveConfigConsoleMiddlewares } from "../feature/console-middleware.ts";
 
 /**
  * App 类
@@ -187,6 +189,12 @@ export class App extends EventEmitter implements IApp {
   private _consoleMode = false;
   /** console.slim / DWEB_CONSOLE_SLIM：跳过 banner 与 HTTP 中间件管理器 */
   private _consoleSlim = false;
+  /** 来自已合并 config.middlewares 的 Console 中间件 */
+  private _configConsoleMiddlewares: ConsoleAppMiddleware[] = [];
+  /** 来自 console/main.ts 中 app.use() 的 Console 中间件 */
+  private _entryConsoleMiddlewares: ConsoleAppMiddleware[] = [];
+  /** start() 已完成（允许入口未调用 start，由 dweb-cli run 再调一次） */
+  private _started = false;
   /** 当前生命周期阶段 */
   get stage(): AppStage {
     try {
@@ -402,7 +410,12 @@ export class App extends EventEmitter implements IApp {
     // 再按配置顺序注册插件并触发 onInit，之后才初始化服务器/构建 client
     // （以便 getHmrCssEntries 等能读到 tailwindConfig 等）
     await this._registerPluginsFromConfig(mergedConfig);
-    if (!this._consoleSlim) {
+    if (this._consoleMode) {
+      // kind=console：config.middlewares 走命令管道，不注册到 HTTP 中间件管理器
+      this._configConsoleMiddlewares = await resolveConfigConsoleMiddlewares(
+        mergedConfig,
+      );
+    } else {
       await this._registerMiddlewaresFromConfig(mergedConfig);
     }
     // console 无 HTTP：跳过 routes 嵌套中间件（避免无 router 时的无用注册）
@@ -410,7 +423,11 @@ export class App extends EventEmitter implements IApp {
       this._registerRoutesMiddleware(mergedConfig);
     }
     this._initialized = true;
-    if (!this._consoleSlim) {
+    if (this._consoleMode) {
+      for (const pending of this._pendingMiddlewares) {
+        this._registerEntryConsoleMiddleware(pending);
+      }
+    } else {
       for (const pending of this._pendingMiddlewares) {
         this.use(
           pending.middlewareOrPath as AppMiddleware,
@@ -531,6 +548,8 @@ export class App extends EventEmitter implements IApp {
           container: this.container,
         }),
       };
+      // onRequest must run before the router; onResponse still runs after next().
+      server.use(pluginEventsMiddleware(this.container));
       server.useRouter(router, routerOptions);
 
       // 纯 API：不挂 HTML 渲染器、不构建/托管客户端脚本
@@ -542,9 +561,6 @@ export class App extends EventEmitter implements IApp {
           isBuildMode: () => this._isBuildMode(),
         });
       }
-
-      // 注册插件事件中间件（触发 onRequest/onResponse 事件）
-      server.use(pluginEventsMiddleware(this.container));
 
       // 注册生命周期钩子，在启动阶段启动服务器
       const lifecycleManager = getLifecycleManager(this.container);
@@ -655,8 +671,11 @@ export class App extends EventEmitter implements IApp {
         const middleware = await this._loadMiddlewareFromFile(middlewareConfig);
         registerMiddleware(this.container, middleware);
       } else if (typeof middlewareConfig === "function") {
-        // 如果是中间件函数，直接注册
-        registerMiddleware(this.container, middlewareConfig);
+        // 如果是中间件函数，直接注册（此路径仅 HTTP；console 已在上游分流）
+        registerMiddleware(
+          this.container,
+          middlewareConfig as Middleware<MiddlewareContext>,
+        );
       } else if (
         typeof middlewareConfig === "object" &&
         "middleware" in middlewareConfig
@@ -669,8 +688,10 @@ export class App extends EventEmitter implements IApp {
             middlewareConfig.middleware,
           );
         } else {
-          // 中间件是函数
-          middleware = middlewareConfig.middleware;
+          // 中间件是函数（此路径仅 HTTP）
+          middleware = middlewareConfig.middleware as Middleware<
+            MiddlewareContext
+          >;
         }
         registerMiddleware(
           this.container,
@@ -746,7 +767,7 @@ export class App extends EventEmitter implements IApp {
    * @param name 中间件名称（可选）
    */
   use(
-    middleware: AppMiddleware,
+    middleware: AppMiddleware | ConsoleAppMiddleware,
     condition?: unknown,
     name?: string,
   ): void;
@@ -756,14 +777,23 @@ export class App extends EventEmitter implements IApp {
     name?: string,
   ): void;
   use(
-    middlewareOrPath: AppMiddleware | string,
+    middlewareOrPath: AppMiddleware | ConsoleAppMiddleware | string,
     conditionOrMiddleware?: unknown | AppMiddleware,
     name?: string,
   ): void {
     // 如果初始化未完成，缓存调用
     if (!this._initialized) {
       this._pendingMiddlewares.push({
-        middlewareOrPath,
+        middlewareOrPath: middlewareOrPath as AppMiddleware | string,
+        conditionOrMiddleware,
+        name,
+      });
+      return;
+    }
+
+    if (this._consoleMode) {
+      this._registerEntryConsoleMiddleware({
+        middlewareOrPath: middlewareOrPath as AppMiddleware | string,
         conditionOrMiddleware,
         name,
       });
@@ -781,7 +811,7 @@ export class App extends EventEmitter implements IApp {
       );
     } else {
       // use(middleware, condition?, name?)
-      const middleware = middlewareOrPath;
+      const middleware = middlewareOrPath as AppMiddleware;
       registerMiddleware(
         this.container,
         middleware,
@@ -789,6 +819,33 @@ export class App extends EventEmitter implements IApp {
         name,
       );
     }
+  }
+
+  /**
+   * 将入口 `app.use()` 登记为 Console 中间件（仅 kind=console）。
+   * 仅支持函数；文件路径请写在 config.middlewares 或在入口 import 后再 use。
+   */
+  private _registerEntryConsoleMiddleware(pending: {
+    middlewareOrPath: AppMiddleware | string;
+    conditionOrMiddleware?: unknown | AppMiddleware;
+    name?: string;
+  }): void {
+    const fn = typeof pending.middlewareOrPath === "function"
+      ? pending.middlewareOrPath
+      : undefined;
+    if (typeof fn === "function") {
+      this._entryConsoleMiddlewares.push(fn as unknown as ConsoleAppMiddleware);
+    }
+  }
+
+  /** 配置层 Console 中间件（已解析为函数，按合并后的 config 顺序） */
+  getConfigConsoleMiddlewares(): ConsoleAppMiddleware[] {
+    return [...this._configConsoleMiddlewares];
+  }
+
+  /** 入口 `app.use()` 注册的 Console 中间件 */
+  getEntryConsoleMiddlewares(): ConsoleAppMiddleware[] {
+    return [...this._entryConsoleMiddlewares];
   }
 
   /**
@@ -872,6 +929,11 @@ export class App extends EventEmitter implements IApp {
       // config 可能尚未就绪（极少见）
     }
 
+    // 入口不必调用 start()；dweb-cli run 会再调一次，避免重复生命周期
+    if (this._started) {
+      return;
+    }
+
     const lifecycleManager = getLifecycleManager(this.container);
 
     // 初始化应用
@@ -890,6 +952,7 @@ export class App extends EventEmitter implements IApp {
 
     // 启动应用（HTTP listen 仅在非 console 且已挂 server hook 时发生）
     await lifecycleManager.start();
+    this._started = true;
   }
 
   /** 是否以 console（CLI）模式运行 */

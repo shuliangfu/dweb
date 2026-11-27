@@ -22,15 +22,22 @@ import {
   readTextFile,
   resolve,
 } from "@dreamer/runtime-adapter";
-import { App } from "../core/app.ts";
-import { getConfig } from "../core/config.ts";
+import type { App } from "../core/app.ts";
+import {
+  getConfig,
+  setConsoleConfigDirectoryOverride,
+} from "../core/config.ts";
 import { createConsoleContext } from "../feature/console-context.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import {
   formatConsoleCommandList,
   listConsoleCommands,
 } from "../feature/console-list.ts";
-import { loadConsoleMiddlewares } from "../feature/console-middleware.ts";
+import { loadConsoleAppEntry } from "../feature/console-app.ts";
+import {
+  loadConsoleMiddlewares,
+  loadDirectoryConsoleMiddlewares,
+} from "../feature/console-middleware.ts";
 import {
   ConsoleActionNotFoundError,
   ConsoleModuleHelpError,
@@ -158,6 +165,8 @@ export async function main(
   }
 
   const configDir = join(consoleRoot, "config");
+  // 让 console/main.ts 里 `new App({ kind: "console" })` 能自动加载本目录配置
+  setConsoleConfigDirectoryOverride(configDir);
   let app: App | null = null;
 
   // 合并：位置参数尾巴 + cli 预处理摘出的命令选项
@@ -165,10 +174,14 @@ export async function main(
   const trailing = parseTrailingCommandArgs(trailingRaw);
 
   try {
-    app = new App(
-      { kind: "console", hotReload: false },
-      { mode: "console", configDirectories: [configDir] },
-    );
+    const { App: AppClass } = await import("../core/app.ts");
+    app = await loadConsoleAppEntry(consoleRoot);
+    if (!app) {
+      app = new AppClass(
+        { kind: "console", hotReload: false },
+        { mode: "console", configDirectories: [configDir] },
+      );
+    }
     await app.start({ mode: "console" });
 
     const config = getConfig(app.container);
@@ -189,9 +202,13 @@ export async function main(
       : join(consoleRoot, "routes");
 
     const resolved = await resolveConsoleRoute(routesDir, routePath);
-    const middlewares = await loadConsoleMiddlewares(
-      join(consoleRoot, "middlewares"),
-    );
+    // 外 → 内：全局 middlewares/ → config.middlewares → app.use() → 目录 _middleware.ts
+    const middlewares = [
+      ...await loadConsoleMiddlewares(join(consoleRoot, "middlewares")),
+      ...app.getConfigConsoleMiddlewares(),
+      ...app.getEntryConsoleMiddlewares(),
+      ...await loadDirectoryConsoleMiddlewares(routesDir, resolved.filePath),
+    ];
     const ac = new AbortController();
     const ctx = createConsoleContext({
       app,

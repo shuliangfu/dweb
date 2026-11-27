@@ -9,6 +9,35 @@
 
 ## [Unreleased]
 
+### 新增
+
+- **Console 成为真正的应用入口**：`dweb-cli run` 会加载导出 `App` 的
+  `console/main.ts`（可用 `app.use()` / `middlewares` 配置中间件，用
+  `app.registerPlugin()` / `plugins` 配置插件）。`console/config`（`main.ts`、
+  `main.dev.ts`、`main.prod.ts`）使用与 HTTP 应用相同的顶层 `plugins`、
+  `middlewares` 字段，并且配置会生效。
+- **Console 命令支持目录级 `_middleware.ts`**，规则与 HTTP 文件路由一致：从
+  `routes/` 根目录到命令所在目录，由外到内执行。中间件可包裹 `next()`，或不调用
+  `next()` 直接返回退出码以拦截命令。没有目录中间件的命令仍可执行。
+
+  顺序（外 → 内）：(1) 全局 `console/middlewares/*.ts`（按文件名排序）； (2)
+  `config.middlewares`；(3) `console/main.ts` 中的 `app.use()`； (4) 目录级
+  `_middleware.ts`；(5) 路由模块 `before` → action → `after`。
+
+### 修复
+
+- **Console 耗时日志**：全局中间件（如 `middlewares/timing.ts`）原本就会加载。
+  若使用 `ctx.log.debug(...)` 而 `logger.level` 为
+  `info`（常见默认值），日志会被 过滤。需要看见输出时请改用
+  `ctx.log.info(...)`，或将 `logger.level` 设为 `"debug"`（例如写在
+  `config/main.dev.ts`）。框架默认日志级别未改。
+
+### 性能
+
+- **`dweb-cli run` 启动**：第一个进程会在导入 `run.ts` / `App` 之前按项目 import
+  map 重跑，避免把 HTTP 渲染栈加载两遍。仅在真正执行命令时才导入 `App`， 因此
+  `dweb-cli run --list` 不再构造 App。
+
 ## [3.11.0] - 2026-11-23
 
 ### 安全

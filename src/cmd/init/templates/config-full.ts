@@ -213,6 +213,10 @@ const config: AppConfig = {
   kind: "console",
   /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
+  /** ${$tr("init.comments.pluginsDesc")} */
+  // plugins: [],
+  /** ${$tr("init.comments.consoleMiddlewaresDesc")} */
+  // middlewares: [],
   /** ${$tr("init.comments.frameworkLanguage")} ${
       $tr("init.comments.frameworkLanguageSuffix")
     } */
